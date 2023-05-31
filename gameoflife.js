@@ -91,8 +91,6 @@ function tick() {
     frame = requestAnimationFrame(tick);
 };
 
-//requestAnimationFrame(tick);
-//return context_canvas;
 
 function nextFrame(){
     gol.draw();
