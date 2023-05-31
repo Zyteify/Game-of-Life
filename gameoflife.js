@@ -8,7 +8,7 @@ let frame;
 
 class Gameoflife {
 constructor() {
-    const gpu = new GPU({
+    const gpu = new GPUX({
         canvas: context_canvas,
         mode: 'gpu'
     });
