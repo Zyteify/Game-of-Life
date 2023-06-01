@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="utf-8">
   <title></title>
@@ -7,14 +8,21 @@
 
 <body>
   <div class="container">
-    <canvas id="gameCanvas"></canvas>
+    <!-- generations -->
+    <div id="generations">
+      <span id="generationCount">0</span> generations
+    </div>
     <div id="controls">
       <button id="startButton">Start</button>
       <button id="nextButton">Next</button>
+      <button id="getArray">Get Array</button>
     </div>
-  </div> 
+    <canvas id="gameCanvas"></canvas>
+  </div>
   <script src="gpu-browser.min.js"></script>
   <script src="gameoflife.js"></script>
+  <!-- <script src="test.js"></script> -->
 
 </body>
+
 </html>
