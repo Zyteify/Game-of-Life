@@ -1,28 +1,22 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title></title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
 </head>
-
 <body>
-  <div class="container">
-    <!-- generations -->
-    <div id="generations">
-      <span id="generationCount">0</span> generations
+    <div id="container">
+        <h1>Here's the Triangle:</h1>
+        <canvas id="gfx-main" width="800" height = "600"></canvas>
+        <h2>Current Key: </h2><h2 id="key-label"></h2>
+        <hr>
+        <h2>Mouse X: </h2><h2 id="mouse-x-label"></h2>
+        <br>
+        <h2>Mouse Y: </h2><h2 id="mouse-y-label"></h2>
+        <hr>
     </div>
-    <div id="controls">
-      <button id="startButton">Start</button>
-      <button id="nextButton">Next</button>
-      <button id="getArray">Get Array</button>
-    </div>
-    <canvas id="gameCanvas"></canvas>
-  </div>
-  <script src="gpu-browser.min.js"></script>
-  <script src="gameoflife.js"></script>
-  <!-- <script src="test.js"></script> -->
-
+    <script src="dist/main.js"></script>
 </body>
-
 </html>
