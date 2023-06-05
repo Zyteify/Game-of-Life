@@ -5,6 +5,12 @@ import { mat4 } from "gl-matrix";
 import { Material } from "./material";
 import { object_types, RenderData } from "../model/definitions";
 
+
+// import wgsl-debug and wgsl-debug-table
+/* import { WGSL_debug } from "wgsl-debug"
+import { WGSL_debug_table } from 'wgsl-debug-table' */
+
+
 export class Renderer {
 
     canvas: HTMLCanvasElement;
