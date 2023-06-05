@@ -267,7 +267,7 @@ export class Renderer {
         const renderpass : GPURenderPassEncoder = commandEncoder.beginRenderPass({
             colorAttachments: [{
                 view: textureView,
-                clearValue: {r: 0.5, g: 0.0, b: 0.25, a: 1.0},
+                clearValue: {r: 0.1, g: 0.1, b: 0.1, a: 1.0},
                 loadOp: "clear",
                 storeOp: "store"
             }],

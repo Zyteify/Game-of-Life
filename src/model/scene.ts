@@ -22,7 +22,7 @@ export class Scene {
         this.quad_count = 0;
 
         this.make_triangles();
-        this.make_quads();
+        //this.make_quads();
 
         this.player = new Camera(
             [-2, 0, 0.5], 0, 0
