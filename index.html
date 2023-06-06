@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <title>Game of Life</title>
 </head>
-
+<link rel="icon" href="src/img/fav.png" type="image/png">
 <body>
     <!-- create buttons for start game, pause game, next step, and reset game -->
     <button id="start">Start</button>
@@ -14,12 +14,12 @@
     <button id="reset">Reset</button>
     <!-- create a text for generations -->
     <p id="generations">Generations: 0</p>
-    <canvas width="512" height="512"></canvas>
+    <canvas width="512" height="512" id="gfx-main"></canvas>
     <!-- create a h1 for when the WEBGPU doesn't initialise with the id of MESSAGE -->
     <h1 id="MESSAGE"></h1>
     
     <!-- include game-of-life.js -->
-    <script type="module" src="game-of-life.js"></script>
+    <script type="module" src="dist/main.js"></script>
 </body>
 
 </html>

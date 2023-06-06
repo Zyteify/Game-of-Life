@@ -5,8 +5,11 @@ module.exports = {
     output: {
         filename: "main.js",
         path: path.resolve(__dirname, "dist"),
-        publicPath: "/dist/"
+        publicPath: "/dist/",
+        devtoolModuleFilenameTemplate: 'C:/Users/Michael/Documents/WebsiteZyteify.github.io/dist',
     },
+    mode: 'development',
+    devtool: "cheap-source-map",
 
     module: {
         rules: [
