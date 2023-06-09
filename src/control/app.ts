@@ -6,12 +6,12 @@ export class App {
 
     canvas: HTMLCanvasElement;
 
-    renderingCanvas: CanvasRenderingContext2D 
+    renderingCanvas: CanvasRenderingContext2D
     //make the grid size equal to a multiple of x^2
-     GRID_SIZE:number = 8;
+    GRID_SIZE: number = 8;
 
     renderer: Renderer;
-    scene: Scene; 
+    scene: Scene;
 
     //Labels for displaying state
     keyLabel: HTMLElement;
@@ -22,7 +22,13 @@ export class App {
     cells: Float32Array;
 
     sceneBuffer: ArrayBuffer;
-    
+
+
+    fps: number = 30;
+    animationId: number = 0;
+    animationRunning: boolean = false;
+
+
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
 
@@ -35,16 +41,16 @@ export class App {
         this.generationsLabel = <HTMLElement>document.getElementById("generations");
 
         $(document).on(
-            "keydown", 
+            "keydown",
             (event) => {
                 this.handle_keypress(event);
             }
         );
 
-        $('#next').on('click', 
+        $('#next, #start, #pause, #reset').on('click',
             (event) => {
-            this.handle_button(event);
-        })
+                this.handle_button(event);
+            })
     }
 
     GenerateScene() {
@@ -53,32 +59,104 @@ export class App {
     }
 
     async InitializeRenderer() {
-        await this.renderer.Initialize();
-        await this.renderer.setBuffer(this.scene.getArray())
+        await this.renderer.Initialize(this.GRID_SIZE);
+        this.renderer.setBuffer(this.scene.getArray())
     }
 
     async handle_button(event: JQuery.ClickEvent) {
+        //when next button is pressed
+        if (event.target.id == "next") {
+            this.stepRenderer()
+        }
+
+        //when start button is pressed
+        if (event.target.id == "start") {
+            console.log("starting animation")
+            this.startAnimating(5)
+        }
+
+        //when pause button is pressed
+        if (event.target.id == "reset") {
+            console.log("resetting scene")
+            this.resetScene()
+            this.stopAnimating()
+        }
+
+        //when reset button is pressed
+        if (event.target.id == "pause") {
+            //stop the animation frames
+            console.log("stopping animation")
+            this.stopAnimating()
+            
+
+        }
+
+
+    }
+    startAnimating(fps: number) {
+        this.animationRunning = true; // Flag to control the animation loop
+        this.animate(fps);
+    }
+
+    stopAnimating() {
+        this.animationRunning = false;
+    }
+
+    animate(fps: number) {
+        if (!this.animationRunning) return; // Check if animation is stopped
+        //request animation frame
+        requestAnimationFrame(() => {
+            //update the scene by one step
+            this.stepRenderer()
+            setTimeout(() => {
+                this.animate(fps);
+                //limit to x fps
+            }, 1000 / fps);
+        });
+    }
+
+    stepRenderer() {
+        //get the renderer to update the grid by one step
+        this.renderer.updateGrid().then(data => {
+            //get the data from the renderer into a Uint32Array of living cells
+            const cellAliveArray: Uint32Array = new Uint32Array(data)
+            //set the scene to the new array
+            this.scene.setArray(cellAliveArray)
+            //update the scene
+            this.updateScene()
+        })
+            .catch(error => {
+                console.error(error);
+            });
+    }
+
+    sendCellstoRenderer() {
         this.renderer.setBuffer(this.scene.getArray())
-        console.log("step " + this.renderer.getStep())
-        this.updateScene()
     }
 
-    updateScene(){
+    updateScene() {
+        //update which cells are alive
         this.scene.updateCells()
+        //draw the scene
         this.scene.draw();
+        //update the generations label
         this.updateGenerations()
-        //console.log(this.scene.getArray());
     }
 
-
+    resetScene() {
+        this.scene.reset()
+        //draw the scene
+        this.scene.draw();
+        //update the generations label
+        this.updateGenerations()
+        //set the step to 0 to ensure the renderer is in sync
+        this.renderer.setStep(0)
+        //set the renderer buffer to the cells in the scene. this only updates one side of the bind layouts
+        this.renderer.setBuffer(this.scene.getArray())
+    }
 
     async handle_keypress(event: JQuery.KeyDownEvent) {
-        this.keyLabel.innerText = event.code;
-        if (event.code == "KeyS") {
-            this.scene.setArray(await this.renderer.updateGrid())
-            console.log("step " + this.renderer.getStep())
-            this.updateScene()
-        }
+        
     }
 
     handle_keyrelease(event: JQuery.KeyUpEvent) {
@@ -90,10 +168,11 @@ export class App {
         this.mouseYLabel.innerText = event.clientY.toString();
     }
 
-    updateGenerations(){
+    updateGenerations() {
+        //get the generations from the scene
         this.generationsLabel.innerText = "Generations: " + this.scene.getGenerations().toString();
     }
 
-    
+
 
 }

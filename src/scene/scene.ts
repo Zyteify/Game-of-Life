@@ -78,11 +78,13 @@ export class Scene {
                 this.cells[i][j].alive = (this.aliveArray[i*8+j] !== 0)
             }
           }
+          console.log("updating generation count to " + this.generations + "+1")   
         this.generations++;
     }
 
-    createScene(){
-
+    reset(){
+        this.createCells()
+        this.draw()
     }
 
     draw() {

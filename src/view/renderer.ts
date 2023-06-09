@@ -5,7 +5,7 @@ import { ComputeBufferLayout } from "./definitions";
 export class Renderer {
 
 
-    GRID_SIZE: number = 8;
+    GRID_SIZE: number;
 
     canvas: HTMLCanvasElement;
 
@@ -52,15 +52,18 @@ export class Renderer {
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
+        this.GRID_SIZE = 8;
     }
 
-    async Initialize() {
+    async Initialize(GRID_SIZE: number) {
+
+        this.GRID_SIZE = GRID_SIZE;
 
         await this.setupDevice();
 
         await this.makeBindGroupsLayouts();
 
-        await this.createAssets(8);
+        await this.createAssets();
 
         await this.makeBindGroup();
 
@@ -112,7 +115,7 @@ export class Renderer {
 
     }
 
-    async createAssets(GRID_SIZE: number) {
+    async createAssets() {
 
         // Create a compute buffer layout that describes the compute buffer.
         this.computeBufferLayout = {
@@ -125,7 +128,7 @@ export class Renderer {
         };
 
         // Create a uniform buffer that describes the grid.
-        this.uniformArray = new Float32Array([GRID_SIZE, GRID_SIZE]);
+        this.uniformArray = new Float32Array([this.GRID_SIZE, this.GRID_SIZE]);
         this.uniformBuffer = this.device.createBuffer({
             label: "Grid Uniforms",
             size: this.uniformArray.byteLength,
@@ -134,7 +137,7 @@ export class Renderer {
         this.device.queue.writeBuffer(this.uniformBuffer, 0, this.uniformArray);
 
         // Create an array representing the active state of each cell.
-        this.cellStateArray = new Uint32Array(GRID_SIZE * GRID_SIZE);
+        this.cellStateArray = new Uint32Array(this.GRID_SIZE * this.GRID_SIZE);
         this.BUFFER_SIZE = this.cellStateArray.byteLength;
 
         // Create storage buffers to hold the cell state.
@@ -170,68 +173,15 @@ export class Renderer {
                 usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
             })
         ];
-
-        /* // Set each cell to a random state, then copy the JavaScript array into
-        // the storage buffer.
-        for (let i = 0; i < this.cellStateArray.length; ++i) {
-            this.cellStateArray[i] = Math.random() > 0.5 ? 1 : 0;
-        }
-        this.device.queue.writeBuffer(this.cellStateStorage[0], 0, this.cellStateArray);
-        console.log("step 0")
-        console.log(this.cellStateArray) */
     }
 
     async makePipeline() {
         // Create the compute shader that will process the game of life simulation.
         const simulationShaderModule = this.device.createShaderModule({
             label: "Life simulation shader",
-            code: `
-          @group(0) @binding(0) var<uniform> grid: vec2f;
-
-          @group(0) @binding(1) var<storage, read> cellStateIn: array<u32>;
-          @group(0) @binding(2) var<storage, read_write> cellStateOut: array<u32>;
-          @group(0) @binding(3) var<storage, read_write> cellStateBuffer: array<u32>;
-
-          fn cellIndex(cell: vec2u) -> u32 {
-            return (cell.y % u32(grid.y)) * u32(grid.x) +
-                   (cell.x % u32(grid.x));
-          }
-
-          fn cellActive(x: u32, y: u32) -> u32 {
-            return cellStateIn[cellIndex(vec2(x, y))];
-          }
-  
-          @compute @workgroup_size(${8}, ${8})
-
-          fn computeMain(@builtin(global_invocation_id) cell: vec3u){
-            
-            let activeNeighbors = cellActive(cell.x+1, cell.y+1) +
-                                  cellActive(cell.x+1, cell.y) +
-                                  cellActive(cell.x+1, cell.y-1) +
-                                  cellActive(cell.x, cell.y-1) +
-                                  cellActive(cell.x-1, cell.y-1) +
-                                  cellActive(cell.x-1, cell.y) +
-                                  cellActive(cell.x-1, cell.y+1) +
-                                  cellActive(cell.x, cell.y+1);
-
-            let i = cellIndex(cell.xy);
-
-            // Conway's game of life rules:
-            switch activeNeighbors {
-                case 2: { // Active cells with 2 neighbors stay active.
-                  cellStateOut[i] = cellStateIn[i];
-                }
-                case 3: { // Cells with 3 neighbors become or stay active.
-                  cellStateOut[i] = 1;
-                }
-                default: { // Cells with < 2 or > 3 neighbors become inactive.
-                  cellStateOut[i] = 0;
-                }
-              }
-              cellStateBuffer[i] = cellStateOut[i];
-          }
-        `
+            code: shader
         });
+
         // Create a compute buffer layout that describes the compute buffer.
         this.computeBufferLayout = {
             arrayStride: 8,
@@ -241,6 +191,7 @@ export class Renderer {
                 shaderLocation: 0,
             }],
         };
+        
         // Create a compute pipeline that updates the game state.
         this.simulationPipeline = this.device.createComputePipeline({
             label: "Simulation pipeline",
@@ -310,8 +261,6 @@ export class Renderer {
             //set the bind group to be either A or B depending on the step count
             this.bindGroups[this.step % 2]
         );
-        console.log(this.bindGroups[this.step % 2].label)
-        console.log(this.step % 2)
         const workgroupCount = Math.ceil(this.GRID_SIZE / this.WORKGROUP_SIZE);
         computePass.dispatchWorkgroups(workgroupCount, workgroupCount);
         computePass.end();
@@ -341,19 +290,18 @@ export class Renderer {
         const copyArrayBuffer = this.cellStateStorage[3].getMappedRange(0, this.BUFFER_SIZE);
         const data = copyArrayBuffer.slice(0);
         this.cellStateStorage[3].unmap();
-        console.log(new Uint32Array(data))
         return(new Uint32Array(data))
     }
 
     setBuffer(array: Uint32Array){
-        console.log("setting buffer")
-        console.log(array)
-        console.log(this.cellStateArray)
         this.device.queue.writeBuffer(this.cellStateStorage[0], 0, array);
     }
 
     getStep(){
         return this.step
+    }
+    setStep(step: number){
+        this.step = step
     }
 
 }
