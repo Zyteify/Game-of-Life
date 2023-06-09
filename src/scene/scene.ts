@@ -15,6 +15,8 @@ export class Scene {
     //2d array holding all the cells
     cells: Cell[][]
 
+    generations: number = 0;
+
     aliveArray: Uint32Array;
 
     constructor(canvas: HTMLCanvasElement, renderingCanvas: CanvasRenderingContext2D, GRID_SIZE: number) {
@@ -39,15 +41,23 @@ export class Scene {
 
     createCells(){
         console.log("creating cells" + this.GRID_SIZE + " by "+ this.GRID_SIZE);
+
+        this.generations = 0;
         //create a 2d array to populate this.cells
         this.cells = new Array(this.GRID_SIZE);
+        this.aliveArray = new Uint32Array(this.GRID_SIZE*this.GRID_SIZE)
         for (let i = 0; i < this.GRID_SIZE; i++) {
             this.cells[i] = new Array(this.GRID_SIZE);
             for (let j = 0; j < this.GRID_SIZE; j++) {
                 //console.log("creating cell"+i + " " + j)
                 this.cells[i][j] = new Cell(i, j);
+                if(this.cells[i][j].alive){
+                    this.aliveArray[i*this.GRID_SIZE+j] = 1
+                }
             }
         }
+        
+
     }
 
     setArray(array: Uint32Array){
@@ -57,6 +67,10 @@ export class Scene {
     getArray(){
         return this.aliveArray 
     }
+    
+    getGenerations(){
+        return this.generations
+    }
 
     updateCells(){
         for (let i = 0; i < 8; i++) {    
@@ -64,6 +78,7 @@ export class Scene {
                 this.cells[i][j].alive = (this.aliveArray[i*8+j] !== 0)
             }
           }
+        this.generations++;
     }
 
     createScene(){
@@ -96,30 +111,5 @@ export class Scene {
                 );
             }
         }
-    }
-
-    fitArrayIntoBuffer(): ArrayBuffer {
-        const cellSize = Float32Array.BYTES_PER_ELEMENT * 4; // Size of a single cell (4 floats: age, alive, x, y)
-        const bufferSize = this.cells.length * this.cells[0].length * cellSize; // Total buffer size
-
-        const buffer = new ArrayBuffer(bufferSize);
-        const float32Array = new Float32Array(buffer);
-
-        let offset = 0;
-
-        for (let i = 0; i < this.cells.length; i++) {
-            for (let j = 0; j < this.cells[i].length; j++) {
-                const cell = this.cells[i][j];
-
-                float32Array[offset] = cell.age;
-                float32Array[offset + 1] = cell.alive ? 1 : 0;
-                float32Array[offset + 2] = cell.x;
-                float32Array[offset + 3] = cell.y;
-
-                offset += 4; // Move to the next position in the buffer
-            }
-        }
-
-        return buffer;
     }
 }

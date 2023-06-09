@@ -17,6 +17,7 @@ export class App {
     keyLabel: HTMLElement;
     mouseXLabel: HTMLElement;
     mouseYLabel: HTMLElement;
+    generationsLabel: HTMLElement;
 
     cells: Float32Array;
 
@@ -31,6 +32,7 @@ export class App {
         this.keyLabel = <HTMLElement>document.getElementById("key-label");
         this.mouseXLabel = <HTMLElement>document.getElementById("mouse-x-label");
         this.mouseYLabel = <HTMLElement>document.getElementById("mouse-y-label");
+        this.generationsLabel = <HTMLElement>document.getElementById("generations");
 
         $(document).on(
             "keydown", 
@@ -43,25 +45,20 @@ export class App {
             (event) => {
             this.handle_button(event);
         })
-          
-        
     }
 
     GenerateScene() {
         this.scene = new Scene(this.canvas, <CanvasRenderingContext2D>this.canvas.getContext("2d"), this.GRID_SIZE);
         this.scene.draw()
-        //this.sceneBuffer = this.scene.fitArrayIntoBuffer()
-        
     }
 
     async InitializeRenderer() {
         await this.renderer.Initialize();
-        //await this.renderer.render(this.balls);
+        await this.renderer.setBuffer(this.scene.getArray())
     }
 
     async handle_button(event: JQuery.ClickEvent) {
         this.renderer.setBuffer(this.scene.getArray())
-        this.scene.setArray(await this.renderer.updateGrid())
         console.log("step " + this.renderer.getStep())
         this.updateScene()
     }
@@ -69,6 +66,7 @@ export class App {
     updateScene(){
         this.scene.updateCells()
         this.scene.draw();
+        this.updateGenerations()
         //console.log(this.scene.getArray());
     }
 
@@ -90,6 +88,10 @@ export class App {
     handle_mouse_move(event: MouseEvent) {
         this.mouseXLabel.innerText = event.clientX.toString();
         this.mouseYLabel.innerText = event.clientY.toString();
+    }
+
+    updateGenerations(){
+        this.generationsLabel.innerText = "Generations: " + this.scene.getGenerations().toString();
     }
 
     

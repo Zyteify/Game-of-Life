@@ -10743,6 +10743,7 @@ class App {
         this.keyLabel = document.getElementById("key-label");
         this.mouseXLabel = document.getElementById("mouse-x-label");
         this.mouseYLabel = document.getElementById("mouse-y-label");
+        this.generationsLabel = document.getElementById("generations");
         jquery__WEBPACK_IMPORTED_MODULE_2___default()(document).on("keydown", (event) => {
             this.handle_keypress(event);
         });
@@ -10757,17 +10758,18 @@ class App {
     }
     async InitializeRenderer() {
         await this.renderer.Initialize();
+        await this.renderer.setBuffer(this.scene.getArray());
         //await this.renderer.render(this.balls);
     }
     async handle_button(event) {
         this.renderer.setBuffer(this.scene.getArray());
-        this.scene.setArray(await this.renderer.updateGrid());
         console.log("step " + this.renderer.getStep());
         this.updateScene();
     }
     updateScene() {
         this.scene.updateCells();
         this.scene.draw();
+        this.updateGenerations();
         //console.log(this.scene.getArray());
     }
     async handle_keypress(event) {
@@ -10784,6 +10786,9 @@ class App {
     handle_mouse_move(event) {
         this.mouseXLabel.innerText = event.clientX.toString();
         this.mouseYLabel.innerText = event.clientY.toString();
+    }
+    updateGenerations() {
+        this.generationsLabel.innerText = "Generations: " + this.scene.getGenerations().toString();
     }
 }
 
@@ -10828,6 +10833,7 @@ __webpack_require__.r(__webpack_exports__);
 
 class Scene {
     constructor(canvas, renderingCanvas, GRID_SIZE) {
+        this.generations = 0;
         console.log("Initializing scene");
         this.renderingCanvas = renderingCanvas;
         this.GRID_SIZE = GRID_SIZE;
@@ -10841,13 +10847,18 @@ class Scene {
     }
     createCells() {
         console.log("creating cells" + this.GRID_SIZE + " by " + this.GRID_SIZE);
+        this.generations = 0;
         //create a 2d array to populate this.cells
         this.cells = new Array(this.GRID_SIZE);
+        this.aliveArray = new Uint32Array(this.GRID_SIZE * this.GRID_SIZE);
         for (let i = 0; i < this.GRID_SIZE; i++) {
             this.cells[i] = new Array(this.GRID_SIZE);
             for (let j = 0; j < this.GRID_SIZE; j++) {
                 //console.log("creating cell"+i + " " + j)
                 this.cells[i][j] = new _cell__WEBPACK_IMPORTED_MODULE_0__.Cell(i, j);
+                if (this.cells[i][j].alive) {
+                    this.aliveArray[i * this.GRID_SIZE + j] = 1;
+                }
             }
         }
     }
@@ -10857,12 +10868,16 @@ class Scene {
     getArray() {
         return this.aliveArray;
     }
+    getGenerations() {
+        return this.generations;
+    }
     updateCells() {
         for (let i = 0; i < 8; i++) {
             for (let j = 0; j < 8; j++) {
                 this.cells[i][j].alive = (this.aliveArray[i * 8 + j] !== 0);
             }
         }
+        this.generations++;
     }
     createScene() {
     }
@@ -10957,6 +10972,10 @@ class Renderer {
                     binding: 2,
                     visibility: GPUShaderStage.COMPUTE,
                     buffer: { type: "storage" } // Cell state output buffer
+                }, {
+                    binding: 3,
+                    visibility: GPUShaderStage.COMPUTE,
+                    buffer: { type: "storage" } // Cell state output buffer
                 },
             ]
         });
@@ -10986,19 +11005,23 @@ class Renderer {
         // Create an array representing the active state of each cell.
         this.cellStateArray = new Uint32Array(GRID_SIZE * GRID_SIZE);
         this.BUFFER_SIZE = this.cellStateArray.byteLength;
-        // Create two storage buffers to hold the cell state.
+        // Create storage buffers to hold the cell state.
         this.cellStateStorage = [
             this.device.createBuffer({
                 label: "Cell State A",
                 size: this.cellStateArray.byteLength,
                 usage: GPUBufferUsage.STORAGE
                     |
-                        GPUBufferUsage.COPY_DST
-                //| GPUBufferUsage.MAP_READ
-                ,
+                        GPUBufferUsage.COPY_DST,
             }),
             this.device.createBuffer({
                 label: "Cell State B",
+                size: this.cellStateArray.byteLength,
+                usage: GPUBufferUsage.STORAGE |
+                    GPUBufferUsage.COPY_DST,
+            }),
+            this.device.createBuffer({
+                label: "Cell State Buffer",
                 size: this.cellStateArray.byteLength,
                 usage: GPUBufferUsage.STORAGE |
                     GPUBufferUsage.COPY_SRC,
@@ -11009,14 +11032,14 @@ class Renderer {
                 usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
             })
         ];
-        // Set each cell to a random state, then copy the JavaScript array into
+        /* // Set each cell to a random state, then copy the JavaScript array into
         // the storage buffer.
         for (let i = 0; i < this.cellStateArray.length; ++i) {
             this.cellStateArray[i] = Math.random() > 0.5 ? 1 : 0;
         }
         this.device.queue.writeBuffer(this.cellStateStorage[0], 0, this.cellStateArray);
-        console.log("step 0");
-        console.log(this.cellStateArray);
+        console.log("step 0")
+        console.log(this.cellStateArray) */
     }
     async makePipeline() {
         // Create the compute shader that will process the game of life simulation.
@@ -11027,6 +11050,7 @@ class Renderer {
 
           @group(0) @binding(1) var<storage, read> cellStateIn: array<u32>;
           @group(0) @binding(2) var<storage, read_write> cellStateOut: array<u32>;
+          @group(0) @binding(3) var<storage, read_write> cellStateBuffer: array<u32>;
 
           fn cellIndex(cell: vec2u) -> u32 {
             return (cell.y % u32(grid.y)) * u32(grid.x) +
@@ -11064,6 +11088,7 @@ class Renderer {
                   cellStateOut[i] = 0;
                 }
               }
+              cellStateBuffer[i] = cellStateOut[i];
           }
         `
         });
@@ -11100,6 +11125,9 @@ class Renderer {
                     }, {
                         binding: 2,
                         resource: { buffer: this.cellStateStorage[1] }
+                    }, {
+                        binding: 3,
+                        resource: { buffer: this.cellStateStorage[2] }
                     }
                 ],
             }),
@@ -11115,6 +11143,9 @@ class Renderer {
                     }, {
                         binding: 2,
                         resource: { buffer: this.cellStateStorage[0] }
+                    }, {
+                        binding: 3,
+                        resource: { buffer: this.cellStateStorage[2] }
                     }
                 ],
             }),
@@ -11134,25 +11165,26 @@ class Renderer {
         computePass.dispatchWorkgroups(workgroupCount, workgroupCount);
         computePass.end();
         // Copy the cell state from the storage buffer to the staging buffer.
-        encoder.copyBufferToBuffer(this.cellStateStorage[1], 
+        encoder.copyBufferToBuffer(this.cellStateStorage[2], 
         //this.output,
         0, // Source offset
-        this.cellStateStorage[2], 0, // Destination offset
+        this.cellStateStorage[3], 0, // Destination offset
         this.BUFFER_SIZE);
         this.step++; // Increment the step count
         const commands = encoder.finish();
         this.device.queue.submit([commands]);
-        await this.cellStateStorage[2].mapAsync(GPUMapMode.READ, 0, // Offset
-        this.cellStateStorage[2].size // Length
+        await this.cellStateStorage[3].mapAsync(GPUMapMode.READ, 0, // Offset
+        this.cellStateStorage[3].size // Length
         );
-        const copyArrayBuffer = this.cellStateStorage[2].getMappedRange(0, this.BUFFER_SIZE);
+        const copyArrayBuffer = this.cellStateStorage[3].getMappedRange(0, this.BUFFER_SIZE);
         const data = copyArrayBuffer.slice(0);
-        this.cellStateStorage[2].unmap();
+        this.cellStateStorage[3].unmap();
         console.log(new Uint32Array(data));
         return (new Uint32Array(data));
     }
     setBuffer(array) {
         console.log("setting buffer");
+        console.log(array);
         console.log(this.cellStateArray);
         this.device.queue.writeBuffer(this.cellStateStorage[0], 0, array);
     }
