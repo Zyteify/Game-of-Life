@@ -1,16 +1,11 @@
 import shader from "./shaders/shaders.wgsl";
-import { SquareMesh } from "./square_mesh";
-import { mat4 } from "gl-matrix";
-import { Material } from "./material";
-import { object_types, RenderData } from "../model/definitions";
-
-
-// import wgsl-debug and wgsl-debug-table
-/* import { WGSL_debug } from "wgsl-debug"
-import { WGSL_debug_table } from 'wgsl-debug-table' */
+import { ComputeBufferLayout } from "./definitions";
 
 
 export class Renderer {
+
+
+    GRID_SIZE: number = 8;
 
     canvas: HTMLCanvasElement;
 
@@ -18,269 +13,326 @@ export class Renderer {
     adapter: GPUAdapter;
     device: GPUDevice;
     context: GPUCanvasContext;
-    format : GPUTextureFormat;
+    format: GPUTextureFormat;
+
+    //buffers
+    computeBufferLayout: ComputeBufferLayout;
 
     // Pipeline objects
-    uniformBuffer: GPUBuffer;
+
+    pipelineLayout: GPUPipelineLayout;
+
     pipeline: GPURenderPipeline;
+    computepipeline: GPUComputePipeline;
     frameGroupLayout: GPUBindGroupLayout;
-    materialGroupLayout: GPUBindGroupLayout;
-    frameBindGroup: GPUBindGroup;
+    computeGroupLayout: GPUBindGroupLayout;
+    computeBindGroup: GPUBindGroup;
 
-    // Depth Stencil stuff
-    depthStencilState: GPUDepthStencilState;
-    depthStencilBuffer: GPUTexture;
-    depthStencilView: GPUTextureView;
-    depthStencilAttachment: GPURenderPassDepthStencilAttachment;
+    //assets
+    uniformBuffer: GPUBuffer;
+    cellStateStorage: GPUBuffer[];
+    inputBuffer: GPUBuffer;
+    output: GPUBuffer;
 
-    // Assets
-    squareMesh: SquareMesh;
-    objectBuffer: GPUBuffer;
-    squareMaterial: Material;
+    cellStateArray: Uint32Array;
 
+    simulationPipeline: GPUComputePipeline;
 
-    constructor(canvas: HTMLCanvasElement){
+    bindGroupLayout: GPUBindGroupLayout
+
+    bindGroups: GPUBindGroup[];
+
+    step: number = 0;
+
+    WORKGROUP_SIZE: number = 8;
+
+    uniformArray: Float32Array;
+
+    BUFFER_SIZE: number;
+
+    constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
     }
 
-   async Initialize() {
+    async Initialize() {
 
         await this.setupDevice();
 
         await this.makeBindGroupsLayouts();
 
-        await this.createAssets();
-
-        await this.makeDepthBufferResources();
-    
-        await this.makePipeline();
+        await this.createAssets(8);
 
         await this.makeBindGroup();
+
+        await this.makePipeline();
+
+
     }
 
     async setupDevice() {
+
         //adapter: wrapper around (physical) GPU.
         //Describes features and limits
-        this.adapter = <GPUAdapter> await navigator.gpu?.requestAdapter();
+        this.adapter = <GPUAdapter>await navigator.gpu?.requestAdapter();
         //device: wrapper around GPU functionality
         //Function calls are made through the device
-        this.device = <GPUDevice> await this.adapter?.requestDevice();
-        //context: similar to vulkan instance (or OpenGL context)
-        this.context = <GPUCanvasContext> this.canvas.getContext("webgpu");
-        this.format = "bgra8unorm";
-        this.context.configure({
-            device: this.device,
-            format: this.format,
-            alphaMode: "opaque"
-        });
-    }
-
-    async makeDepthBufferResources() {
-
-        this.depthStencilState = {
-            format: "depth24plus-stencil8",
-            depthWriteEnabled: true,
-            depthCompare: "less-equal",
-        };
-
-        const size: GPUExtent3D = {
-            width: this.canvas.width,
-            height: this.canvas.height,
-            depthOrArrayLayers: 1
-        };
-        const depthBufferDescriptor: GPUTextureDescriptor = {
-            size: size,
-            format: "depth24plus-stencil8",
-            usage: GPUTextureUsage.RENDER_ATTACHMENT,
-        }
-        this.depthStencilBuffer = this.device.createTexture(depthBufferDescriptor);
-
-        const viewDescriptor: GPUTextureViewDescriptor = {
-            format: "depth24plus-stencil8",
-            dimension: "2d",
-            aspect: "all"
-        };
-        this.depthStencilView = this.depthStencilBuffer.createView(viewDescriptor);
-        
-        this.depthStencilAttachment = {
-            view: this.depthStencilView,
-            depthClearValue: 1.0,
-            depthLoadOp: "clear",
-            depthStoreOp: "store",
-
-            stencilLoadOp: "clear",
-            stencilStoreOp: "discard"
-        };
+        this.device = <GPUDevice>await this.adapter?.requestDevice();
 
     }
 
     async makeBindGroupsLayouts() {
-        this.frameGroupLayout = this.device.createBindGroupLayout({
-            entries: [
-                {
-                    binding: 0,
-                    visibility: GPUShaderStage.VERTEX,
-                    buffer: {}
-                }
-                ,{
-                    binding: 1,
-                    visibility: GPUShaderStage.VERTEX,
-                    buffer: {
-                        type: "read-only-storage",
-                        hasDynamicOffset: false
-                    }
-                }
-            ]
-        })
+        // Create the bind group layout and pipeline layout.
+        this.bindGroupLayout = this.device.createBindGroupLayout({
+            label: "Cell Bind Group Layout",
+            entries: [{
+                binding: 0,
+                visibility: GPUShaderStage.COMPUTE,
+                buffer: {} // Grid uniform buffer
+            }, {
+                binding: 1,
+                visibility: GPUShaderStage.COMPUTE,
+                buffer: { type: "read-only-storage" } // Cell state input buffer
+            }, {
+                binding: 2,
+                visibility: GPUShaderStage.COMPUTE,
+                buffer: { type: "storage" } // Cell state output buffer
+            }, 
+        ]
+        });
 
-        this.materialGroupLayout = this.device.createBindGroupLayout({
-            entries: [
-                {
-                    binding: 0,
-                    visibility: GPUShaderStage.FRAGMENT,
-                    texture: {}
-                }
-                ,{
-                    binding: 1,
-                    visibility: GPUShaderStage.FRAGMENT,
-                    sampler: {}
-                }
-            ]
-        })
+        this.pipelineLayout = this.device.createPipelineLayout({
+            label: "Cell Pipeline Layout",
+            bindGroupLayouts: [this.bindGroupLayout],
+        });
+
+    }
+
+    async createAssets(GRID_SIZE: number) {
+
+        // Create a compute buffer layout that describes the compute buffer.
+        this.computeBufferLayout = {
+            arrayStride: this.WORKGROUP_SIZE,
+            attributes: [{
+                format: "float32",
+                offset: 0,
+                shaderLocation: 0, // Position. Matches @location(0) in the @compute shader.
+            }],
+        };
+
+        // Create a uniform buffer that describes the grid.
+        this.uniformArray = new Float32Array([GRID_SIZE, GRID_SIZE]);
+        this.uniformBuffer = this.device.createBuffer({
+            label: "Grid Uniforms",
+            size: this.uniformArray.byteLength,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+        this.device.queue.writeBuffer(this.uniformBuffer, 0, this.uniformArray);
+
+        // Create an array representing the active state of each cell.
+        this.cellStateArray = new Uint32Array(GRID_SIZE * GRID_SIZE);
+        this.BUFFER_SIZE = this.cellStateArray.byteLength;
+
+        // Create two storage buffers to hold the cell state.
+        this.cellStateStorage = [
+            this.device.createBuffer({
+                label: "Cell State A",
+                size: this.cellStateArray.byteLength,
+                usage: 
+                GPUBufferUsage.STORAGE 
+                | 
+                GPUBufferUsage.COPY_DST 
+                //| GPUBufferUsage.MAP_READ
+                ,
+            }),
+            this.device.createBuffer({
+                label: "Cell State B",
+                size: this.cellStateArray.byteLength,
+                usage: 
+                GPUBufferUsage.STORAGE | 
+                GPUBufferUsage.COPY_SRC
+                ,
+            }),
+            this.device.createBuffer({
+                label: "Staging Buffer",
+                size: this.cellStateArray.byteLength,
+                usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+            })
+        ];
+
+        // Set each cell to a random state, then copy the JavaScript array into
+        // the storage buffer.
+        for (let i = 0; i < this.cellStateArray.length; ++i) {
+            this.cellStateArray[i] = Math.random() > 0.5 ? 1 : 0;
+        }
+        this.device.queue.writeBuffer(this.cellStateStorage[0], 0, this.cellStateArray);
+        console.log("step 0")
+        console.log(this.cellStateArray)
     }
 
     async makePipeline() {
-        
-        const pipelineLayout = this.device.createPipelineLayout({
-            bindGroupLayouts: [this.frameGroupLayout, this.materialGroupLayout]
-        });
-    
-        this.pipeline = this.device.createRenderPipeline({
-            vertex : {
-                module : this.device.createShaderModule({
-                    code : shader
-                }),
-                entryPoint : "vertexMain",
-                buffers: [this.squareMesh.bufferLayout,]
-            },
-    
-            fragment : {
-                module : this.device.createShaderModule({
-                    code : shader
-                }),
-                entryPoint : "fragmentMain",
-                targets : [{
-                    format : this.format
-                }]
-            },
-    
-            /* primitive : {
-                topology : "square-list"
-            }, */
-    
-            layout: pipelineLayout,
-            depthStencil: this.depthStencilState,
-        });
+        // Create the compute shader that will process the game of life simulation.
+        const simulationShaderModule = this.device.createShaderModule({
+            label: "Life simulation shader",
+            code: `
+          @group(0) @binding(0) var<uniform> grid: vec2f;
 
-    }
+          @group(0) @binding(1) var<storage, read> cellStateIn: array<u32>;
+          @group(0) @binding(2) var<storage, read_write> cellStateOut: array<u32>;
 
-    async createAssets() {
-        this.squareMesh = new SquareMesh(this.device);
-        this.squareMaterial = new Material();
-        this.uniformBuffer = this.device.createBuffer({
-            size: 64 * 2,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+          fn cellIndex(cell: vec2u) -> u32 {
+            return (cell.y % u32(grid.y)) * u32(grid.x) +
+                   (cell.x % u32(grid.x));
+          }
+
+          fn cellActive(x: u32, y: u32) -> u32 {
+            return cellStateIn[cellIndex(vec2(x, y))];
+          }
+  
+          @compute @workgroup_size(${8}, ${8})
+
+          fn computeMain(@builtin(global_invocation_id) cell: vec3u){
+            
+            let activeNeighbors = cellActive(cell.x+1, cell.y+1) +
+                                  cellActive(cell.x+1, cell.y) +
+                                  cellActive(cell.x+1, cell.y-1) +
+                                  cellActive(cell.x, cell.y-1) +
+                                  cellActive(cell.x-1, cell.y-1) +
+                                  cellActive(cell.x-1, cell.y) +
+                                  cellActive(cell.x-1, cell.y+1) +
+                                  cellActive(cell.x, cell.y+1);
+
+            let i = cellIndex(cell.xy);
+
+            // Conway's game of life rules:
+            switch activeNeighbors {
+                case 2: { // Active cells with 2 neighbors stay active.
+                  cellStateOut[i] = cellStateIn[i];
+                }
+                case 3: { // Cells with 3 neighbors become or stay active.
+                  cellStateOut[i] = 1;
+                }
+                default: { // Cells with < 2 or > 3 neighbors become inactive.
+                  cellStateOut[i] = 0;
+                }
+              }
+          }
+        `
         });
-
-        const modelBufferDescriptor: GPUBufferDescriptor = {
-            size: 64 * 1024,
-            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        // Create a compute buffer layout that describes the compute buffer.
+        this.computeBufferLayout = {
+            arrayStride: 8,
+            attributes: [{
+                format: "float32",
+                offset: 0,
+                shaderLocation: 0,
+            }],
         };
-        this.objectBuffer = this.device.createBuffer(modelBufferDescriptor);
-        await this.squareMaterial.initialize(
-            this.device
-            //, "dist/img/chat.jpg"
-            , this.materialGroupLayout);
+        // Create a compute pipeline that updates the game state.
+        this.simulationPipeline = this.device.createComputePipeline({
+            label: "Simulation pipeline",
+            layout: this.pipelineLayout,
+            compute: {
+                module: simulationShaderModule,
+                entryPoint: "computeMain"
+            }
+        });
+
     }
 
     async makeBindGroup() {
-        this.frameBindGroup = this.device.createBindGroup({
-            layout: this.frameGroupLayout,
-            entries: [
-                {
+        this.bindGroups = [
+            this.device.createBindGroup({
+                label: "Cell renderer bind group A",
+                layout: this.bindGroupLayout,
+                entries: [{
                     binding: 0,
-                    resource: {
-                        buffer: this.uniformBuffer
-                    }
-                },
-                {
+                    resource: { buffer: this.uniformBuffer },
+                    
+                }, {
                     binding: 1,
-                    resource: {
-                        buffer: this.objectBuffer,
-                    }
+                    resource: { buffer: this.cellStateStorage[0] }
+                }, {
+                    binding: 2,
+                    resource: { buffer: this.cellStateStorage[1] }
                 }
-            ]
-        });
-
-        
-    }
-
-    async render(renderables: RenderData) {
-
-        //Early exit tests
-        if (!this.device || !this.pipeline) {
-            return;
-        }
-
-        //make transforms
-        const projection = mat4.create();
-        mat4.perspective(projection, Math.PI/4, 800/600, 0.1, 10);
-
-        const view = renderables.view_transform;
-
-        this.device.queue.writeBuffer(
-            this.objectBuffer, 0, 
-            renderables.model_transforms, 0, 
-            renderables.model_transforms.length
-        );
-        this.device.queue.writeBuffer(this.uniformBuffer, 0, <ArrayBuffer>view); 
-        this.device.queue.writeBuffer(this.uniformBuffer, 64, <ArrayBuffer>projection); 
-        
-        //command encoder: records draw commands for submission
-        const commandEncoder : GPUCommandEncoder = this.device.createCommandEncoder();
-        //texture view: image view to the color buffer in this case
-        const textureView : GPUTextureView = this.context.getCurrentTexture().createView();
-        //renderpass: holds draw commands, allocated from command encoder
-        const renderpass : GPURenderPassEncoder = commandEncoder.beginRenderPass({
-            colorAttachments: [{
-                view: textureView,
-                clearValue: {r: 1, g: 1, b: 1, a: 1.0},
-                loadOp: "clear",
-                storeOp: "store"
-            }],
-            depthStencilAttachment: this.depthStencilAttachment,
-        });
-        
-        renderpass.setPipeline(this.pipeline);
-        renderpass.setBindGroup(0, this.frameBindGroup); 
-
-        var objects_drawn: number = 0;
-
-        //Squares
-        renderpass.setVertexBuffer(0, this.squareMesh.buffer);
-        renderpass.setBindGroup(1, this.squareMaterial.bindGroup); 
-
-        renderpass.draw(
-            6, renderables.object_counts[object_types.TRIANGLE], 
-            0, objects_drawn
-        );
-
-        objects_drawn += renderables.object_counts[object_types.TRIANGLE];
-
-        renderpass.end();
-    
-        this.device.queue.submit([commandEncoder.finish()]);
+                ],
+            })
+            ,
+            this.device.createBindGroup({
+                label: "Cell renderer bind group B",
+                layout: this.bindGroupLayout,
+                entries: [{
+                    binding: 0,
+                    resource: { buffer: this.uniformBuffer },
+                    
+                }, {
+                    binding: 1,
+                    resource: { buffer: this.cellStateStorage[1] }
+                }, {
+                    binding: 2,
+                    resource: { buffer: this.cellStateStorage[0] }
+                }
+                ],
+            }),
+        ];
 
     }
-    
+
+    async updateGrid() {
+        const encoder = this.device.createCommandEncoder();
+
+        // Start a compute pass
+        const computePass = encoder.beginComputePass();
+
+        computePass.setPipeline(this.simulationPipeline), 
+        computePass.setBindGroup(
+            0, 
+            //set the bind group to be either A or B depending on the step count
+            this.bindGroups[this.step % 2]
+        );
+        console.log(this.bindGroups[this.step % 2].label)
+        console.log(this.step % 2)
+        const workgroupCount = Math.ceil(this.GRID_SIZE / this.WORKGROUP_SIZE);
+        computePass.dispatchWorkgroups(workgroupCount, workgroupCount);
+        computePass.end();
+
+        // Copy the cell state from the storage buffer to the staging buffer.
+        encoder.copyBufferToBuffer(
+            this.cellStateStorage[1],
+            //this.output,
+            0, // Source offset
+            this.cellStateStorage[2],
+            0, // Destination offset
+            this.BUFFER_SIZE
+          );
+
+        this.step++; // Increment the step count
+
+        const commands = encoder.finish();
+        this.device.queue.submit([commands]);
+
+        await this.cellStateStorage[2].mapAsync(
+            GPUMapMode.READ,
+            0, // Offset
+            this.cellStateStorage[2].size // Length
+        );
+
+
+        const copyArrayBuffer = this.cellStateStorage[2].getMappedRange(0, this.BUFFER_SIZE);
+        const data = copyArrayBuffer.slice(0);
+        this.cellStateStorage[2].unmap();
+        console.log(new Uint32Array(data))
+        return(new Uint32Array(data))
+    }
+
+    setBuffer(array: Uint32Array){
+        console.log("setting buffer")
+        console.log(this.cellStateArray)
+        this.device.queue.writeBuffer(this.cellStateStorage[0], 0, array);
+    }
+
+    getStep(){
+        return this.step
+    }
+
 }
