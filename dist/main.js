@@ -10737,7 +10737,7 @@ __webpack_require__.r(__webpack_exports__);
 class App {
     constructor(canvas) {
         //make the grid size equal to a multiple of x^2
-        this.GRID_SIZE = 8;
+        this.GRID_SIZE = 512;
         this.fps = 30;
         this.animationId = 0;
         this.animationRunning = false;
@@ -10753,9 +10753,18 @@ class App {
         jquery__WEBPACK_IMPORTED_MODULE_2___default()('#next, #start, #pause, #reset').on('click', (event) => {
             this.handle_button(event);
         });
+        //get when the input box fps changes
+        jquery__WEBPACK_IMPORTED_MODULE_2___default()('#fps').on('input', (event) => {
+            this.fps = parseInt(event.target.value);
+            console.log(this.fps);
+        });
     }
     GenerateScene() {
-        this.scene = new _scene_scene__WEBPACK_IMPORTED_MODULE_1__.Scene(this.canvas, this.canvas.getContext("2d"), this.GRID_SIZE);
+        this.scene = new _scene_scene__WEBPACK_IMPORTED_MODULE_1__.Scene(this.canvas, this.canvas.getContext("2d", {
+            //desynchronized: true,
+            willReadFrequently: true,
+            alpha: false
+        }), this.GRID_SIZE);
         this.scene.draw();
     }
     async InitializeRenderer() {
@@ -10770,7 +10779,7 @@ class App {
         //when start button is pressed
         if (event.target.id == "start") {
             console.log("starting animation");
-            this.startAnimating(5);
+            this.startAnimating();
         }
         //when pause button is pressed
         if (event.target.id == "reset") {
@@ -10785,14 +10794,14 @@ class App {
             this.stopAnimating();
         }
     }
-    startAnimating(fps) {
+    startAnimating() {
         this.animationRunning = true; // Flag to control the animation loop
-        this.animate(fps);
+        this.animate();
     }
     stopAnimating() {
         this.animationRunning = false;
     }
-    animate(fps) {
+    animate() {
         if (!this.animationRunning)
             return; // Check if animation is stopped
         //request animation frame
@@ -10800,9 +10809,9 @@ class App {
             //update the scene by one step
             this.stepRenderer();
             setTimeout(() => {
-                this.animate(fps);
+                this.animate();
                 //limit to x fps
-            }, 1000 / fps);
+            }, 1000 / this.fps);
         });
     }
     stepRenderer() {
@@ -10810,10 +10819,10 @@ class App {
         this.renderer.updateGrid().then(data => {
             //get the data from the renderer into a Uint32Array of living cells
             const cellAliveArray = new Uint32Array(data);
-            //set the scene to the new array
-            this.scene.setArray(cellAliveArray);
+            /* //set the scene to the new array
+            this.scene.setArray(cellAliveArray)
             //update the scene
-            this.updateScene();
+            this.updateScene() */
         })
             .catch(error => {
             console.error(error);
@@ -10936,12 +10945,11 @@ class Scene {
         return this.generations;
     }
     updateCells() {
-        for (let i = 0; i < 8; i++) {
-            for (let j = 0; j < 8; j++) {
-                this.cells[i][j].alive = (this.aliveArray[i * 8 + j] !== 0);
+        for (let i = 0; i < this.GRID_SIZE; i++) {
+            for (let j = 0; j < this.GRID_SIZE; j++) {
+                this.cells[i][j].alive = (this.aliveArray[i * this.GRID_SIZE + j] !== 0);
             }
         }
-        console.log("updating generation count to " + this.generations + "+1");
         this.generations++;
     }
     reset() {
@@ -10950,6 +10958,11 @@ class Scene {
     }
     draw() {
         //console.log("drawing");
+        let x = [];
+        x = [this.GRID_SIZEX,
+            this.GRID_SIZEY,
+            this.GRID_SIZEX,
+            this.GRID_SIZEY];
         this.renderingCanvas.fillStyle = "#FF0000";
         // Draw a square for each square in the array
         for (let i = 0; i < this.GRID_SIZE; i++) {
@@ -10961,8 +10974,7 @@ class Scene {
                 else {
                     this.renderingCanvas.fillStyle = "#100000";
                 }
-                this.renderingCanvas.strokeStyle = "#FFFFFF";
-                this.renderingCanvas.fillRect(this.cells[i][j].x * this.GRID_SIZEX, this.cells[i][j].y * this.GRID_SIZEY, this.GRID_SIZEX, this.GRID_SIZEY);
+                this.renderingCanvas.fillRect(this.cells[i][j].x * x[0], this.cells[i][j].y * x[1], x[2], x[3]);
             }
         }
     }
@@ -11037,15 +11049,6 @@ class Renderer {
         });
     }
     async createAssets() {
-        // Create a compute buffer layout that describes the compute buffer.
-        this.computeBufferLayout = {
-            arrayStride: this.WORKGROUP_SIZE,
-            attributes: [{
-                    format: "float32",
-                    offset: 0,
-                    shaderLocation: 0, // Position. Matches @location(0) in the @compute shader.
-                }],
-        };
         // Create a uniform buffer that describes the grid.
         this.uniformArray = new Float32Array([this.GRID_SIZE, this.GRID_SIZE]);
         this.uniformBuffer = this.device.createBuffer({
@@ -11091,15 +11094,6 @@ class Renderer {
             label: "Life simulation shader",
             code: _shaders_shaders_wgsl__WEBPACK_IMPORTED_MODULE_0__["default"]
         });
-        // Create a compute buffer layout that describes the compute buffer.
-        this.computeBufferLayout = {
-            arrayStride: 8,
-            attributes: [{
-                    format: "float32",
-                    offset: 0,
-                    shaderLocation: 0,
-                }],
-        };
         // Create a compute pipeline that updates the game state.
         this.simulationPipeline = this.device.createComputePipeline({
             label: "Simulation pipeline",
@@ -11176,9 +11170,11 @@ class Renderer {
         const copyArrayBuffer = this.cellStateStorage[3].getMappedRange(0, this.BUFFER_SIZE);
         const data = copyArrayBuffer.slice(0);
         this.cellStateStorage[3].unmap();
+        //todo check the size of the array is correct
         return (new Uint32Array(data));
     }
     setBuffer(array) {
+        //todo check the size of the array is correct
         this.device.queue.writeBuffer(this.cellStateStorage[0], 0, array);
     }
     getStep() {

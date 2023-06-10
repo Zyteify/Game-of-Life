@@ -8,7 +8,7 @@ export class App {
 
     renderingCanvas: CanvasRenderingContext2D
     //make the grid size equal to a multiple of x^2
-    GRID_SIZE: number = 8;
+    GRID_SIZE: number = 512;
 
     renderer: Renderer;
     scene: Scene;
@@ -51,10 +51,23 @@ export class App {
             (event) => {
                 this.handle_button(event);
             })
+        
+        //get when the input box fps changes
+        $('#fps').on('input',
+            (event) => {
+                this.fps = parseInt((<HTMLInputElement>event.target).value)
+                console.log(this.fps)
+            })
+
+            
     }
 
     GenerateScene() {
-        this.scene = new Scene(this.canvas, <CanvasRenderingContext2D>this.canvas.getContext("2d"), this.GRID_SIZE);
+        this.scene = new Scene(this.canvas, <CanvasRenderingContext2D>this.canvas.getContext("2d",{
+            //desynchronized: true,
+            willReadFrequently: true,
+            alpha: false
+        }), this.GRID_SIZE);
         this.scene.draw()
     }
 
@@ -72,7 +85,7 @@ export class App {
         //when start button is pressed
         if (event.target.id == "start") {
             console.log("starting animation")
-            this.startAnimating(5)
+            this.startAnimating()
         }
 
         //when pause button is pressed
@@ -93,25 +106,25 @@ export class App {
 
 
     }
-    startAnimating(fps: number) {
+    startAnimating() {
         this.animationRunning = true; // Flag to control the animation loop
-        this.animate(fps);
+        this.animate();
     }
 
     stopAnimating() {
         this.animationRunning = false;
     }
 
-    animate(fps: number) {
+    animate() {
         if (!this.animationRunning) return; // Check if animation is stopped
         //request animation frame
         requestAnimationFrame(() => {
             //update the scene by one step
             this.stepRenderer()
             setTimeout(() => {
-                this.animate(fps);
+                this.animate();
                 //limit to x fps
-            }, 1000 / fps);
+            }, 1000 / this.fps);
         });
     }
 

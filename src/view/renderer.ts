@@ -15,9 +15,6 @@ export class Renderer {
     context: GPUCanvasContext;
     format: GPUTextureFormat;
 
-    //buffers
-    computeBufferLayout: ComputeBufferLayout;
-
     // Pipeline objects
 
     pipelineLayout: GPUPipelineLayout;
@@ -117,16 +114,6 @@ export class Renderer {
 
     async createAssets() {
 
-        // Create a compute buffer layout that describes the compute buffer.
-        this.computeBufferLayout = {
-            arrayStride: this.WORKGROUP_SIZE,
-            attributes: [{
-                format: "float32",
-                offset: 0,
-                shaderLocation: 0, // Position. Matches @location(0) in the @compute shader.
-            }],
-        };
-
         // Create a uniform buffer that describes the grid.
         this.uniformArray = new Float32Array([this.GRID_SIZE, this.GRID_SIZE]);
         this.uniformBuffer = this.device.createBuffer({
@@ -181,16 +168,6 @@ export class Renderer {
             label: "Life simulation shader",
             code: shader
         });
-
-        // Create a compute buffer layout that describes the compute buffer.
-        this.computeBufferLayout = {
-            arrayStride: 8,
-            attributes: [{
-                format: "float32",
-                offset: 0,
-                shaderLocation: 0,
-            }],
-        };
         
         // Create a compute pipeline that updates the game state.
         this.simulationPipeline = this.device.createComputePipeline({
@@ -286,20 +263,23 @@ export class Renderer {
             this.cellStateStorage[3].size // Length
         );
 
-
         const copyArrayBuffer = this.cellStateStorage[3].getMappedRange(0, this.BUFFER_SIZE);
         const data = copyArrayBuffer.slice(0);
         this.cellStateStorage[3].unmap();
+
+        //todo check the size of the array is correct
         return(new Uint32Array(data))
     }
 
     setBuffer(array: Uint32Array){
+        //todo check the size of the array is correct
         this.device.queue.writeBuffer(this.cellStateStorage[0], 0, array);
     }
 
     getStep(){
         return this.step
     }
+
     setStep(step: number){
         this.step = step
     }
