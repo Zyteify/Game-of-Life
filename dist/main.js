@@ -10819,10 +10819,10 @@ class App {
         this.renderer.updateGrid().then(data => {
             //get the data from the renderer into a Uint32Array of living cells
             const cellAliveArray = new Uint32Array(data);
-            /* //set the scene to the new array
-            this.scene.setArray(cellAliveArray)
+            //set the scene to the new array
+            this.scene.setArray(cellAliveArray);
             //update the scene
-            this.updateScene() */
+            this.updateScene();
         })
             .catch(error => {
             console.error(error);
