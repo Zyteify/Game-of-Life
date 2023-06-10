@@ -5,6 +5,6 @@ const canvas: HTMLCanvasElement = <HTMLCanvasElement>document.getElementById("gf
 
 
 const app = new App(canvas);
-app.GenerateScene();
+/* app.GenerateScene(); */
 app.InitializeRenderer();
 

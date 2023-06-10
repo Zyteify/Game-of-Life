@@ -2,7 +2,8 @@
 
 @group(0) @binding(1) var<storage, read> cellStateIn: array<u32>;
 @group(0) @binding(2) var<storage, read_write> cellStateOut: array<u32>;
-@group(0) @binding(3) var<storage, read_write> cellStateBuffer: array<u32>;
+@group(0) @binding(3) var<storage, read> cellStateBufferIn: array<u32>;
+@group(0) @binding(4) var<storage, read_write> cellStateBufferOut: array<u32>;
 
 fn cellIndex(cell: vec2u) -> u32 {
   return (cell.y % u32(grid.y)) * u32(grid.x) +
@@ -40,5 +41,5 @@ fn computeMain(@builtin(global_invocation_id) cell: vec3u){
         cellStateOut[i] = 0;
       }
     }
-    cellStateBuffer[i] = cellStateOut[i];
+  cellStateBufferOut[i] = cellStateBufferIn[i]+1;
 }

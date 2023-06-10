@@ -1,4 +1,5 @@
 import { Renderer } from "../view/renderer";
+import { Renderer2 } from "../view/renderer2";
 import { Scene } from "../scene/scene";
 import $ from "jquery";
 
@@ -8,9 +9,9 @@ export class App {
 
     renderingCanvas: CanvasRenderingContext2D
     //make the grid size equal to a multiple of x^2
-    GRID_SIZE: number = 512;
+    GRID_SIZE: number = 8;
 
-    renderer: Renderer;
+    renderer: Renderer2;
     scene: Scene;
 
     //Labels for displaying state
@@ -32,7 +33,7 @@ export class App {
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
 
-        this.renderer = new Renderer(canvas);
+        this.renderer = new Renderer2(canvas);
 
 
         this.keyLabel = <HTMLElement>document.getElementById("key-label");
@@ -73,7 +74,9 @@ export class App {
 
     async InitializeRenderer() {
         await this.renderer.Initialize(this.GRID_SIZE);
-        this.renderer.setBuffer(this.scene.getArray())
+        /* this.renderer.setBuffer(this.scene.getArray()) */
+        //do one step to render the first iteration
+        this.renderer.updateGrid()
     }
 
     async handle_button(event: JQuery.ClickEvent) {
@@ -131,12 +134,12 @@ export class App {
     stepRenderer() {
         //get the renderer to update the grid by one step
         this.renderer.updateGrid().then(data => {
-            //get the data from the renderer into a Uint32Array of living cells
+            /* //get the data from the renderer into a Uint32Array of living cells
             const cellAliveArray: Uint32Array = new Uint32Array(data)
             //set the scene to the new array
             this.scene.setArray(cellAliveArray)
             //update the scene
-            this.updateScene()
+            this.updateScene() */
         })
             .catch(error => {
                 console.error(error);
