@@ -27,16 +27,8 @@ export class Scene {
 
         this.GRID_SIZEX = Math.floor(canvas.width/GRID_SIZE)
         this.GRID_SIZEY = Math.floor(canvas.height/GRID_SIZE)
-        
-        
 
         this.createCells()
-    }
-
-    resize(canvas: HTMLCanvasElement, renderingCanvas: CanvasRenderingContext2D, GRID_SIZE: number){
-        this.GRID_SIZEX = Math.floor(canvas.width/GRID_SIZE)
-        this.GRID_SIZEY = Math.floor(canvas.height/GRID_SIZE)
-
     }
 
     createCells(){
@@ -45,29 +37,18 @@ export class Scene {
         this.generations = 0;
         //create a 2d array to populate this.cells
         this.cells = new Array(this.GRID_SIZE);
-        this.aliveArray = new Uint32Array(this.GRID_SIZE*this.GRID_SIZE)
+        
+        //loop though the array and create a new cell for each element
         for (let i = 0; i < this.GRID_SIZE; i++) {
+            //create the second dimension of the array
             this.cells[i] = new Array(this.GRID_SIZE);
             for (let j = 0; j < this.GRID_SIZE; j++) {
-                //console.log("creating cell"+i + " " + j)
+
                 this.cells[i][j] = new Cell(i, j);
-                if(this.cells[i][j].alive){
-                    this.aliveArray[i*this.GRID_SIZE+j] = 1
-                }
             }
-        }
-        
-
+        }        
     }
 
-    setArray(array: Uint32Array){
-        this.aliveArray = array
-    }
-
-    getArray(){
-        return this.aliveArray 
-    }
-    
     getGenerations(){
         return this.generations
     }
@@ -77,10 +58,11 @@ export class Scene {
     }
 
     updateCells(){
+
         
         for (let i = 0; i < this.GRID_SIZE; i++) {    
             for (let j = 0; j < this.GRID_SIZE; j++) {
-                this.cells[i][j].alive = (this.aliveArray[i*this.GRID_SIZE+j] !== 0)
+
             }
           }  
         this.generations++;
@@ -88,38 +70,6 @@ export class Scene {
 
     reset(){
         this.createCells()
-        this.draw()
-    }
-
-    draw() {
-        //console.log("drawing");
-        let x: number[] = [];
-        x = [this.GRID_SIZEX,
-            this.GRID_SIZEY,
-            this.GRID_SIZEX,
-            this.GRID_SIZEY]
-        
-        this.renderingCanvas.fillStyle = "#FF0000";
-        // Draw a square for each square in the array
-        for (let i = 0; i < this.GRID_SIZE; i++) {
-
-            for (let j = 0; j < this.GRID_SIZE; j++) {
-                // Set the fill color to a random colour
-                if(this.cells[i][j].alive){
-                    this.renderingCanvas.fillStyle = "#F00000";
-                }
-                else{
-                    this.renderingCanvas.fillStyle = "#100000";
-                }
-                
-                this.renderingCanvas.fillRect
-
-                (this.cells[i][j].x * x[0],     
-                    this.cells[i][j].y * x[1], 
-                x[2], 
-                x[3]);
-            }
-        }
     }
     
 }

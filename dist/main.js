@@ -10727,7 +10727,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   App: () => (/* binding */ App)
 /* harmony export */ });
-/* harmony import */ var _view_renderer2__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../view/renderer2 */ "./src/view/renderer2.ts");
+/* harmony import */ var _view_renderer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../view/renderer */ "./src/view/renderer.ts");
 /* harmony import */ var _scene_scene__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../scene/scene */ "./src/scene/scene.ts");
 /* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! jquery */ "./node_modules/jquery/dist/jquery.js");
 /* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_2__);
@@ -10741,16 +10741,272 @@ class App {
         this.fps = 30;
         this.animationId = 0;
         this.animationRunning = false;
+        this.obj = {
+            "0": 0,
+            "1": 0,
+            "2": 0,
+            "3": 0,
+            "4": 0,
+            "5": 0,
+            "6": 0,
+            "7": 0,
+            "8": 0,
+            "9": 0,
+            "10": 0,
+            "11": 0,
+            "12": 0,
+            "13": 0,
+            "14": 0,
+            "15": 0,
+            "16": 0,
+            "17": 1,
+            "18": 0,
+            "19": 0,
+            "20": 0,
+            "21": 0,
+            "22": 0,
+            "23": 0,
+            "24": 0,
+            "25": 0,
+            "26": 0,
+            "27": 0,
+            "28": 0,
+            "29": 0,
+            "30": 0,
+            "31": 0,
+            "32": 0,
+            "33": 0,
+            "34": 0,
+            "35": 0,
+            "36": 0,
+            "37": 0,
+            "38": 0,
+            "39": 0,
+            "40": 0,
+            "41": 0,
+            "42": 0,
+            "43": 0,
+            "44": 0,
+            "45": 0,
+            "46": 0,
+            "47": 0,
+            "48": 0,
+            "49": 0,
+            "50": 0,
+            "51": 0,
+            "52": 0,
+            "53": 0,
+            "54": 0,
+            "55": 0,
+            "56": 0,
+            "57": 0,
+            "58": 0,
+            "59": 0,
+            "60": 0,
+            "61": 0,
+            "62": 0,
+            "63": 0,
+            "64": 0,
+            "65": 0,
+            "66": 0,
+            "67": 0,
+            "68": 0,
+            "69": 0,
+            "70": 0,
+            "71": 0,
+            "72": 0,
+            "73": 0,
+            "74": 0,
+            "75": 0,
+            "76": 0,
+            "77": 0,
+            "78": 0,
+            "79": 0,
+            "80": 0,
+            "81": 0,
+            "82": 0,
+            "83": 0,
+            "84": 0,
+            "85": 0,
+            "86": 0,
+            "87": 0,
+            "88": 0,
+            "89": 0,
+            "90": 0,
+            "91": 0,
+            "92": 0,
+            "93": 0,
+            "94": 0,
+            "95": 0,
+            "96": 0,
+            "97": 0,
+            "98": 0,
+            "99": 0,
+            "100": 0,
+            "101": 0,
+            "102": 0,
+            "103": 0,
+            "104": 0,
+            "105": 0,
+            "106": 0,
+            "107": 0,
+            "108": 0,
+            "109": 0,
+            "110": 0,
+            "111": 0,
+            "112": 0,
+            "113": 0,
+            "114": 0,
+            "115": 0,
+            "116": 0,
+            "117": 0,
+            "118": 0,
+            "119": 0,
+            "120": 0,
+            "121": 0,
+            "122": 0,
+            "123": 0,
+            "124": 0,
+            "125": 0,
+            "126": 0,
+            "127": 0,
+            "128": 0,
+            "129": 0,
+            "130": 0,
+            "131": 0,
+            "132": 0,
+            "133": 0,
+            "134": 0,
+            "135": 0,
+            "136": 0,
+            "137": 0,
+            "138": 0,
+            "139": 0,
+            "140": 0,
+            "141": 0,
+            "142": 0,
+            "143": 0,
+            "144": 0,
+            "145": 0,
+            "146": 0,
+            "147": 0,
+            "148": 0,
+            "149": 0,
+            "150": 0,
+            "151": 0,
+            "152": 0,
+            "153": 0,
+            "154": 0,
+            "155": 0,
+            "156": 0,
+            "157": 1,
+            "158": 1,
+            "159": 1,
+            "160": 0,
+            "161": 0,
+            "162": 0,
+            "163": 0,
+            "164": 0,
+            "165": 0,
+            "166": 0,
+            "167": 0,
+            "168": 0,
+            "169": 0,
+            "170": 0,
+            "171": 0,
+            "172": 0,
+            "173": 0,
+            "174": 0,
+            "175": 0,
+            "176": 0,
+            "177": 0,
+            "178": 0,
+            "179": 0,
+            "180": 0,
+            "181": 0,
+            "182": 0,
+            "183": 0,
+            "184": 0,
+            "185": 0,
+            "186": 0,
+            "187": 0,
+            "188": 0,
+            "189": 0,
+            "190": 0,
+            "191": 0,
+            "192": 0,
+            "193": 0,
+            "194": 0,
+            "195": 0,
+            "196": 0,
+            "197": 0,
+            "198": 0,
+            "199": 0,
+            "200": 0,
+            "201": 0,
+            "202": 0,
+            "203": 0,
+            "204": 0,
+            "205": 0,
+            "206": 0,
+            "207": 0,
+            "208": 0,
+            "209": 0,
+            "210": 0,
+            "211": 0,
+            "212": 0,
+            "213": 0,
+            "214": 0,
+            "215": 0,
+            "216": 0,
+            "217": 0,
+            "218": 0,
+            "219": 0,
+            "220": 0,
+            "221": 0,
+            "222": 0,
+            "223": 0,
+            "224": 0,
+            "225": 0,
+            "226": 0,
+            "227": 0,
+            "228": 0,
+            "229": 0,
+            "230": 0,
+            "231": 0,
+            "232": 0,
+            "233": 0,
+            "234": 0,
+            "235": 0,
+            "236": 0,
+            "237": 0,
+            "238": 0,
+            "239": 0,
+            "240": 0,
+            "241": 0,
+            "242": 0,
+            "243": 0,
+            "244": 0,
+            "245": 0,
+            "246": 0,
+            "247": 0,
+            "248": 0,
+            "249": 0,
+            "250": 0,
+            "251": 0,
+            "252": 0,
+            "253": 0,
+            "254": 0,
+            "255": 0
+        };
         this.canvas = canvas;
-        this.renderer = new _view_renderer2__WEBPACK_IMPORTED_MODULE_0__.Renderer2(canvas);
+        this.renderer = new _view_renderer__WEBPACK_IMPORTED_MODULE_0__.Renderer(canvas);
         this.keyLabel = document.getElementById("key-label");
         this.mouseXLabel = document.getElementById("mouse-x-label");
         this.mouseYLabel = document.getElementById("mouse-y-label");
         this.generationsLabel = document.getElementById("generations");
-        jquery__WEBPACK_IMPORTED_MODULE_2___default()(document).on("keydown", (event) => {
-            this.handle_keypress(event);
-        });
-        jquery__WEBPACK_IMPORTED_MODULE_2___default()('#next, #start, #pause, #reset, #data, #data-age').on('click', (event) => {
+        //register clicking on buttons
+        jquery__WEBPACK_IMPORTED_MODULE_2___default()('#next, #start, #pause, #test, #data, #data-age').on('click', (event) => {
             this.handle_button(event);
         });
         //get when the input box fps changes
@@ -10758,6 +11014,8 @@ class App {
             this.fps = parseInt(event.target.value);
             console.log(this.fps);
         });
+        // register clicking on the canvas and log the position
+        this.canvas.addEventListener('click', this.handleClick.bind(this));
     }
     GenerateScene() {
         this.scene = new _scene_scene__WEBPACK_IMPORTED_MODULE_1__.Scene(this.canvas, this.canvas.getContext("2d", {
@@ -10765,7 +11023,6 @@ class App {
             willReadFrequently: true,
             alpha: false
         }), this.GRID_SIZE);
-        this.scene.draw();
     }
     async InitializeRenderer() {
         await this.renderer.Initialize(this.GRID_SIZE);
@@ -10782,10 +11039,9 @@ class App {
             this.startAnimating();
         }
         //when pause button is pressed
-        if (event.target.id == "reset") {
-            console.log("resetting scene");
-            this.resetScene();
-            this.stopAnimating();
+        if (event.target.id == "test") {
+            console.log("test scene");
+            this.renderer.setBuffer(this.obj);
         }
         //when reset button is pressed
         if (event.target.id == "pause") {
@@ -10833,42 +11089,43 @@ class App {
     stepRenderer() {
         //get the renderer to update the grid by one step
         this.renderer.updateGrid().then(data => {
-            /* //get the data from the renderer into a Uint32Array of living cells
-            const cellAliveArray: Uint32Array = new Uint32Array(data)
-            //set the scene to the new array
-            this.scene.setArray(cellAliveArray)
-            //update the scene
-            this.updateScene() */
+            //get the data from the renderer into a Uint32Array of living cells
+            //const cellAliveArray: Uint32Array = new Uint32Array(data)
         })
             .catch(error => {
             console.error(error);
         });
         //update the generations label
         this.updateGenerations();
+        this.renderer.randomiseGrid();
     }
     sendCellstoRenderer() {
-        this.renderer.setBuffer(this.scene.getArray());
     }
     updateScene() {
         //update which cells are alive
         this.scene.updateCells();
-        //draw the scene
-        this.scene.draw();
         //update the generations label
         this.updateGenerations();
     }
     resetScene() {
         this.scene.reset();
-        //draw the scene
-        this.scene.draw();
         //update the generations label
         this.updateGenerations();
         //set the step to 0 to ensure the renderer is in sync
         this.renderer.setStep(0);
         //set the renderer buffer to the cells in the scene. this only updates one side of the bind layouts
-        this.renderer.setBuffer(this.scene.getArray());
     }
-    async handle_keypress(event) {
+    handleClick(event) {
+        const canvasRect = this.canvas.getBoundingClientRect();
+        const mouseX = event.clientX - canvasRect.left;
+        const mouseY = event.clientY - canvasRect.top;
+        console.log(`Clicked on canvas at position: (${mouseX}, ${mouseY})`);
+        //get the cell that was clicked on
+        const cellsize = this.canvas.width / this.GRID_SIZE;
+        const cellX = Math.floor(mouseX / cellsize);
+        //grid coordinates are flipped for the y axis
+        const cellY = this.GRID_SIZE - 1 - Math.floor(mouseY / cellsize);
+        console.log(`Clicked on cell: (${cellX}, ${cellY})`);
     }
     handle_keyrelease(event) {
         this.keyLabel.innerText = event.code;
@@ -10902,6 +11159,7 @@ class Cell {
         this.x = x;
         this.y = y;
         this.age = 0;
+        //initial state of the cell
         this.alive = Math.random() > 0.5 ? true : false;
     }
 }
@@ -10932,32 +11190,19 @@ class Scene {
         this.GRID_SIZEY = Math.floor(canvas.height / GRID_SIZE);
         this.createCells();
     }
-    resize(canvas, renderingCanvas, GRID_SIZE) {
-        this.GRID_SIZEX = Math.floor(canvas.width / GRID_SIZE);
-        this.GRID_SIZEY = Math.floor(canvas.height / GRID_SIZE);
-    }
     createCells() {
         console.log("creating cells" + this.GRID_SIZE + " by " + this.GRID_SIZE);
         this.generations = 0;
         //create a 2d array to populate this.cells
         this.cells = new Array(this.GRID_SIZE);
-        this.aliveArray = new Uint32Array(this.GRID_SIZE * this.GRID_SIZE);
+        //loop though the array and create a new cell for each element
         for (let i = 0; i < this.GRID_SIZE; i++) {
+            //create the second dimension of the array
             this.cells[i] = new Array(this.GRID_SIZE);
             for (let j = 0; j < this.GRID_SIZE; j++) {
-                //console.log("creating cell"+i + " " + j)
                 this.cells[i][j] = new _cell__WEBPACK_IMPORTED_MODULE_0__.Cell(i, j);
-                if (this.cells[i][j].alive) {
-                    this.aliveArray[i * this.GRID_SIZE + j] = 1;
-                }
             }
         }
-    }
-    setArray(array) {
-        this.aliveArray = array;
-    }
-    getArray() {
-        return this.aliveArray;
     }
     getGenerations() {
         return this.generations;
@@ -10968,58 +11213,36 @@ class Scene {
     updateCells() {
         for (let i = 0; i < this.GRID_SIZE; i++) {
             for (let j = 0; j < this.GRID_SIZE; j++) {
-                this.cells[i][j].alive = (this.aliveArray[i * this.GRID_SIZE + j] !== 0);
             }
         }
         this.generations++;
     }
     reset() {
         this.createCells();
-        this.draw();
-    }
-    draw() {
-        //console.log("drawing");
-        let x = [];
-        x = [this.GRID_SIZEX,
-            this.GRID_SIZEY,
-            this.GRID_SIZEX,
-            this.GRID_SIZEY];
-        this.renderingCanvas.fillStyle = "#FF0000";
-        // Draw a square for each square in the array
-        for (let i = 0; i < this.GRID_SIZE; i++) {
-            for (let j = 0; j < this.GRID_SIZE; j++) {
-                // Set the fill color to a random colour
-                if (this.cells[i][j].alive) {
-                    this.renderingCanvas.fillStyle = "#F00000";
-                }
-                else {
-                    this.renderingCanvas.fillStyle = "#100000";
-                }
-                this.renderingCanvas.fillRect(this.cells[i][j].x * x[0], this.cells[i][j].y * x[1], x[2], x[3]);
-            }
-        }
     }
 }
 
 
 /***/ }),
 
-/***/ "./src/view/renderer2.ts":
-/*!*******************************!*\
-  !*** ./src/view/renderer2.ts ***!
-  \*******************************/
+/***/ "./src/view/renderer.ts":
+/*!******************************!*\
+  !*** ./src/view/renderer.ts ***!
+  \******************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   Renderer2: () => (/* binding */ Renderer2)
+/* harmony export */   Renderer: () => (/* binding */ Renderer)
 /* harmony export */ });
 /* harmony import */ var _shaders_shaders_wgsl__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./shaders/shaders.wgsl */ "./src/view/shaders/shaders.wgsl");
-/* harmony import */ var _shaders_vertexshaders_wgsl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./shaders/vertexshaders.wgsl */ "./src/view/shaders/vertexshaders.wgsl");
+/* harmony import */ var _shaders_copier_shader_wgsl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./shaders/copier_shader.wgsl */ "./src/view/shaders/copier_shader.wgsl");
+/* harmony import */ var _shaders_vertexshaders_wgsl__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./shaders/vertexshaders.wgsl */ "./src/view/shaders/vertexshaders.wgsl");
 
 
-class Renderer2 {
+
+class Renderer {
     constructor(canvas) {
         this.step = 0;
         this.WORKGROUP_SIZE = 8;
@@ -11031,6 +11254,7 @@ class Renderer2 {
         await this.setupDevice();
         await this.makeBindGroupsLayouts();
         await this.createAssets();
+        await this.randomiseGrid();
         await this.makeBindGroup();
         await this.makePipeline();
     }
@@ -11054,20 +11278,16 @@ class Renderer2 {
     }
     async makeBindGroupsLayouts() {
         // Create the bind group layout and pipeline layout.
-        this.bindGroupLayout = this.device.createBindGroupLayout({
+        this.cellBindGroupLayout = this.device.createBindGroupLayout({
             label: "Cell Bind Group Layout",
             entries: [{
                     binding: 0,
                     visibility: GPUShaderStage.VERTEX | GPUShaderStage.COMPUTE,
-                    buffer: {} // Grid uniform buffer
-                }, {
-                    binding: 1,
-                    visibility: GPUShaderStage.VERTEX | GPUShaderStage.COMPUTE,
                     buffer: { type: "read-only-storage" } // Cell state input buffer
                 }, {
-                    binding: 2,
+                    binding: 1,
                     visibility: GPUShaderStage.COMPUTE,
-                    buffer: { type: "storage" } // Cell state age buffer
+                    buffer: { type: "storage" }
                 }]
         });
         this.UniformBindGroupLayout = this.device.createBindGroupLayout({
@@ -11075,19 +11295,27 @@ class Renderer2 {
             entries: [{
                     binding: 0,
                     visibility: GPUShaderStage.VERTEX | GPUShaderStage.COMPUTE,
-                    buffer: {} // Grid uniform buffer
+                    buffer: {}
                 }]
         });
-        this.bindGroupLayoutAge = this.device.createBindGroupLayout({
+        this.cellAgeBindGroupLayout = this.device.createBindGroupLayout({
             label: "Cell Bind Group Layout Age",
             entries: [{
                     binding: 0,
                     visibility: GPUShaderStage.VERTEX | GPUShaderStage.COMPUTE,
-                    buffer: { type: "read-only-storage" } // Cell state output buffer
+                    buffer: { type: "read-only-storage" }
                 }, {
                     binding: 1,
                     visibility: GPUShaderStage.COMPUTE,
-                    buffer: { type: "storage" } // Cell state age buffer
+                    buffer: { type: "storage" }
+                }]
+        });
+        this.randomArrayBindGroupLayout = this.device.createBindGroupLayout({
+            label: "Cell Bind Group Layout",
+            entries: [{
+                    binding: 0,
+                    visibility: GPUShaderStage.COMPUTE,
+                    buffer: { type: "read-only-storage" } // Cell state input buffer
                 }]
         });
     }
@@ -11174,7 +11402,7 @@ class Renderer2 {
             // Set each cell to a random state, then copy the JavaScript array into
             // the storage buffer.
             for (let i = 0; i < cellStateArray.length; ++i) {
-                cellStateArray[i] = Math.random() > 0.5 ? 1 : 0;
+                cellStateArray[i] = Math.random() > 0.9 ? 1 : 0;
             }
             device.queue.writeBuffer(cellStateStorage[0], 0, cellStateArray);
         }
@@ -11185,11 +11413,34 @@ class Renderer2 {
         }
         initialiseGridAge(this.device, this.cellStateStorage, this.cellStateArray);
     }
+    async randomiseGrid() {
+        if (!this.randomArrayBuffer) {
+            //creating new random array buffer
+            console.log("creating new random array buffer");
+            this.randomArrayBuffer = this.device.createBuffer({
+                label: "Random Array Buffer",
+                size: this.BUFFER_SIZE,
+                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+            });
+        }
+        var randomArray;
+        randomArray = new Uint32Array(this.GRID_SIZE * this.GRID_SIZE);
+        var random;
+        for (let i = 0; i < randomArray.length; ++i) {
+            random = Math.random() > 0.001 ? 0 : 1;
+            if (random == 1) {
+                console.log("new cell at x:" + (i % this.GRID_SIZE).toString() + ", y:" + Math.floor(i / this.GRID_SIZE).toString());
+            }
+            randomArray[i] = random;
+        }
+        //finished copying random array to buffer
+        this.device.queue.writeBuffer(this.randomArrayBuffer, 0, randomArray);
+    }
     async makeBindGroup() {
         this.cellAgeBindGroups = [
             this.device.createBindGroup({
                 label: "Cell renderer bind group A Age",
-                layout: this.bindGroupLayoutAge,
+                layout: this.cellAgeBindGroupLayout,
                 entries: [{
                         binding: 0,
                         resource: { buffer: this.cellStateStorage[2] }
@@ -11203,7 +11454,7 @@ class Renderer2 {
             }),
             this.device.createBindGroup({
                 label: "Cell renderer bind group B Age",
-                layout: this.bindGroupLayoutAge,
+                layout: this.cellAgeBindGroupLayout,
                 entries: [{
                         binding: 0,
                         resource: { buffer: this.cellStateStorage[3] }
@@ -11218,30 +11469,24 @@ class Renderer2 {
         this.cellAliveBindGroups = [
             this.device.createBindGroup({
                 label: "Cell renderer bind group A",
-                layout: this.bindGroupLayout,
+                layout: this.cellBindGroupLayout,
                 entries: [{
                         binding: 0,
-                        resource: { buffer: this.uniformBuffer }
-                    }, {
-                        binding: 1,
                         resource: { buffer: this.cellStateStorage[0] }
                     }, {
-                        binding: 2,
+                        binding: 1,
                         resource: { buffer: this.cellStateStorage[1] }
                     }
                 ],
             }),
             this.device.createBindGroup({
                 label: "Cell renderer bind group B",
-                layout: this.bindGroupLayout,
+                layout: this.cellBindGroupLayout,
                 entries: [{
                         binding: 0,
-                        resource: { buffer: this.uniformBuffer }
-                    }, {
-                        binding: 1,
                         resource: { buffer: this.cellStateStorage[1] }
                     }, {
-                        binding: 2,
+                        binding: 1,
                         resource: { buffer: this.cellStateStorage[0] }
                     }
                 ],
@@ -11257,25 +11502,44 @@ class Renderer2 {
                     }
                 ]
             });
+        this.randomArrayBindGroup =
+            this.device.createBindGroup({
+                label: "randomArray bind group",
+                layout: this.randomArrayBindGroupLayout,
+                entries: [{
+                        binding: 0,
+                        resource: { buffer: this.randomArrayBuffer }
+                    }
+                ]
+            });
     }
     async makePipeline() {
         this.pipelineLayout = this.device.createPipelineLayout({
             label: "Cell Pipeline Layout",
             bindGroupLayouts: [
                 this.UniformBindGroupLayout,
-                this.bindGroupLayout,
-                this.bindGroupLayoutAge //group 1
+                this.cellBindGroupLayout,
+                this.cellAgeBindGroupLayout,
+                this.randomArrayBindGroupLayout
+            ],
+        });
+        this.renderPipelineLayout = this.device.createPipelineLayout({
+            label: "Cell Pipeline Layout",
+            bindGroupLayouts: [
+                this.UniformBindGroupLayout,
+                this.cellBindGroupLayout,
+                this.cellAgeBindGroupLayout, //group 2
             ],
         });
         // Create the shader that will render the cells.
         this.cellShaderModule = this.device.createShaderModule({
             label: "Cell shader",
-            code: _shaders_vertexshaders_wgsl__WEBPACK_IMPORTED_MODULE_1__["default"]
+            code: _shaders_vertexshaders_wgsl__WEBPACK_IMPORTED_MODULE_2__["default"]
         });
         // Create a pipeline that renders the cell.
         this.cellPipeline = this.device.createRenderPipeline({
             label: "Cell pipeline",
-            layout: this.pipelineLayout,
+            layout: this.renderPipelineLayout,
             vertex: {
                 module: this.cellShaderModule,
                 entryPoint: "vertexMain",
@@ -11312,16 +11576,18 @@ class Renderer2 {
             this.computePass.setBindGroup(0, this.uniformBindGroup);
         this.computePass.setBindGroup(1, this.cellAliveBindGroups[this.step % 2]);
         this.computePass.setBindGroup(2, this.cellAgeBindGroups[this.step % 2]);
+        this.computePass.setBindGroup(3, this.randomArrayBindGroup);
         this.workgroupCount = Math.ceil(this.GRID_SIZE / this.WORKGROUP_SIZE);
         this.computePass.dispatchWorkgroups(this.workgroupCount, this.workgroupCount);
         this.computePass.end();
+        // End the compute pass and submit the command buffer
         this.step++;
         // Start a render pass
         this.pass = encoder.beginRenderPass({
             colorAttachments: [{
                     view: this.context.getCurrentTexture().createView(),
                     loadOp: "clear",
-                    clearValue: { r: 0, g: 0.0, b: 0, a: 1.0 },
+                    clearValue: { r: 0.1, g: 0.1, b: 0.1, a: 1.0 },
                     storeOp: "store",
                 }]
         });
@@ -11336,7 +11602,38 @@ class Renderer2 {
         this.pass.end();
         this.device.queue.submit([encoder.finish()]);
     }
-    setBuffer(array) {
+    async renderGrid() {
+        const encoder = this.device.createCommandEncoder();
+        // Start a render pass
+        this.pass = encoder.beginRenderPass({
+            colorAttachments: [{
+                    view: this.context.getCurrentTexture().createView(),
+                    loadOp: "clear",
+                    clearValue: { r: 0.1, g: 0.1, b: 0.1, a: 1.0 },
+                    storeOp: "store",
+                }]
+        });
+        // Draw the grid.
+        this.pass.setPipeline(this.cellPipeline);
+        this.pass.setBindGroup(0, this.uniformBindGroup);
+        this.pass.setBindGroup(1, this.cellAliveBindGroups[this.step % 2]);
+        this.pass.setBindGroup(2, this.cellAgeBindGroups[this.step % 2]);
+        this.pass.setVertexBuffer(0, this.vertexBuffer);
+        this.pass.draw(this.vertices.length / 2, this.GRID_SIZE * this.GRID_SIZE);
+        // End the render pass and submit the command buffer
+        this.pass.end();
+        this.device.queue.submit([encoder.finish()]);
+    }
+    setBuffer(obj) {
+        this.setStep(0);
+        const values = Object.values(obj);
+        var testarray;
+        testarray = new Uint32Array(values);
+        console.log(testarray);
+        this.device.queue.writeBuffer(this.cellStateStorage[0], 0, testarray);
+        //copy the buffers of the first step to the buffers of the second step to render properly
+        this.copyBufferUsingCompute(this.cellStateStorage[0], this.cellStateStorage[1]);
+        this.renderGrid();
     }
     getStep() {
         return this.step;
@@ -11375,8 +11672,86 @@ class Renderer2 {
         const commands = encoder.finish();
         this.device.queue.submit([commands]);
     }
+    //copy the contents of buffer1 to buffer2
+    copyBufferUsingCompute(buffer1, buffer2) {
+        //todo verify buffer 1 is copy_src and buffer 2 is copy_dst
+        //create bind group layout
+        var copierBindGroupLayout;
+        copierBindGroupLayout = this.device.createBindGroupLayout({
+            label: "Copier Bind Group Layout",
+            entries: [{
+                    binding: 0,
+                    visibility: GPUShaderStage.COMPUTE,
+                    buffer: { type: "read-only-storage" }
+                }, {
+                    binding: 1,
+                    visibility: GPUShaderStage.COMPUTE,
+                    buffer: { type: "storage" }
+                }]
+        });
+        var copierBindGroup = this.device.createBindGroup({
+            label: "copier bind group",
+            layout: copierBindGroupLayout,
+            entries: [{
+                    binding: 0,
+                    resource: { buffer: buffer1 }
+                },
+                {
+                    binding: 1,
+                    resource: { buffer: buffer2 }
+                }
+            ],
+        });
+        // Create the compute shader that will process the game of life simulation.
+        var copierShaderModule = this.device.createShaderModule({
+            label: "Simulation shader1",
+            code: _shaders_copier_shader_wgsl__WEBPACK_IMPORTED_MODULE_1__["default"]
+        });
+        var copierPipelineLayout = this.device.createPipelineLayout({
+            label: "Cell Pipeline Layout",
+            bindGroupLayouts: [
+                this.UniformBindGroupLayout,
+                copierBindGroupLayout, //group 1
+            ],
+        });
+        // Create a compute pipeline that updates the game state.
+        var copierPipeline = this.device.createComputePipeline({
+            label: "Simulation pipeline",
+            layout: copierPipelineLayout,
+            compute: {
+                module: copierShaderModule,
+                entryPoint: "computeMain",
+            }
+        });
+        //run the commands
+        const encoder = this.device.createCommandEncoder();
+        // Start a compute pass
+        this.computePass = encoder.beginComputePass();
+        this.computePass.setPipeline(copierPipeline);
+        this.computePass.setBindGroup(0, this.uniformBindGroup);
+        this.computePass.setBindGroup(1, copierBindGroup);
+        this.workgroupCount = Math.ceil(this.GRID_SIZE / this.WORKGROUP_SIZE);
+        this.computePass.dispatchWorkgroups(this.workgroupCount, this.workgroupCount);
+        this.computePass.end();
+        this.device.queue.submit([encoder.finish()]);
+    }
 }
 
+
+/***/ }),
+
+/***/ "./src/view/shaders/copier_shader.wgsl":
+/*!*********************************************!*\
+  !*** ./src/view/shaders/copier_shader.wgsl ***!
+  \*********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("@group(0) @binding(0) var<uniform> grid: vec2f;\r\n\r\n@group(1) @binding(0) var<storage, read> cellStateIn: array<u32>;\r\n@group(1) @binding(1) var<storage, read_write> cellStateOut: array<u32>;\r\n\r\nfn cellIndex(cell: vec2u) -> u32 {\r\n  return (cell.y % u32(grid.y)) * u32(grid.x) +\r\n         (cell.x % u32(grid.x));\r\n}\r\n\r\n@compute @workgroup_size(8, 8) fn computeMain(@builtin(global_invocation_id) cell: vec3u){\r\n    let i = cellIndex(cell.xy);\r\n  cellStateOut[i] = cellStateIn[i];\r\n}");
 
 /***/ }),
 
@@ -11391,7 +11766,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("@group(0) @binding(0) var<uniform> grid: vec2f;\r\n\r\n@group(1) @binding(1) var<storage, read> cellStateIn: array<u32>;\r\n@group(1) @binding(2) var<storage, read_write> cellStateOut: array<u32>;\r\n@group(2) @binding(0) var<storage, read> cellStateBufferIn: array<u32>;\r\n@group(2) @binding(1) var<storage, read_write> cellStateBufferOut: array<u32>;\r\n\r\nfn cellIndex(cell: vec2u) -> u32 {\r\n  return (cell.y % u32(grid.y)) * u32(grid.x) +\r\n         (cell.x % u32(grid.x));\r\n}\r\n\r\nfn cellActive(x: u32, y: u32) -> u32 {\r\n  return cellStateIn[cellIndex(vec2(x, y))];\r\n}\r\n  \r\n@compute @workgroup_size(8, 8)\r\n\r\nfn computeMain(@builtin(global_invocation_id) cell: vec3u){\r\n            \r\n  let activeNeighbors = cellActive(cell.x+1, cell.y+1) +\r\n                        cellActive(cell.x+1, cell.y) +\r\n                        cellActive(cell.x+1, cell.y-1) +\r\n                        cellActive(cell.x, cell.y-1) +\r\n                        cellActive(cell.x-1, cell.y-1) +\r\n                        cellActive(cell.x-1, cell.y) +\r\n                        cellActive(cell.x-1, cell.y+1) +\r\n                        cellActive(cell.x, cell.y+1);\r\n\r\n  let i = cellIndex(cell.xy);\r\n\r\n  // Conway's game of life rules:\r\n  switch activeNeighbors {\r\n      case 2: { // Active cells with 2 neighbors stay active.\r\n        cellStateOut[i] = cellStateIn[i];\r\n        cellStateBufferOut[i] = cellStateBufferIn[i]+1;\r\n      }\r\n      case 3: { // Cells with 3 neighbors become or stay active.\r\n        cellStateOut[i] = 1;\r\n        cellStateBufferOut[i] = cellStateBufferIn[i]+1;\r\n      }\r\n      default: { // Cells with < 2 or > 3 neighbors become inactive.\r\n        cellStateOut[i] = 0;\r\n        cellStateBufferOut[i] = 0;\r\n      }\r\n    }\r\n  \r\n}");
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("@group(0) @binding(0) var<uniform> grid: vec2f;\r\n\r\n@group(1) @binding(0) var<storage, read> cellStateIn: array<u32>;\r\n@group(1) @binding(1) var<storage, read_write> cellStateOut: array<u32>;\r\n@group(2) @binding(0) var<storage, read> cellStateAgeIn: array<u32>;\r\n@group(2) @binding(1) var<storage, read_write> cellStateAgeOut: array<u32>;\r\n@group(3) @binding(0) var<storage, read> cellStateRandom: array<u32>;\r\n\r\nfn cellIndex(cell: vec2u) -> u32 {\r\n  return (cell.y % u32(grid.y)) * u32(grid.x) +\r\n         (cell.x % u32(grid.x));\r\n}\r\n\r\nfn cellActive(x: u32, y: u32) -> u32 {\r\n  return cellStateIn[cellIndex(vec2(x, y))];\r\n}\r\n  \r\n@compute @workgroup_size(8, 8)\r\n\r\nfn computeMain(@builtin(global_invocation_id) cell: vec3u){\r\n            \r\n  let activeNeighbors = cellActive(cell.x+1, cell.y+1) +\r\n                        cellActive(cell.x+1, cell.y) +\r\n                        cellActive(cell.x+1, cell.y-1) +\r\n                        cellActive(cell.x, cell.y-1) +\r\n                        cellActive(cell.x-1, cell.y-1) +\r\n                        cellActive(cell.x-1, cell.y) +\r\n                        cellActive(cell.x-1, cell.y+1) +\r\n                        cellActive(cell.x, cell.y+1);\r\n\r\n  let i = cellIndex(cell.xy);\r\n\r\n  // Conway's game of life rules:\r\n  switch activeNeighbors {\r\n      case 2: { // Active cells with 2 neighbors stay active.\r\n        cellStateOut[i] = cellStateIn[i];\r\n        cellStateAgeOut[i] = cellStateAgeIn[i]+1;\r\n      }\r\n      case 3: { // Cells with 3 neighbors become or stay active.\r\n        cellStateOut[i] = 1;\r\n        cellStateAgeOut[i] = cellStateAgeIn[i]+1;\r\n      }\r\n      default: { // Cells with < 2 or > 3 neighbors become inactive.\r\n        if(cellStateRandom[i] == 1){\r\n          cellStateOut[i] = 1;\r\n          cellStateAgeOut[i] = cellStateAgeIn[i]+1;\r\n        }\r\n        else{\r\n          cellStateOut[i] = 0;\r\n          cellStateAgeOut[i] = 0;\r\n        }\r\n\r\n        \r\n      }\r\n    }\r\n  \r\n}");
 
 /***/ }),
 
@@ -11406,7 +11781,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("struct VertexOutput {\r\n    @builtin(position) position: vec4f,\r\n    @location(0) cell: vec2f,\r\n    @location(1) cellAge: f32,\r\n  };\r\n\r\n  @group(0) @binding(0) var<uniform> grid: vec2f;\r\n    @group(1) @binding(1) var<storage> cellState: array<u32>;\r\n    @group(2) @binding(0) var<storage> cellStateAge: array<u32>;\r\n\r\n  @vertex\r\n  fn vertexMain(@location(0) position: vec2f,\r\n                @builtin(instance_index) instance: u32) -> VertexOutput {\r\n    var output: VertexOutput;\r\n\r\n    let i = f32(instance);\r\n    let cell = vec2f(i % grid.x, floor(i / grid.x));\r\n\r\n    let scale = f32(cellState[instance]);\r\n    let cellOffset = cell / grid * 2;\r\n    let gridPos = (position*scale+1) / grid - 1 + cellOffset;\r\n\r\n    output.position = vec4f(gridPos, 0, 1);\r\n    output.cell = cell / grid;\r\n    //get the age of the current cell\r\n    output.cellAge = f32(cellStateAge[instance])/256.0;\r\n    return output;\r\n  }\r\n\r\n  @fragment\r\n  fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {\r\n    //return vec4f(input.cell, 1.0 - input.cell.x, 1);\r\n    return vec4f(0.2+input.cellAge, input.cellAge, input.cellAge, 1);\r\n  }\r\n//");
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("struct VertexOutput {\r\n    @builtin(position) position: vec4f,\r\n    @location(0) cell: vec2f,\r\n    @location(1) cellAge: f32,\r\n  };\r\n\r\n  @group(0) @binding(0) var<uniform> grid: vec2f;\r\n    @group(1) @binding(0) var<storage> cellState: array<u32>;\r\n    @group(2) @binding(0) var<storage> cellStateAge: array<u32>;\r\n\r\n  @vertex\r\n  fn vertexMain(@location(0) position: vec2f,\r\n                @builtin(instance_index) instance: u32) -> VertexOutput {\r\n    var output: VertexOutput;\r\n\r\n    let i = f32(instance);\r\n    let cell = vec2f(i % grid.x, floor(i / grid.x));\r\n\r\n    let scale = f32(cellState[instance]);\r\n    let cellOffset = cell / grid * 2;\r\n    let gridPos = (position*scale+1) / grid - 1 + cellOffset;\r\n\r\n    output.position = vec4f(gridPos, 0, 1);\r\n    output.cell = cell / grid;\r\n    //get the age of the current cell\r\n    output.cellAge = f32(cellStateAge[instance])/256.0;\r\n    return output;\r\n  }\r\n\r\n  @fragment\r\n  fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {\r\n    //return vec4f(input.cell, 1.0 - input.cell.x, 1);\r\n    return vec4f(0.2+input.cellAge, input.cellAge, 0.4, 1);\r\n  }\r\n//");
 
 /***/ })
 

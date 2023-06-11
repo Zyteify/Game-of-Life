@@ -5,7 +5,7 @@ struct VertexOutput {
   };
 
   @group(0) @binding(0) var<uniform> grid: vec2f;
-    @group(1) @binding(1) var<storage> cellState: array<u32>;
+    @group(1) @binding(0) var<storage> cellState: array<u32>;
     @group(2) @binding(0) var<storage> cellStateAge: array<u32>;
 
   @vertex
@@ -30,6 +30,6 @@ struct VertexOutput {
   @fragment
   fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
     //return vec4f(input.cell, 1.0 - input.cell.x, 1);
-    return vec4f(0.2+input.cellAge, input.cellAge, input.cellAge, 1);
+    return vec4f(0.2+input.cellAge, input.cellAge, 0.4, 1);
   }
 //

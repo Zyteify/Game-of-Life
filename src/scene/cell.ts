@@ -7,6 +7,7 @@ export class Cell {
         this.x = x;
         this.y = y;
         this.age = 0;
+        //initial state of the cell
         this.alive = Math.random() > 0.5 ? true : false;
     }
 }

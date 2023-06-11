@@ -1,9 +1,10 @@
 @group(0) @binding(0) var<uniform> grid: vec2f;
 
-@group(1) @binding(1) var<storage, read> cellStateIn: array<u32>;
-@group(1) @binding(2) var<storage, read_write> cellStateOut: array<u32>;
-@group(2) @binding(0) var<storage, read> cellStateBufferIn: array<u32>;
-@group(2) @binding(1) var<storage, read_write> cellStateBufferOut: array<u32>;
+@group(1) @binding(0) var<storage, read> cellStateIn: array<u32>;
+@group(1) @binding(1) var<storage, read_write> cellStateOut: array<u32>;
+@group(2) @binding(0) var<storage, read> cellStateAgeIn: array<u32>;
+@group(2) @binding(1) var<storage, read_write> cellStateAgeOut: array<u32>;
+@group(3) @binding(0) var<storage, read> cellStateRandom: array<u32>;
 
 fn cellIndex(cell: vec2u) -> u32 {
   return (cell.y % u32(grid.y)) * u32(grid.x) +
@@ -33,15 +34,23 @@ fn computeMain(@builtin(global_invocation_id) cell: vec3u){
   switch activeNeighbors {
       case 2: { // Active cells with 2 neighbors stay active.
         cellStateOut[i] = cellStateIn[i];
-        cellStateBufferOut[i] = cellStateBufferIn[i]+1;
+        cellStateAgeOut[i] = cellStateAgeIn[i]+1;
       }
       case 3: { // Cells with 3 neighbors become or stay active.
         cellStateOut[i] = 1;
-        cellStateBufferOut[i] = cellStateBufferIn[i]+1;
+        cellStateAgeOut[i] = cellStateAgeIn[i]+1;
       }
       default: { // Cells with < 2 or > 3 neighbors become inactive.
-        cellStateOut[i] = 0;
-        cellStateBufferOut[i] = 0;
+        if(cellStateRandom[i] == 1){
+          cellStateOut[i] = 1;
+          cellStateAgeOut[i] = cellStateAgeIn[i]+1;
+        }
+        else{
+          cellStateOut[i] = 0;
+          cellStateAgeOut[i] = 0;
+        }
+
+        
       }
     }
   
