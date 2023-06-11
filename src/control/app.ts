@@ -9,7 +9,7 @@ export class App {
 
     renderingCanvas: CanvasRenderingContext2D
     //make the grid size equal to a multiple of x^2
-    GRID_SIZE: number = 8;
+    GRID_SIZE: number = 16;
 
     renderer: Renderer2;
     scene: Scene;
@@ -48,11 +48,11 @@ export class App {
             }
         );
 
-        $('#next, #start, #pause, #reset').on('click',
+        $('#next, #start, #pause, #reset, #data, #data-age').on('click',
             (event) => {
                 this.handle_button(event);
             })
-        
+
         //get when the input box fps changes
         $('#fps').on('input',
             (event) => {
@@ -60,11 +60,11 @@ export class App {
                 console.log(this.fps)
             })
 
-            
+
     }
 
     GenerateScene() {
-        this.scene = new Scene(this.canvas, <CanvasRenderingContext2D>this.canvas.getContext("2d",{
+        this.scene = new Scene(this.canvas, <CanvasRenderingContext2D>this.canvas.getContext("2d", {
             //desynchronized: true,
             willReadFrequently: true,
             alpha: false
@@ -74,8 +74,6 @@ export class App {
 
     async InitializeRenderer() {
         await this.renderer.Initialize(this.GRID_SIZE);
-        /* this.renderer.setBuffer(this.scene.getArray()) */
-        //do one step to render the first iteration
         this.renderer.updateGrid()
     }
 
@@ -103,7 +101,25 @@ export class App {
             //stop the animation frames
             console.log("stopping animation")
             this.stopAnimating()
-            
+
+
+        }
+        //when data button is pressed
+        if (event.target.id == "data") {
+            await this.renderer.getBuffer(1).then(data => {
+            })
+                .catch(error => {
+                    console.error(error);
+                });
+
+        }
+        //when data button is pressed
+        if (event.target.id == "data-age") {
+            await this.renderer.getBuffer(3).then(data => {
+            })
+                .catch(error => {
+                    console.error(error);
+                });
 
         }
 
@@ -144,6 +160,9 @@ export class App {
             .catch(error => {
                 console.error(error);
             });
+        //update the generations label
+        this.updateGenerations()
+
     }
 
     sendCellstoRenderer() {
@@ -172,7 +191,7 @@ export class App {
     }
 
     async handle_keypress(event: JQuery.KeyDownEvent) {
-        
+
     }
 
     handle_keyrelease(event: JQuery.KeyUpEvent) {
@@ -186,7 +205,7 @@ export class App {
 
     updateGenerations() {
         //get the generations from the scene
-        this.generationsLabel.innerText = "Generations: " + this.scene.getGenerations().toString();
+        this.generationsLabel.innerText = "Generations: " + this.renderer.getStep().toString();
     }
 
 

@@ -2,8 +2,8 @@
 
 @group(0) @binding(1) var<storage, read> cellStateIn: array<u32>;
 @group(0) @binding(2) var<storage, read_write> cellStateOut: array<u32>;
-@group(0) @binding(3) var<storage, read> cellStateBufferIn: array<u32>;
-@group(0) @binding(4) var<storage, read_write> cellStateBufferOut: array<u32>;
+@group(1) @binding(0) var<storage, read> cellStateBufferIn: array<u32>;
+@group(1) @binding(1) var<storage, read_write> cellStateBufferOut: array<u32>;
 
 fn cellIndex(cell: vec2u) -> u32 {
   return (cell.y % u32(grid.y)) * u32(grid.x) +
@@ -33,13 +33,16 @@ fn computeMain(@builtin(global_invocation_id) cell: vec3u){
   switch activeNeighbors {
       case 2: { // Active cells with 2 neighbors stay active.
         cellStateOut[i] = cellStateIn[i];
+        cellStateBufferOut[i] = cellStateBufferIn[i]+1;
       }
       case 3: { // Cells with 3 neighbors become or stay active.
         cellStateOut[i] = 1;
+        cellStateBufferOut[i] = cellStateBufferIn[i]+1;
       }
       default: { // Cells with < 2 or > 3 neighbors become inactive.
         cellStateOut[i] = 0;
+        cellStateBufferOut[i] = 0;
       }
     }
-  cellStateBufferOut[i] = cellStateBufferIn[i]+1;
+  
 }

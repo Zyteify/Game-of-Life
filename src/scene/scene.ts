@@ -72,6 +72,10 @@ export class Scene {
         return this.generations
     }
 
+    updateGenerations(){
+        this.generations++;
+    }
+
     updateCells(){
         
         for (let i = 0; i < this.GRID_SIZE; i++) {    

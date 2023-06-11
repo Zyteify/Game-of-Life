@@ -10737,7 +10737,7 @@ __webpack_require__.r(__webpack_exports__);
 class App {
     constructor(canvas) {
         //make the grid size equal to a multiple of x^2
-        this.GRID_SIZE = 8;
+        this.GRID_SIZE = 16;
         this.fps = 30;
         this.animationId = 0;
         this.animationRunning = false;
@@ -10750,7 +10750,7 @@ class App {
         jquery__WEBPACK_IMPORTED_MODULE_2___default()(document).on("keydown", (event) => {
             this.handle_keypress(event);
         });
-        jquery__WEBPACK_IMPORTED_MODULE_2___default()('#next, #start, #pause, #reset').on('click', (event) => {
+        jquery__WEBPACK_IMPORTED_MODULE_2___default()('#next, #start, #pause, #reset, #data, #data-age').on('click', (event) => {
             this.handle_button(event);
         });
         //get when the input box fps changes
@@ -10769,8 +10769,6 @@ class App {
     }
     async InitializeRenderer() {
         await this.renderer.Initialize(this.GRID_SIZE);
-        /* this.renderer.setBuffer(this.scene.getArray()) */
-        //do one step to render the first iteration
         this.renderer.updateGrid();
     }
     async handle_button(event) {
@@ -10794,6 +10792,22 @@ class App {
             //stop the animation frames
             console.log("stopping animation");
             this.stopAnimating();
+        }
+        //when data button is pressed
+        if (event.target.id == "data") {
+            await this.renderer.getBuffer(1).then(data => {
+            })
+                .catch(error => {
+                console.error(error);
+            });
+        }
+        //when data button is pressed
+        if (event.target.id == "data-age") {
+            await this.renderer.getBuffer(3).then(data => {
+            })
+                .catch(error => {
+                console.error(error);
+            });
         }
     }
     startAnimating() {
@@ -10829,6 +10843,8 @@ class App {
             .catch(error => {
             console.error(error);
         });
+        //update the generations label
+        this.updateGenerations();
     }
     sendCellstoRenderer() {
         this.renderer.setBuffer(this.scene.getArray());
@@ -10863,7 +10879,7 @@ class App {
     }
     updateGenerations() {
         //get the generations from the scene
-        this.generationsLabel.innerText = "Generations: " + this.scene.getGenerations().toString();
+        this.generationsLabel.innerText = "Generations: " + this.renderer.getStep().toString();
     }
 }
 
@@ -10945,6 +10961,9 @@ class Scene {
     }
     getGenerations() {
         return this.generations;
+    }
+    updateGenerations() {
+        this.generations++;
     }
     updateCells() {
         for (let i = 0; i < this.GRID_SIZE; i++) {
@@ -11048,13 +11067,17 @@ class Renderer2 {
                 }, {
                     binding: 2,
                     visibility: GPUShaderStage.COMPUTE,
-                    buffer: { type: "storage" } // Cell state output buffer
+                    buffer: { type: "storage" } // Cell state age buffer
+                }]
+        });
+        this.bindGroupLayoutAge = this.device.createBindGroupLayout({
+            label: "Cell Bind Group Layout Age",
+            entries: [{
+                    binding: 0,
+                    visibility: GPUShaderStage.VERTEX | GPUShaderStage.COMPUTE,
+                    buffer: { type: "read-only-storage" } // Cell state output buffer
                 }, {
-                    binding: 3,
-                    visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE,
-                    buffer: { type: "read-only-storage" } // Cell state age buffer
-                }, {
-                    binding: 4,
+                    binding: 1,
                     visibility: GPUShaderStage.COMPUTE,
                     buffer: { type: "storage" } // Cell state age buffer
                 }]
@@ -11109,6 +11132,7 @@ class Renderer2 {
         this.device.queue.writeBuffer(this.uniformBuffer, 0, this.uniformArray);
         // Create an array representing the active state of each cell.
         this.cellStateArray = new Uint32Array(this.GRID_SIZE * this.GRID_SIZE);
+        this.BUFFER_SIZE = this.cellStateArray.byteLength;
         this.cellStateAgeArray = new Uint32Array(this.GRID_SIZE * this.GRID_SIZE);
         // Create two storage buffers to hold the cell state.
         this.cellStateStorage = [
@@ -11120,7 +11144,7 @@ class Renderer2 {
             this.device.createBuffer({
                 label: "Cell State B",
                 size: this.cellStateArray.byteLength,
-                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
             }),
             this.device.createBuffer({
                 label: "Cell State Age A",
@@ -11130,10 +11154,14 @@ class Renderer2 {
             this.device.createBuffer({
                 label: "Cell State Age B",
                 size: this.cellStateArray.byteLength,
-                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
             })
         ];
-        let step = 0;
+        this.stagingBuffer = this.device.createBuffer({
+            label: "Staging buffer",
+            size: this.BUFFER_SIZE,
+            usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+        });
         function initialiseGrid(device, cellStateStorage, cellStateArray) {
             // Set each cell to a random state, then copy the JavaScript array into
             // the storage buffer.
@@ -11141,12 +11169,45 @@ class Renderer2 {
                 cellStateArray[i] = Math.random() > 0.5 ? 1 : 0;
             }
             device.queue.writeBuffer(cellStateStorage[0], 0, cellStateArray);
-            step = 0;
         }
         initialiseGrid(this.device, this.cellStateStorage, this.cellStateArray);
+        function initialiseGridAge(device, cellStateStorage, cellStateArray) {
+            const emptyArray = new Uint32Array(cellStateArray.length);
+            device.queue.writeBuffer(cellStateStorage[2], 0, emptyArray);
+        }
+        initialiseGridAge(this.device, this.cellStateStorage, this.cellStateArray);
     }
     async makeBindGroup() {
-        this.bindGroups = [
+        this.cellAgeBindGroups = [
+            this.device.createBindGroup({
+                label: "Cell renderer bind group A Age",
+                layout: this.bindGroupLayoutAge,
+                entries: [{
+                        binding: 0,
+                        resource: { buffer: this.cellStateStorage[2] }
+                    } //age of cells in group A
+                    ,
+                    {
+                        binding: 1,
+                        resource: { buffer: this.cellStateStorage[3] }
+                    }
+                ],
+            }),
+            this.device.createBindGroup({
+                label: "Cell renderer bind group B Age",
+                layout: this.bindGroupLayoutAge,
+                entries: [{
+                        binding: 0,
+                        resource: { buffer: this.cellStateStorage[3] }
+                    },
+                    {
+                        binding: 1,
+                        resource: { buffer: this.cellStateStorage[2] }
+                    }
+                ],
+            }),
+        ];
+        this.cellAliveBindGroups = [
             this.device.createBindGroup({
                 label: "Cell renderer bind group A",
                 layout: this.bindGroupLayout,
@@ -11159,17 +11220,6 @@ class Renderer2 {
                     }, {
                         binding: 2,
                         resource: { buffer: this.cellStateStorage[1] }
-                    }
-                    //age of cells in group A
-                    ,
-                    {
-                        binding: 3,
-                        resource: { buffer: this.cellStateStorage[2] }
-                    } //age of cells in group A
-                    ,
-                    {
-                        binding: 4,
-                        resource: { buffer: this.cellStateStorage[3] }
                     }
                 ],
             }),
@@ -11186,16 +11236,6 @@ class Renderer2 {
                         binding: 2,
                         resource: { buffer: this.cellStateStorage[0] }
                     }
-                    //age of cells in group B
-                    ,
-                    {
-                        binding: 3,
-                        resource: { buffer: this.cellStateStorage[2] }
-                    },
-                    {
-                        binding: 4,
-                        resource: { buffer: this.cellStateStorage[3] }
-                    }
                 ],
             }),
         ];
@@ -11203,7 +11243,9 @@ class Renderer2 {
     async makePipeline() {
         this.pipelineLayout = this.device.createPipelineLayout({
             label: "Cell Pipeline Layout",
-            bindGroupLayouts: [this.bindGroupLayout],
+            bindGroupLayouts: [this.bindGroupLayout,
+                this.bindGroupLayoutAge //group 1
+            ],
         });
         // Create the shader that will render the cells.
         this.cellShaderModule = this.device.createShaderModule({
@@ -11239,8 +11281,6 @@ class Renderer2 {
             compute: {
                 module: simulationShaderModule,
                 entryPoint: "computeMain",
-                //check if this is needed
-                //buffers: [this.computeBufferLayout]
             }
         });
     }
@@ -11248,24 +11288,26 @@ class Renderer2 {
         const encoder = this.device.createCommandEncoder();
         // Start a compute pass
         this.computePass = encoder.beginComputePass();
-        this.computePass.setPipeline(this.simulationPipeline), this.computePass.setBindGroup(0, this.bindGroups[this.step % 2]);
+        this.computePass.setPipeline(this.simulationPipeline),
+            this.computePass.setBindGroup(0, this.cellAliveBindGroups[this.step % 2]);
+        this.computePass.setBindGroup(1, this.cellAgeBindGroups[this.step % 2]);
         this.workgroupCount = Math.ceil(this.GRID_SIZE / this.WORKGROUP_SIZE);
         this.computePass.dispatchWorkgroups(this.workgroupCount, this.workgroupCount);
         this.computePass.end();
-        this.step++; // Increment the step count
-        /* document.getElementById("generations").innerHTML = "Generations: " + (this.step-1); */
+        this.step++;
         // Start a render pass
         this.pass = encoder.beginRenderPass({
             colorAttachments: [{
                     view: this.context.getCurrentTexture().createView(),
                     loadOp: "clear",
-                    clearValue: { r: 0, g: 0, b: 0.4, a: 1.0 },
+                    clearValue: { r: 0, g: 0.0, b: 0, a: 1.0 },
                     storeOp: "store",
                 }]
         });
         // Draw the grid.
         this.pass.setPipeline(this.cellPipeline);
-        this.pass.setBindGroup(0, this.bindGroups[this.step % 2]);
+        this.pass.setBindGroup(0, this.cellAliveBindGroups[this.step % 2]);
+        this.pass.setBindGroup(1, this.cellAgeBindGroups[this.step % 2]);
         this.pass.setVertexBuffer(0, this.vertexBuffer);
         this.pass.draw(this.vertices.length / 2, this.GRID_SIZE * this.GRID_SIZE);
         // End the render pass and submit the command buffer
@@ -11277,8 +11319,39 @@ class Renderer2 {
     getStep() {
         return this.step;
     }
+    //set the step number. this is used to determine which bind group to use. 0 for A, 1 for B
     setStep(step) {
         this.step = step;
+    }
+    //get the contents of the buffer from cellStateStorage[index]
+    async getBuffer(index) {
+        //create seperate command encoder to copy the buffer to the staging buffer
+        //this doesnt work without this on the first click but works on the second click and onwards
+        const encoder2 = this.device.createCommandEncoder();
+        encoder2.copyBufferToBuffer(this.cellStateStorage[index], 
+        //this.output,
+        0, // Source offset
+        this.stagingBuffer, 0, // Destination offset
+        this.BUFFER_SIZE);
+        const commands2 = encoder2.finish();
+        this.device.queue.submit([commands2]);
+        const encoder = this.device.createCommandEncoder();
+        await this.stagingBuffer.mapAsync(GPUMapMode.READ, 0, // Offset
+        this.stagingBuffer.size // Length
+        ).then(() => {
+            console.log(this.cellStateStorage[index]);
+            console.log(this.stagingBuffer);
+            const data = this.stagingBuffer.getMappedRange(0, this.BUFFER_SIZE).slice(0);
+            console.log(this.stagingBuffer);
+            console.log(new Uint32Array(data));
+            this.stagingBuffer.unmap();
+        }).catch(error => {
+            console.log(error);
+            console.log(this.stagingBuffer.mapState);
+            console.log(this.stagingBuffer.getMappedRange);
+        });
+        const commands = encoder.finish();
+        this.device.queue.submit([commands]);
     }
 }
 
@@ -11296,7 +11369,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("@group(0) @binding(0) var<uniform> grid: vec2f;\r\n\r\n@group(0) @binding(1) var<storage, read> cellStateIn: array<u32>;\r\n@group(0) @binding(2) var<storage, read_write> cellStateOut: array<u32>;\r\n@group(0) @binding(3) var<storage, read> cellStateBufferIn: array<u32>;\r\n@group(0) @binding(4) var<storage, read_write> cellStateBufferOut: array<u32>;\r\n\r\nfn cellIndex(cell: vec2u) -> u32 {\r\n  return (cell.y % u32(grid.y)) * u32(grid.x) +\r\n         (cell.x % u32(grid.x));\r\n}\r\n\r\nfn cellActive(x: u32, y: u32) -> u32 {\r\n  return cellStateIn[cellIndex(vec2(x, y))];\r\n}\r\n  \r\n@compute @workgroup_size(8, 8)\r\n\r\nfn computeMain(@builtin(global_invocation_id) cell: vec3u){\r\n            \r\n  let activeNeighbors = cellActive(cell.x+1, cell.y+1) +\r\n                        cellActive(cell.x+1, cell.y) +\r\n                        cellActive(cell.x+1, cell.y-1) +\r\n                        cellActive(cell.x, cell.y-1) +\r\n                        cellActive(cell.x-1, cell.y-1) +\r\n                        cellActive(cell.x-1, cell.y) +\r\n                        cellActive(cell.x-1, cell.y+1) +\r\n                        cellActive(cell.x, cell.y+1);\r\n\r\n  let i = cellIndex(cell.xy);\r\n\r\n  // Conway's game of life rules:\r\n  switch activeNeighbors {\r\n      case 2: { // Active cells with 2 neighbors stay active.\r\n        cellStateOut[i] = cellStateIn[i];\r\n      }\r\n      case 3: { // Cells with 3 neighbors become or stay active.\r\n        cellStateOut[i] = 1;\r\n      }\r\n      default: { // Cells with < 2 or > 3 neighbors become inactive.\r\n        cellStateOut[i] = 0;\r\n      }\r\n    }\r\n  cellStateBufferOut[i] = cellStateBufferIn[i]+1;\r\n}");
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("@group(0) @binding(0) var<uniform> grid: vec2f;\r\n\r\n@group(0) @binding(1) var<storage, read> cellStateIn: array<u32>;\r\n@group(0) @binding(2) var<storage, read_write> cellStateOut: array<u32>;\r\n@group(1) @binding(0) var<storage, read> cellStateBufferIn: array<u32>;\r\n@group(1) @binding(1) var<storage, read_write> cellStateBufferOut: array<u32>;\r\n\r\nfn cellIndex(cell: vec2u) -> u32 {\r\n  return (cell.y % u32(grid.y)) * u32(grid.x) +\r\n         (cell.x % u32(grid.x));\r\n}\r\n\r\nfn cellActive(x: u32, y: u32) -> u32 {\r\n  return cellStateIn[cellIndex(vec2(x, y))];\r\n}\r\n  \r\n@compute @workgroup_size(8, 8)\r\n\r\nfn computeMain(@builtin(global_invocation_id) cell: vec3u){\r\n            \r\n  let activeNeighbors = cellActive(cell.x+1, cell.y+1) +\r\n                        cellActive(cell.x+1, cell.y) +\r\n                        cellActive(cell.x+1, cell.y-1) +\r\n                        cellActive(cell.x, cell.y-1) +\r\n                        cellActive(cell.x-1, cell.y-1) +\r\n                        cellActive(cell.x-1, cell.y) +\r\n                        cellActive(cell.x-1, cell.y+1) +\r\n                        cellActive(cell.x, cell.y+1);\r\n\r\n  let i = cellIndex(cell.xy);\r\n\r\n  // Conway's game of life rules:\r\n  switch activeNeighbors {\r\n      case 2: { // Active cells with 2 neighbors stay active.\r\n        cellStateOut[i] = cellStateIn[i];\r\n        cellStateBufferOut[i] = cellStateBufferIn[i]+1;\r\n      }\r\n      case 3: { // Cells with 3 neighbors become or stay active.\r\n        cellStateOut[i] = 1;\r\n        cellStateBufferOut[i] = cellStateBufferIn[i]+1;\r\n      }\r\n      default: { // Cells with < 2 or > 3 neighbors become inactive.\r\n        cellStateOut[i] = 0;\r\n        cellStateBufferOut[i] = 0;\r\n      }\r\n    }\r\n  \r\n}");
 
 /***/ }),
 
@@ -11311,7 +11384,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("struct VertexOutput {\r\n    @builtin(position) position: vec4f,\r\n    @location(0) cell: vec2f,\r\n  };\r\n\r\n  @group(0) @binding(0) var<uniform> grid: vec2f;\r\n  @group(0) @binding(1) var<storage> cellState: array<u32>;\r\n@group(0) @binding(3) var<storage> cellStateAge: array<u32>;\r\n\r\n  @vertex\r\n  fn vertexMain(@location(0) position: vec2f,\r\n                @builtin(instance_index) instance: u32) -> VertexOutput {\r\n    var output: VertexOutput;\r\n\r\n    let i = f32(instance);\r\n    let cell = vec2f(i % grid.x, floor(i / grid.x));\r\n\r\n    let scale = f32(cellState[instance]);\r\n    let cellOffset = cell / grid * 2;\r\n    let gridPos = (position*scale+1) / grid - 1 + cellOffset;\r\n\r\n    output.position = vec4f(gridPos, 0, 1);\r\n    output.cell = cell / grid;\r\n    return output;\r\n  }\r\n\r\n  @fragment\r\n  fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {\r\n    return vec4f(input.cell, 1.0 - input.cell.x, 1);\r\n  }\r\n//return vec4f(0.0, 0.0, f32(cellStateAge[0]*255), 1);");
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("struct VertexOutput {\r\n    @builtin(position) position: vec4f,\r\n    @location(0) cell: vec2f,\r\n    @location(1) cellAge: f32,\r\n  };\r\n\r\n  @group(0) @binding(0) var<uniform> grid: vec2f;\r\n    @group(0) @binding(1) var<storage> cellState: array<u32>;\r\n    @group(1) @binding(0) var<storage> cellStateAge: array<u32>;\r\n\r\n  @vertex\r\n  fn vertexMain(@location(0) position: vec2f,\r\n                @builtin(instance_index) instance: u32) -> VertexOutput {\r\n    var output: VertexOutput;\r\n\r\n    let i = f32(instance);\r\n    let cell = vec2f(i % grid.x, floor(i / grid.x));\r\n\r\n    let scale = f32(cellState[instance]);\r\n    let cellOffset = cell / grid * 2;\r\n    let gridPos = (position*scale+1) / grid - 1 + cellOffset;\r\n\r\n    output.position = vec4f(gridPos, 0, 1);\r\n    output.cell = cell / grid;\r\n    //get the age of the current cell\r\n    output.cellAge = f32(cellStateAge[instance])/256.0;\r\n    return output;\r\n  }\r\n\r\n  @fragment\r\n  fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {\r\n    //return vec4f(input.cell, 1.0 - input.cell.x, 1);\r\n    return vec4f(0.2+input.cellAge, input.cellAge, input.cellAge, 1);\r\n  }\r\n//");
 
 /***/ })
 
