@@ -37,9 +37,11 @@ export class Renderer2 {
 
     bindGroupLayout: GPUBindGroupLayout
     bindGroupLayoutAge: GPUBindGroupLayout
+    UniformBindGroupLayout: GPUBindGroupLayout
 
     cellAliveBindGroups: GPUBindGroup[];
     cellAgeBindGroups: GPUBindGroup[];
+    uniformBindGroup: GPUBindGroup;
 
     step: number = 0;
 
@@ -111,6 +113,15 @@ export class Renderer2 {
                 binding: 2,
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "storage" } // Cell state age buffer
+            }]
+        });
+
+        this.UniformBindGroupLayout = this.device.createBindGroupLayout({
+            label: "Uniform Bind Group",
+            entries: [{
+                binding: 0,
+                visibility: GPUShaderStage.VERTEX | GPUShaderStage.COMPUTE,
+                buffer: {} // Grid uniform buffer
             }]
         });
 
@@ -300,14 +311,28 @@ export class Renderer2 {
                 ],
             }),
         ];
+
+        this.uniformBindGroup = 
+            this.device.createBindGroup({
+                label: "uniform bind group",
+                layout: this.UniformBindGroupLayout,
+                entries: [{
+                    binding: 0,
+                    resource: { buffer: this.uniformBuffer }
+                }
+                ]
+        })
+        
     }
 
     async makePipeline() {
         this.pipelineLayout = this.device.createPipelineLayout(
             {
                 label: "Cell Pipeline Layout",
-                bindGroupLayouts: [this.bindGroupLayout, //group 0 
-                this.bindGroupLayoutAge //group 1
+                bindGroupLayouts: [
+                    this.UniformBindGroupLayout, //group 0 
+                    this.bindGroupLayout, //group 0 
+                    this.bindGroupLayoutAge //group 1
                 ],
             },
         );
@@ -371,8 +396,9 @@ export class Renderer2 {
         this.computePass = encoder.beginComputePass();
 
         this.computePass.setPipeline(this.simulationPipeline),
-            this.computePass.setBindGroup(0, this.cellAliveBindGroups[this.step % 2]);
-        this.computePass.setBindGroup(1, this.cellAgeBindGroups[this.step % 2]);
+        this.computePass.setBindGroup(0, this.uniformBindGroup);
+        this.computePass.setBindGroup(1, this.cellAliveBindGroups[this.step % 2]);
+        this.computePass.setBindGroup(2, this.cellAgeBindGroups[this.step % 2]);
         this.workgroupCount = Math.ceil(this.GRID_SIZE / this.WORKGROUP_SIZE);
         this.computePass.dispatchWorkgroups(this.workgroupCount, this.workgroupCount);
         this.computePass.end();
@@ -391,8 +417,9 @@ export class Renderer2 {
 
         // Draw the grid.
         this.pass.setPipeline(this.cellPipeline);
-        this.pass.setBindGroup(0, this.cellAliveBindGroups[this.step % 2]);
-        this.pass.setBindGroup(1, this.cellAgeBindGroups[this.step % 2]);
+        this.pass.setBindGroup(0, this.uniformBindGroup);
+        this.pass.setBindGroup(1, this.cellAliveBindGroups[this.step % 2]);
+        this.pass.setBindGroup(2, this.cellAgeBindGroups[this.step % 2]);
         this.pass.setVertexBuffer(0, this.vertexBuffer);
         this.pass.draw(this.vertices.length / 2, this.GRID_SIZE * this.GRID_SIZE);
 

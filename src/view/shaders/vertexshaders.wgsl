@@ -5,8 +5,8 @@ struct VertexOutput {
   };
 
   @group(0) @binding(0) var<uniform> grid: vec2f;
-    @group(0) @binding(1) var<storage> cellState: array<u32>;
-    @group(1) @binding(0) var<storage> cellStateAge: array<u32>;
+    @group(1) @binding(1) var<storage> cellState: array<u32>;
+    @group(2) @binding(0) var<storage> cellStateAge: array<u32>;
 
   @vertex
   fn vertexMain(@location(0) position: vec2f,

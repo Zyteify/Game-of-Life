@@ -1,9 +1,9 @@
 @group(0) @binding(0) var<uniform> grid: vec2f;
 
-@group(0) @binding(1) var<storage, read> cellStateIn: array<u32>;
-@group(0) @binding(2) var<storage, read_write> cellStateOut: array<u32>;
-@group(1) @binding(0) var<storage, read> cellStateBufferIn: array<u32>;
-@group(1) @binding(1) var<storage, read_write> cellStateBufferOut: array<u32>;
+@group(1) @binding(1) var<storage, read> cellStateIn: array<u32>;
+@group(1) @binding(2) var<storage, read_write> cellStateOut: array<u32>;
+@group(2) @binding(0) var<storage, read> cellStateBufferIn: array<u32>;
+@group(2) @binding(1) var<storage, read_write> cellStateBufferOut: array<u32>;
 
 fn cellIndex(cell: vec2u) -> u32 {
   return (cell.y % u32(grid.y)) * u32(grid.x) +
