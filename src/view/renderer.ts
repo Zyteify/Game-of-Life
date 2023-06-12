@@ -1,6 +1,7 @@
 import shader from "./shaders/shaders.wgsl";
 import copier_shader from "./shaders/copier_shader.wgsl";
 import vertexshader from "./shaders/vertexshaders.wgsl";
+import { arrayBuffer } from "stream/consumers";
 
 
 export class Renderer {
@@ -22,6 +23,15 @@ export class Renderer {
     cellShaderModule: GPUShaderModule;
     cellPipeline: GPURenderPipeline;
     cellRenderPipeline: GPURenderPipeline;
+
+
+    //rendering 
+    
+    vertices: Float32Array;
+
+    computePass: GPUComputePassEncoder;
+    workgroupCount: number;
+    pass: GPURenderPassEncoder;
 
     //assets
     uniformBuffer: GPUBuffer;
@@ -151,8 +161,6 @@ export class Renderer {
         });
     }
 
-
-    vertices: Float32Array;
     async createAssets() {
         // Create a buffer that will hold the vertices of the grid.
         //the vertices from -1 to 1 
@@ -283,15 +291,11 @@ export class Renderer {
         var random: number;
         for (let i = 0; i < randomArray.length; ++i) {
             random = Math.random() > 0.001 ? 0 : 1;
-            if (random == 1) {
-                console.log("new cell at x:" + (i % this.GRID_SIZE).toString() + ", y:" + Math.floor(i / this.GRID_SIZE).toString())
-            }
             randomArray[i] = random
         }
         //finished copying random array to buffer
         this.device.queue.writeBuffer(this.randomArrayBuffer, 0, randomArray)
     }
-
 
     async makeBindGroup() {
         this.cellAgeBindGroups = [
@@ -443,21 +447,17 @@ export class Renderer {
 
 
     }
-
-    //encoder: GPUCommandEncoder;
-    computePass: GPUComputePassEncoder;
-    workgroupCount: number;
-    pass: GPURenderPassEncoder;
-
+ 
+    //update the grid by running the compute shader once
     async updateGrid() {
-
+        
         const encoder = this.device.createCommandEncoder();
 
         // Start a compute pass
         this.computePass = encoder.beginComputePass();
 
         this.computePass.setPipeline(this.simulationPipeline),
-            this.computePass.setBindGroup(0, this.uniformBindGroup);
+        this.computePass.setBindGroup(0, this.uniformBindGroup);
         this.computePass.setBindGroup(1, this.cellAliveBindGroups[this.step % 2]);
         this.computePass.setBindGroup(2, this.cellAgeBindGroups[this.step % 2]);
         this.computePass.setBindGroup(3, this.randomArrayBindGroup);
@@ -491,7 +491,12 @@ export class Renderer {
         this.device.queue.submit([encoder.finish()]);
     }
 
+    //does a render pass without computing anything
     async renderGrid() {
+
+        //copy the contents of all buffers to ensure correct step
+        this.copyBufferUsingCompute(this.cellStateStorage[0], this.cellStateStorage[1]);
+        this.copyBufferUsingCompute(this.cellStateStorage[2], this.cellStateStorage[3]);
 
         const encoder = this.device.createCommandEncoder();
 
@@ -523,7 +528,6 @@ export class Renderer {
         const values = Object.values(obj);
         var testarray: Uint32Array;
         testarray = new Uint32Array(values);
-        console.log(testarray)
         this.device.queue.writeBuffer(this.cellStateStorage[0], 0, testarray);
         //copy the buffers of the first step to the buffers of the second step to render properly
         this.copyBufferUsingCompute(this.cellStateStorage[0], this.cellStateStorage[1])
@@ -540,55 +544,60 @@ export class Renderer {
         this.step = step
     }
 
+    //get the buffer and return as a uint32array in the promise
+    async getBuffer(index: number): Promise<Uint32Array> {
+        return new Promise<Uint32Array>((resolve, reject) => {
+            this.copyBufferUsingCompute(this.cellStateStorage[0], this.cellStateStorage[1]);
+            this.copyBufferUsingCompute(this.cellStateStorage[2], this.cellStateStorage[3]);
 
+            const encoder2 = this.device.createCommandEncoder();
+            encoder2.copyBufferToBuffer(
+                this.cellStateStorage[index],
+                0, // Source offset
+                this.stagingBuffer,
+                0, // Destination offset
+                this.BUFFER_SIZE
+            );
+            const commands2 = encoder2.finish();
+            this.device.queue.submit([commands2]);
 
-    //get the contents of the buffer from cellStateStorage[index]
-    async getBuffer(index: number) {
-        //create seperate command encoder to copy the buffer to the staging buffer
-        //this doesnt work without this on the first click but works on the second click and onwards
-        const encoder2 = this.device.createCommandEncoder();
-        encoder2.copyBufferToBuffer(
-            this.cellStateStorage[index],
-            //this.output,
-            0, // Source offset
-            this.stagingBuffer,
-            0, // Destination offset
-            this.BUFFER_SIZE
-        );
-        const commands2 = encoder2.finish();
-        this.device.queue.submit([commands2]);
+            const encoder = this.device.createCommandEncoder();
 
+            this.stagingBuffer.mapAsync(GPUMapMode.READ, 0, this.stagingBuffer.size)
+                .then(() => {
+                    const data = this.stagingBuffer.getMappedRange(0, this.BUFFER_SIZE).slice(0);
+                    const returnValue = new Uint32Array(data);
+                    this.stagingBuffer.unmap();
+                    resolve(returnValue);
+                })
+                .catch(error => {
+                    console.log(error);
+                    console.log(this.stagingBuffer.mapState);
+                    console.log(this.stagingBuffer.getMappedRange);
+                    reject(new Uint32Array(0));
+                });
 
-        const encoder = this.device.createCommandEncoder();
-
-        await this.stagingBuffer.mapAsync(
-            GPUMapMode.READ,
-            0, // Offset
-            this.stagingBuffer.size // Length
-        ).then(() => {
-            console.log(this.cellStateStorage[index])
-            console.log(this.stagingBuffer)
-            const data = this.stagingBuffer.getMappedRange(0, this.BUFFER_SIZE).slice(0);
-            console.log(this.stagingBuffer)
-
-            console.log(new Uint32Array(data))
-            this.stagingBuffer.unmap()
-        }).catch(error => {
-
-            console.log(error);
-            console.log(this.stagingBuffer.mapState)
-            console.log(this.stagingBuffer.getMappedRange)
-        })
-
-
-        const commands = encoder.finish();
-        this.device.queue.submit([commands]);
+            const commands = encoder.finish();
+            this.device.queue.submit([commands]);
+        });
     }
 
     //copy the contents of buffer1 to buffer2
     copyBufferUsingCompute(buffer1: GPUBuffer, buffer2: GPUBuffer) {
         //todo verify buffer 1 is copy_src and buffer 2 is copy_dst
 
+        //if the step is even, copy buffer 1 to buffer 2
+        //if the step is odd, copy buffer 2 to buffer 1
+        if(this.step %2 == 0){
+            console.log("even")
+            var bufferSRC: GPUBuffer = buffer1; 
+            var bufferDST: GPUBuffer = buffer2; 
+        }
+        else{
+            console.log("odd")
+            var bufferSRC: GPUBuffer = buffer2; 
+            var bufferDST: GPUBuffer = buffer1; 
+        }
 
         //create bind group layout
         var copierBindGroupLayout: GPUBindGroupLayout;
@@ -610,11 +619,11 @@ export class Renderer {
             layout: copierBindGroupLayout,
             entries: [{
                 binding: 0,
-                resource: { buffer: buffer1 }
+                resource: { buffer: bufferSRC }
             }
                 , {
                 binding: 1,
-                resource: { buffer: buffer2 }
+                resource: { buffer: bufferDST }
             }
             ],
         })
@@ -623,7 +632,7 @@ export class Renderer {
         var copierShaderModule: GPUShaderModule = this.device.createShaderModule({
             label: "Simulation shader1",
             code:
-            copier_shader
+                copier_shader
         })
             ;
 
@@ -633,7 +642,7 @@ export class Renderer {
                 bindGroupLayouts: [
                     this.UniformBindGroupLayout, //group 0
                     copierBindGroupLayout, //group 1
-                    
+
                 ],
             },
         );

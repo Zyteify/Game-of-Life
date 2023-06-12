@@ -10736,6 +10736,7 @@ __webpack_require__.r(__webpack_exports__);
 
 class App {
     constructor(canvas) {
+        //get the value inside an input html element
         //make the grid size equal to a multiple of x^2
         this.GRID_SIZE = 16;
         this.fps = 30;
@@ -11026,7 +11027,8 @@ class App {
     }
     async InitializeRenderer() {
         await this.renderer.Initialize(this.GRID_SIZE);
-        this.renderer.updateGrid();
+        this.renderer.renderGrid();
+        //this.renderer.updateGrid()
     }
     async handle_button(event) {
         //when next button is pressed
@@ -11035,40 +11037,45 @@ class App {
         }
         //when start button is pressed
         if (event.target.id == "start") {
-            console.log("starting animation");
             this.startAnimating();
         }
         //when pause button is pressed
         if (event.target.id == "test") {
-            console.log("test scene");
             this.renderer.setBuffer(this.obj);
         }
         //when reset button is pressed
         if (event.target.id == "pause") {
             //stop the animation frames
-            console.log("stopping animation");
             this.stopAnimating();
         }
         //when data button is pressed
         if (event.target.id == "data") {
-            await this.renderer.getBuffer(1).then(data => {
-            })
-                .catch(error => {
-                console.error(error);
-            });
-        }
-        //when data button is pressed
-        if (event.target.id == "data-age") {
-            await this.renderer.getBuffer(3).then(data => {
-            })
-                .catch(error => {
-                console.error(error);
+            await this.getRendererData()
+                .then(data => {
+                console.log(data);
             });
         }
     }
+    async getRendererData() {
+        try {
+            const data = await this.renderer.getBuffer(1);
+            // create a object from the uint32array
+            const obj = Array.from(data).reduce((result, value, index) => {
+                result[index] = value;
+                return result;
+            }, {});
+            return obj;
+        }
+        catch (error) {
+            console.error(error);
+            throw error; // Optional: rethrow the error
+        }
+    }
     startAnimating() {
-        this.animationRunning = true; // Flag to control the animation loop
-        this.animate();
+        if (!this.animationRunning) {
+            this.animationRunning = true; // Flag to control the animation loop
+            this.animate();
+        }
     }
     stopAnimating() {
         this.animationRunning = false;
@@ -11089,8 +11096,6 @@ class App {
     stepRenderer() {
         //get the renderer to update the grid by one step
         this.renderer.updateGrid().then(data => {
-            //get the data from the renderer into a Uint32Array of living cells
-            //const cellAliveArray: Uint32Array = new Uint32Array(data)
         })
             .catch(error => {
             console.error(error);
@@ -11115,17 +11120,32 @@ class App {
         this.renderer.setStep(0);
         //set the renderer buffer to the cells in the scene. this only updates one side of the bind layouts
     }
-    handleClick(event) {
+    async handleClick(event) {
         const canvasRect = this.canvas.getBoundingClientRect();
         const mouseX = event.clientX - canvasRect.left;
         const mouseY = event.clientY - canvasRect.top;
-        console.log(`Clicked on canvas at position: (${mouseX}, ${mouseY})`);
+        //console.log(`Clicked on canvas at position: (${mouseX}, ${mouseY})`);
         //get the cell that was clicked on
         const cellsize = this.canvas.width / this.GRID_SIZE;
         const cellX = Math.floor(mouseX / cellsize);
         //grid coordinates are flipped for the y axis
         const cellY = this.GRID_SIZE - 1 - Math.floor(mouseY / cellsize);
-        console.log(`Clicked on cell: (${cellX}, ${cellY})`);
+        //console.log(`Clicked on cell: (${cellX}, ${cellY})`);
+        // Declare the variable outside the block
+        let cellAliveArray;
+        // get the arraybuffer of the grid
+        await this.getRendererData()
+            .then(data => {
+            const typedData = data;
+            //make the cell that was clicked on alive or dead
+            typedData[cellX + cellY * this.GRID_SIZE] = typedData[cellX + cellY * this.GRID_SIZE] == 0 ? 1 : 0;
+            //rerender objects
+            this.renderer.setBuffer(typedData);
+            this.updateGenerations();
+        })
+            .catch(error => {
+            console.error(error);
+        });
     }
     handle_keyrelease(event) {
         this.keyLabel.innerText = event.code;
@@ -11428,9 +11448,6 @@ class Renderer {
         var random;
         for (let i = 0; i < randomArray.length; ++i) {
             random = Math.random() > 0.001 ? 0 : 1;
-            if (random == 1) {
-                console.log("new cell at x:" + (i % this.GRID_SIZE).toString() + ", y:" + Math.floor(i / this.GRID_SIZE).toString());
-            }
             randomArray[i] = random;
         }
         //finished copying random array to buffer
@@ -11568,6 +11585,7 @@ class Renderer {
             }
         });
     }
+    //update the grid by running the compute shader once
     async updateGrid() {
         const encoder = this.device.createCommandEncoder();
         // Start a compute pass
@@ -11602,7 +11620,11 @@ class Renderer {
         this.pass.end();
         this.device.queue.submit([encoder.finish()]);
     }
+    //does a render pass without computing anything
     async renderGrid() {
+        //copy the contents of all buffers to ensure correct step
+        this.copyBufferUsingCompute(this.cellStateStorage[0], this.cellStateStorage[1]);
+        this.copyBufferUsingCompute(this.cellStateStorage[2], this.cellStateStorage[3]);
         const encoder = this.device.createCommandEncoder();
         // Start a render pass
         this.pass = encoder.beginRenderPass({
@@ -11629,7 +11651,6 @@ class Renderer {
         const values = Object.values(obj);
         var testarray;
         testarray = new Uint32Array(values);
-        console.log(testarray);
         this.device.queue.writeBuffer(this.cellStateStorage[0], 0, testarray);
         //copy the buffers of the first step to the buffers of the second step to render properly
         this.copyBufferUsingCompute(this.cellStateStorage[0], this.cellStateStorage[1]);
@@ -11642,39 +11663,50 @@ class Renderer {
     setStep(step) {
         this.step = step;
     }
-    //get the contents of the buffer from cellStateStorage[index]
+    //get the buffer and return as a uint32array in the promise
     async getBuffer(index) {
-        //create seperate command encoder to copy the buffer to the staging buffer
-        //this doesnt work without this on the first click but works on the second click and onwards
-        const encoder2 = this.device.createCommandEncoder();
-        encoder2.copyBufferToBuffer(this.cellStateStorage[index], 
-        //this.output,
-        0, // Source offset
-        this.stagingBuffer, 0, // Destination offset
-        this.BUFFER_SIZE);
-        const commands2 = encoder2.finish();
-        this.device.queue.submit([commands2]);
-        const encoder = this.device.createCommandEncoder();
-        await this.stagingBuffer.mapAsync(GPUMapMode.READ, 0, // Offset
-        this.stagingBuffer.size // Length
-        ).then(() => {
-            console.log(this.cellStateStorage[index]);
-            console.log(this.stagingBuffer);
-            const data = this.stagingBuffer.getMappedRange(0, this.BUFFER_SIZE).slice(0);
-            console.log(this.stagingBuffer);
-            console.log(new Uint32Array(data));
-            this.stagingBuffer.unmap();
-        }).catch(error => {
-            console.log(error);
-            console.log(this.stagingBuffer.mapState);
-            console.log(this.stagingBuffer.getMappedRange);
+        return new Promise((resolve, reject) => {
+            this.copyBufferUsingCompute(this.cellStateStorage[0], this.cellStateStorage[1]);
+            this.copyBufferUsingCompute(this.cellStateStorage[2], this.cellStateStorage[3]);
+            const encoder2 = this.device.createCommandEncoder();
+            encoder2.copyBufferToBuffer(this.cellStateStorage[index], 0, // Source offset
+            this.stagingBuffer, 0, // Destination offset
+            this.BUFFER_SIZE);
+            const commands2 = encoder2.finish();
+            this.device.queue.submit([commands2]);
+            const encoder = this.device.createCommandEncoder();
+            this.stagingBuffer.mapAsync(GPUMapMode.READ, 0, this.stagingBuffer.size)
+                .then(() => {
+                const data = this.stagingBuffer.getMappedRange(0, this.BUFFER_SIZE).slice(0);
+                const returnValue = new Uint32Array(data);
+                this.stagingBuffer.unmap();
+                resolve(returnValue);
+            })
+                .catch(error => {
+                console.log(error);
+                console.log(this.stagingBuffer.mapState);
+                console.log(this.stagingBuffer.getMappedRange);
+                reject(new Uint32Array(0));
+            });
+            const commands = encoder.finish();
+            this.device.queue.submit([commands]);
         });
-        const commands = encoder.finish();
-        this.device.queue.submit([commands]);
     }
     //copy the contents of buffer1 to buffer2
     copyBufferUsingCompute(buffer1, buffer2) {
         //todo verify buffer 1 is copy_src and buffer 2 is copy_dst
+        //if the step is even, copy buffer 1 to buffer 2
+        //if the step is odd, copy buffer 2 to buffer 1
+        if (this.step % 2 == 0) {
+            console.log("even");
+            var bufferSRC = buffer1;
+            var bufferDST = buffer2;
+        }
+        else {
+            console.log("odd");
+            var bufferSRC = buffer2;
+            var bufferDST = buffer1;
+        }
         //create bind group layout
         var copierBindGroupLayout;
         copierBindGroupLayout = this.device.createBindGroupLayout({
@@ -11694,11 +11726,11 @@ class Renderer {
             layout: copierBindGroupLayout,
             entries: [{
                     binding: 0,
-                    resource: { buffer: buffer1 }
+                    resource: { buffer: bufferSRC }
                 },
                 {
                     binding: 1,
-                    resource: { buffer: buffer2 }
+                    resource: { buffer: bufferDST }
                 }
             ],
         });

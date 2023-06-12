@@ -1,6 +1,7 @@
 import { Renderer } from "../view/renderer";
 import { Scene } from "../scene/scene";
 import $ from "jquery";
+import { arrayBuffer } from "stream/consumers";
 
 export class App {
 
@@ -30,6 +31,10 @@ export class App {
 
 
     constructor(canvas: HTMLCanvasElement) {
+        
+        //get the value inside an input html element
+
+
         this.canvas = canvas;
 
         this.renderer = new Renderer(canvas);
@@ -69,7 +74,8 @@ export class App {
 
     async InitializeRenderer() {
         await this.renderer.Initialize(this.GRID_SIZE);
-        this.renderer.updateGrid()
+        this.renderer.renderGrid()
+        //this.renderer.updateGrid()
     }
 
     async handle_button(event: JQuery.ClickEvent) {
@@ -80,48 +86,55 @@ export class App {
 
         //when start button is pressed
         if (event.target.id == "start") {
-            console.log("starting animation")
             this.startAnimating()
         }
 
         //when pause button is pressed
         if (event.target.id == "test") {
-            console.log("test scene")
             this.renderer.setBuffer(this.obj)
         }
 
         //when reset button is pressed
         if (event.target.id == "pause") {
             //stop the animation frames
-            console.log("stopping animation")
             this.stopAnimating()
 
 
         }
         //when data button is pressed
         if (event.target.id == "data") {
-            await this.renderer.getBuffer(1).then(data => {
+            await this.getRendererData()
+            .then(data => {
+                console.log(data)
             })
-                .catch(error => {
-                    console.error(error);
-                });
+            
 
         }
-        //when data button is pressed
-        if (event.target.id == "data-age") {
-            await this.renderer.getBuffer(3).then(data => {
-            })
-                .catch(error => {
-                    console.error(error);
-                });
-
-        }
-
 
     }
+
+    async getRendererData(): Promise<object> {
+        try {
+            const data = await this.renderer.getBuffer(1);
+            // create a object from the uint32array
+            const obj: object = Array.from(data).reduce((result: { [key: number]: number }, value, index) => {
+                result[index] = value;
+                return result;
+                
+              }, {});
+            return obj
+        } catch (error) {
+            console.error(error);
+            throw error; // Optional: rethrow the error
+        }
+    }
+
     startAnimating() {
-        this.animationRunning = true; // Flag to control the animation loop
-        this.animate();
+        
+        if(!this.animationRunning){
+            this.animationRunning = true; // Flag to control the animation loop
+            this.animate();            
+        }   
     }
 
     stopAnimating() {
@@ -144,8 +157,6 @@ export class App {
     stepRenderer() {
         //get the renderer to update the grid by one step
         this.renderer.updateGrid().then(data => {
-            //get the data from the renderer into a Uint32Array of living cells
-            //const cellAliveArray: Uint32Array = new Uint32Array(data)
         })
             .catch(error => {
                 console.error(error);
@@ -175,11 +186,11 @@ export class App {
         //set the renderer buffer to the cells in the scene. this only updates one side of the bind layouts
     }
 
-    handleClick(event: MouseEvent) {
+    async handleClick(event: MouseEvent) {
         const canvasRect = this.canvas.getBoundingClientRect();
         const mouseX = event.clientX - canvasRect.left;
         const mouseY = event.clientY - canvasRect.top;
-        console.log(`Clicked on canvas at position: (${mouseX}, ${mouseY})`);
+        //console.log(`Clicked on canvas at position: (${mouseX}, ${mouseY})`);
 
         //get the cell that was clicked on
         const cellsize = this.canvas.width / this.GRID_SIZE;
@@ -187,7 +198,27 @@ export class App {
         const cellX = Math.floor(mouseX / cellsize);
         //grid coordinates are flipped for the y axis
         const cellY = this.GRID_SIZE-1 - Math.floor(mouseY / cellsize);
-        console.log(`Clicked on cell: (${cellX}, ${cellY})`);
+        //console.log(`Clicked on cell: (${cellX}, ${cellY})`);
+
+        // Declare the variable outside the block
+        let cellAliveArray: Uint32Array;
+
+        // get the arraybuffer of the grid
+        await this.getRendererData()
+        .then(data => {
+            const typedData = data as { [key: number]: number };
+            //make the cell that was clicked on alive or dead
+            typedData[cellX + cellY * this.GRID_SIZE] = typedData[cellX + cellY * this.GRID_SIZE] == 0 ? 1 : 0;
+            //rerender objects
+            this.renderer.setBuffer(typedData);
+            this.updateGenerations()
+
+              
+            
+        })
+        .catch(error => {
+            console.error(error);
+        });
     }
 
     handle_keyrelease(event: JQuery.KeyUpEvent) {
