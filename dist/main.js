@@ -10731,6 +10731,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _scene_scene__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../scene/scene */ "./src/scene/scene.ts");
 /* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! jquery */ "./node_modules/jquery/dist/jquery.js");
 /* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _scene_cell__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../scene/cell */ "./src/scene/cell.ts");
+
 
 
 
@@ -10738,13 +10740,13 @@ class App {
     constructor(canvas) {
         //get the value inside an input html element
         //make the grid size equal to a multiple of x^2
-        this.GRID_SIZE = 16;
+        this.GRID_SIZE = 32;
         this.fps = 30;
         this.animationId = 0;
         this.animationRunning = false;
         this.obj = {
-            "0": 0,
-            "1": 0,
+            "0": 1,
+            "1": 1,
             "2": 0,
             "3": 0,
             "4": 0,
@@ -10759,7 +10761,7 @@ class App {
             "13": 0,
             "14": 0,
             "15": 0,
-            "16": 0,
+            "16": 1,
             "17": 1,
             "18": 0,
             "19": 0,
@@ -11007,7 +11009,7 @@ class App {
         this.mouseYLabel = document.getElementById("mouse-y-label");
         this.generationsLabel = document.getElementById("generations");
         //register clicking on buttons
-        jquery__WEBPACK_IMPORTED_MODULE_2___default()('#next, #start, #pause, #test, #data, #data-age').on('click', (event) => {
+        jquery__WEBPACK_IMPORTED_MODULE_2___default()('#next, #start, #pause, #test-values, #data, #data-age, #test').on('click', (event) => {
             this.handle_button(event);
         });
         //get when the input box fps changes
@@ -11017,13 +11019,10 @@ class App {
         });
         // register clicking on the canvas and log the position
         this.canvas.addEventListener('click', this.handleClick.bind(this));
+        this.GenerateScene();
     }
     GenerateScene() {
-        this.scene = new _scene_scene__WEBPACK_IMPORTED_MODULE_1__.Scene(this.canvas, this.canvas.getContext("2d", {
-            //desynchronized: true,
-            willReadFrequently: true,
-            alpha: false
-        }), this.GRID_SIZE);
+        this.scene = new _scene_scene__WEBPACK_IMPORTED_MODULE_1__.Scene(this.GRID_SIZE);
     }
     async InitializeRenderer() {
         await this.renderer.Initialize(this.GRID_SIZE);
@@ -11040,7 +11039,7 @@ class App {
             this.startAnimating();
         }
         //when pause button is pressed
-        if (event.target.id == "test") {
+        if (event.target.id == "test-values") {
             this.renderer.setBuffer(this.obj);
         }
         //when reset button is pressed
@@ -11053,6 +11052,15 @@ class App {
             await this.getRendererData()
                 .then(data => {
                 console.log(data);
+                this.data = data;
+            });
+        }
+        //when test button is pressed
+        if (event.target.id == "test") {
+            var test = [{ xy: 0, value: 1 }];
+            await this.getRendererData()
+                .then(data => {
+                this.updateScene(data);
             });
         }
     }
@@ -11060,15 +11068,12 @@ class App {
         try {
             const data = await this.renderer.getBuffer(1);
             // create a object from the uint32array
-            const obj = Array.from(data).reduce((result, value, index) => {
-                result[index] = value;
-                return result;
-            }, {});
-            return obj;
+            const cellInterface = (0,_scene_cell__WEBPACK_IMPORTED_MODULE_3__.convertUint32ArrayToCellInterface)(data);
+            return cellInterface;
         }
         catch (error) {
             console.error(error);
-            throw error; // Optional: rethrow the error
+            throw error;
         }
     }
     startAnimating() {
@@ -11093,22 +11098,26 @@ class App {
             }, 1000 / this.fps);
         });
     }
-    stepRenderer() {
+    async stepRenderer() {
         //get the renderer to update the grid by one step
         this.renderer.updateGrid().then(data => {
         })
             .catch(error => {
             console.error(error);
         });
-        //update the generations label
-        this.updateGenerations();
+        /*  //update the generations label
+         await this.getRendererData()
+                 .then(data => {
+                     this.updateScene(data)
+ 
+                 }) */
         this.renderer.randomiseGrid();
     }
     sendCellstoRenderer() {
     }
-    updateScene() {
+    updateScene(data) {
         //update which cells are alive
-        this.scene.updateCells();
+        this.scene.updateCells(data);
         //update the generations label
         this.updateGenerations();
     }
@@ -11124,23 +11133,21 @@ class App {
         const canvasRect = this.canvas.getBoundingClientRect();
         const mouseX = event.clientX - canvasRect.left;
         const mouseY = event.clientY - canvasRect.top;
-        //console.log(`Clicked on canvas at position: (${mouseX}, ${mouseY})`);
         //get the cell that was clicked on
         const cellsize = this.canvas.width / this.GRID_SIZE;
         const cellX = Math.floor(mouseX / cellsize);
         //grid coordinates are flipped for the y axis
         const cellY = this.GRID_SIZE - 1 - Math.floor(mouseY / cellsize);
-        //console.log(`Clicked on cell: (${cellX}, ${cellY})`);
-        // Declare the variable outside the block
-        let cellAliveArray;
-        // get the arraybuffer of the grid
+        // get the data of the grid
         await this.getRendererData()
             .then(data => {
-            const typedData = data;
-            //make the cell that was clicked on alive or dead
-            typedData[cellX + cellY * this.GRID_SIZE] = typedData[cellX + cellY * this.GRID_SIZE] == 0 ? 1 : 0;
-            //rerender objects
-            this.renderer.setBuffer(typedData);
+            //change the value of the cell to the opposite
+            var newvalue = this.getCellValue(data, cellX + cellY * this.GRID_SIZE) == 1 ? 0 : 1;
+            this.updateCellValue(data, cellX + cellY * this.GRID_SIZE, newvalue);
+            //convert the cell interface to a uint32array for the renderer
+            var newdata = (0,_scene_cell__WEBPACK_IMPORTED_MODULE_3__.convertCellInterfaceToUint32Array)(data);
+            //send it to the renderer
+            this.renderer.setBuffer(newdata);
             this.updateGenerations();
         })
             .catch(error => {
@@ -11158,6 +11165,22 @@ class App {
         //get the generations from the scene
         this.generationsLabel.innerText = "Generations: " + this.renderer.getStep().toString();
     }
+    updateCellValue(cellArray, xy, newValue) {
+        for (let i = 0; i < cellArray.length; i++) {
+            if (cellArray[i].xy === xy) {
+                cellArray[i].value = newValue;
+                break; // Once the value is updated, exit the loop
+            }
+        }
+    }
+    getCellValue(cellArray, xy) {
+        for (const cell of cellArray) {
+            if (cell.xy === xy) {
+                return cell.value;
+            }
+        }
+        return undefined;
+    }
 }
 
 
@@ -11172,7 +11195,9 @@ class App {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   Cell: () => (/* binding */ Cell)
+/* harmony export */   Cell: () => (/* binding */ Cell),
+/* harmony export */   convertCellInterfaceToUint32Array: () => (/* binding */ convertCellInterfaceToUint32Array),
+/* harmony export */   convertUint32ArrayToCellInterface: () => (/* binding */ convertUint32ArrayToCellInterface)
 /* harmony export */ });
 class Cell {
     constructor(x, y) {
@@ -11180,8 +11205,26 @@ class Cell {
         this.y = y;
         this.age = 0;
         //initial state of the cell
-        this.alive = Math.random() > 0.5 ? true : false;
+        this.alive = 0;
+        //this.alive = Math.random() > 0.5 ? 1 : 0;
     }
+}
+;
+function convertUint32ArrayToCellInterface(uint32Array) {
+    const result = [];
+    for (let i = 0; i < uint32Array.length; i += 1) {
+        const xy = i;
+        const value = uint32Array[i];
+        result.push({ xy, value });
+    }
+    return result;
+}
+function convertCellInterfaceToUint32Array(cellArray) {
+    const uint32Array = new Uint32Array(cellArray.length);
+    for (let i = 0; i < cellArray.length; i++) {
+        uint32Array[i] = cellArray[i].value;
+    }
+    return uint32Array;
 }
 
 
@@ -11199,29 +11242,27 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   Scene: () => (/* binding */ Scene)
 /* harmony export */ });
 /* harmony import */ var _cell__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./cell */ "./src/scene/cell.ts");
+/* harmony import */ var _view_definitions__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../view/definitions */ "./src/view/definitions.ts");
+
 
 class Scene {
-    constructor(canvas, renderingCanvas, GRID_SIZE) {
+    constructor(GRID_SIZE) {
         this.generations = 0;
         console.log("Initializing scene");
-        this.renderingCanvas = renderingCanvas;
         this.GRID_SIZE = GRID_SIZE;
-        this.GRID_SIZEX = Math.floor(canvas.width / GRID_SIZE);
-        this.GRID_SIZEY = Math.floor(canvas.height / GRID_SIZE);
+        this.GRID_SIZEX = GRID_SIZE;
+        this.GRID_SIZEY = GRID_SIZE;
         this.createCells();
     }
     createCells() {
-        console.log("creating cells" + this.GRID_SIZE + " by " + this.GRID_SIZE);
+        console.log("creating cells" + this.GRID_SIZEX + " by " + this.GRID_SIZEY);
         this.generations = 0;
-        //create a 2d array to populate this.cells
-        this.cells = new Array(this.GRID_SIZE);
+        //create a array to populate this.cells
+        this.cells = new Array(this.GRID_SIZEX * this.GRID_SIZEY);
         //loop though the array and create a new cell for each element
-        for (let i = 0; i < this.GRID_SIZE; i++) {
-            //create the second dimension of the array
-            this.cells[i] = new Array(this.GRID_SIZE);
-            for (let j = 0; j < this.GRID_SIZE; j++) {
-                this.cells[i][j] = new _cell__WEBPACK_IMPORTED_MODULE_0__.Cell(i, j);
-            }
+        for (let i = 0; i < this.GRID_SIZEX * this.GRID_SIZEY; i++) {
+            const { x, y } = (0,_view_definitions__WEBPACK_IMPORTED_MODULE_1__.getCoordinates)(i, this.GRID_SIZEX);
+            this.cells[i] = new _cell__WEBPACK_IMPORTED_MODULE_0__.Cell(x, y);
         }
     }
     getGenerations() {
@@ -11230,9 +11271,14 @@ class Scene {
     updateGenerations() {
         this.generations++;
     }
-    updateCells() {
-        for (let i = 0; i < this.GRID_SIZE; i++) {
-            for (let j = 0; j < this.GRID_SIZE; j++) {
+    updateCells(data) {
+        for (let i = 0; i < data.length; i++) {
+            const cellData = data[i];
+            const { xy, value } = cellData;
+            const { x, y } = (0,_view_definitions__WEBPACK_IMPORTED_MODULE_1__.getCoordinates)(xy, this.GRID_SIZEX);
+            const cellToUpdate = this.cells.find(cell => cell.x === x && cell.y === y);
+            if (cellToUpdate) {
+                cellToUpdate.alive = value;
             }
         }
         this.generations++;
@@ -11241,6 +11287,36 @@ class Scene {
         this.createCells();
     }
 }
+
+
+/***/ }),
+
+/***/ "./src/view/definitions.ts":
+/*!*********************************!*\
+  !*** ./src/view/definitions.ts ***!
+  \*********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   getCoordinates: () => (/* binding */ getCoordinates)
+/* harmony export */ });
+function getCoordinates(index, gridSize) {
+    const y = Math.floor(index / gridSize); // Calculate the row (x)
+    const x = index % gridSize; // Calculate the column (y)
+    return { x, y };
+}
+const computeBufferLayout = {
+    arrayStride: 8,
+    attributes: [
+        {
+            format: "float32",
+            offset: 0,
+            shaderLocation: 0,
+        },
+    ],
+};
 
 
 /***/ }),
@@ -11698,12 +11774,10 @@ class Renderer {
         //if the step is even, copy buffer 1 to buffer 2
         //if the step is odd, copy buffer 2 to buffer 1
         if (this.step % 2 == 0) {
-            console.log("even");
             var bufferSRC = buffer1;
             var bufferDST = buffer2;
         }
         else {
-            console.log("odd");
             var bufferSRC = buffer2;
             var bufferDST = buffer1;
         }
@@ -11798,7 +11872,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("@group(0) @binding(0) var<uniform> grid: vec2f;\r\n\r\n@group(1) @binding(0) var<storage, read> cellStateIn: array<u32>;\r\n@group(1) @binding(1) var<storage, read_write> cellStateOut: array<u32>;\r\n@group(2) @binding(0) var<storage, read> cellStateAgeIn: array<u32>;\r\n@group(2) @binding(1) var<storage, read_write> cellStateAgeOut: array<u32>;\r\n@group(3) @binding(0) var<storage, read> cellStateRandom: array<u32>;\r\n\r\nfn cellIndex(cell: vec2u) -> u32 {\r\n  return (cell.y % u32(grid.y)) * u32(grid.x) +\r\n         (cell.x % u32(grid.x));\r\n}\r\n\r\nfn cellActive(x: u32, y: u32) -> u32 {\r\n  return cellStateIn[cellIndex(vec2(x, y))];\r\n}\r\n  \r\n@compute @workgroup_size(8, 8)\r\n\r\nfn computeMain(@builtin(global_invocation_id) cell: vec3u){\r\n            \r\n  let activeNeighbors = cellActive(cell.x+1, cell.y+1) +\r\n                        cellActive(cell.x+1, cell.y) +\r\n                        cellActive(cell.x+1, cell.y-1) +\r\n                        cellActive(cell.x, cell.y-1) +\r\n                        cellActive(cell.x-1, cell.y-1) +\r\n                        cellActive(cell.x-1, cell.y) +\r\n                        cellActive(cell.x-1, cell.y+1) +\r\n                        cellActive(cell.x, cell.y+1);\r\n\r\n  let i = cellIndex(cell.xy);\r\n\r\n  // Conway's game of life rules:\r\n  switch activeNeighbors {\r\n      case 2: { // Active cells with 2 neighbors stay active.\r\n        cellStateOut[i] = cellStateIn[i];\r\n        cellStateAgeOut[i] = cellStateAgeIn[i]+1;\r\n      }\r\n      case 3: { // Cells with 3 neighbors become or stay active.\r\n        cellStateOut[i] = 1;\r\n        cellStateAgeOut[i] = cellStateAgeIn[i]+1;\r\n      }\r\n      default: { // Cells with < 2 or > 3 neighbors become inactive.\r\n        if(cellStateRandom[i] == 1){\r\n          cellStateOut[i] = 1;\r\n          cellStateAgeOut[i] = cellStateAgeIn[i]+1;\r\n        }\r\n        else{\r\n          cellStateOut[i] = 0;\r\n          cellStateAgeOut[i] = 0;\r\n        }\r\n\r\n        \r\n      }\r\n    }\r\n  \r\n}");
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("@group(0) @binding(0) var<uniform> grid: vec2f;\r\n\r\n@group(1) @binding(0) var<storage, read> cellStateIn: array<u32>;\r\n@group(1) @binding(1) var<storage, read_write> cellStateOut: array<u32>;\r\n@group(2) @binding(0) var<storage, read> cellStateAgeIn: array<u32>;\r\n@group(2) @binding(1) var<storage, read_write> cellStateAgeOut: array<u32>;\r\n@group(3) @binding(0) var<storage, read> cellStateRandom: array<u32>;\r\n\r\nfn cellIndex(cell: vec2u) -> u32 {\r\n  return (cell.y % u32(grid.y)) * u32(grid.x) +\r\n         (cell.x % u32(grid.x));\r\n}\r\n\r\nfn cellActive(x: u32, y: u32) -> u32 {\r\n  return cellStateIn[cellIndex(vec2(x, y))];\r\n}\r\n  \r\n@compute @workgroup_size(8, 8)\r\n\r\nfn computeMain(@builtin(global_invocation_id) cell: vec3u){\r\n            \r\n  let activeNeighbors = cellActive(cell.x+1, cell.y+1) +\r\n                        cellActive(cell.x+1, cell.y) +\r\n                        cellActive(cell.x+1, cell.y-1) +\r\n                        cellActive(cell.x, cell.y-1) +\r\n                        cellActive(cell.x-1, cell.y-1) +\r\n                        cellActive(cell.x-1, cell.y) +\r\n                        cellActive(cell.x-1, cell.y+1) +\r\n                        cellActive(cell.x, cell.y+1);\r\n\r\n  let i = cellIndex(cell.xy);\r\n\r\n  // Conway's game of life rules:\r\n  switch activeNeighbors {\r\n      case 2: { // Active cells with 2 neighbors stay active.\r\n        cellStateOut[i] = cellStateIn[i];\r\n        cellStateAgeOut[i] = cellStateAgeIn[i]+1;\r\n      }\r\n      \r\n      default: { // Cells with < 2 or > 3 neighbors become inactive.\r\n        if(cellStateRandom[i] == 1){\r\n          cellStateOut[i] = 1;\r\n          cellStateAgeOut[i] = cellStateAgeIn[i]+1;\r\n        }\r\n        else{\r\n          cellStateOut[i] = 0;\r\n          cellStateAgeOut[i] = 0;\r\n        }\r\n\r\n        \r\n      }\r\n    }\r\n  \r\n}");
 
 /***/ }),
 

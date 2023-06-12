@@ -1,75 +1,71 @@
-import { Cell } from "./cell";
+import { Cell, cellInterface } from "./cell";
+import { getCoordinates } from "../view/definitions"
 
 export class Scene {
 
-    //renderingCanvas
-    renderingCanvas: CanvasRenderingContext2D 
-
-    //size of the pixel for x
-    GRID_SIZEX: number
-    //size of the pixel for y
-    GRID_SIZEY: number
 
     GRID_SIZE: number
-
-    //2d array holding all the cells
-    cells: Cell[][]
+    GRID_SIZEX: number
+    GRID_SIZEY: number
+    
+    //1d array holding all the cells
+    cells: Cell[]
 
     generations: number = 0;
 
     aliveArray: Uint32Array;
 
-    constructor(canvas: HTMLCanvasElement, renderingCanvas: CanvasRenderingContext2D, GRID_SIZE: number) {
+    constructor(GRID_SIZE: number) {
         console.log("Initializing scene");
-        this.renderingCanvas = renderingCanvas
 
         this.GRID_SIZE = GRID_SIZE;
-
-        this.GRID_SIZEX = Math.floor(canvas.width/GRID_SIZE)
-        this.GRID_SIZEY = Math.floor(canvas.height/GRID_SIZE)
+        this.GRID_SIZEX = GRID_SIZE;
+        this.GRID_SIZEY = GRID_SIZE;
 
         this.createCells()
     }
 
-    createCells(){
-        console.log("creating cells" + this.GRID_SIZE + " by "+ this.GRID_SIZE);
+    createCells() {
+        console.log("creating cells" + this.GRID_SIZEX + " by " + this.GRID_SIZEY);
 
         this.generations = 0;
-        //create a 2d array to populate this.cells
-        this.cells = new Array(this.GRID_SIZE);
-        
-        //loop though the array and create a new cell for each element
-        for (let i = 0; i < this.GRID_SIZE; i++) {
-            //create the second dimension of the array
-            this.cells[i] = new Array(this.GRID_SIZE);
-            for (let j = 0; j < this.GRID_SIZE; j++) {
+        //create a array to populate this.cells
+        this.cells = new Array(this.GRID_SIZEX*this.GRID_SIZEY);
 
-                this.cells[i][j] = new Cell(i, j);
-            }
-        }        
+        //loop though the array and create a new cell for each element
+        for (let i = 0; i < this.GRID_SIZEX*this.GRID_SIZEY; i++) {
+            const { x, y } = getCoordinates(i, this.GRID_SIZEX);
+            this.cells[i] = new Cell(x, y);
+        }
+
     }
 
-    getGenerations(){
+    getGenerations() {
         return this.generations
     }
 
-    updateGenerations(){
+    updateGenerations() {
         this.generations++;
     }
 
-    updateCells(){
-
-        
-        for (let i = 0; i < this.GRID_SIZE; i++) {    
-            for (let j = 0; j < this.GRID_SIZE; j++) {
-
+    updateCells(data: cellInterface[]) {
+    
+        for (let i = 0; i < data.length; i++) {
+            const cellData = data[i];
+            const { xy, value } = cellData;
+            const { x, y } = getCoordinates(xy, this.GRID_SIZEX);
+    
+            const cellToUpdate = this.cells.find(cell => cell.x === x && cell.y === y);
+            if (cellToUpdate) {
+                cellToUpdate.alive = value;
             }
-          }  
+        }
+    
         this.generations++;
     }
 
-    reset(){
+    reset() {
         this.createCells()
     }
-    
+
 }

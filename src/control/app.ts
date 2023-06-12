@@ -1,7 +1,7 @@
 import { Renderer } from "../view/renderer";
 import { Scene } from "../scene/scene";
 import $ from "jquery";
-import { arrayBuffer } from "stream/consumers";
+import { cellInterface, convertUint32ArrayToCellInterface, convertCellInterfaceToUint32Array } from "../scene/cell";
 
 export class App {
 
@@ -9,7 +9,7 @@ export class App {
 
     renderingCanvas: CanvasRenderingContext2D
     //make the grid size equal to a multiple of x^2
-    GRID_SIZE: number = 16;
+    GRID_SIZE: number = 32;
 
     renderer: Renderer;
     scene: Scene;
@@ -29,9 +29,11 @@ export class App {
     animationId: number = 0;
     animationRunning: boolean = false;
 
+    data: object;
+
 
     constructor(canvas: HTMLCanvasElement) {
-        
+
         //get the value inside an input html element
 
 
@@ -46,7 +48,7 @@ export class App {
         this.generationsLabel = <HTMLElement>document.getElementById("generations");
 
         //register clicking on buttons
-        $('#next, #start, #pause, #test, #data, #data-age').on('click',
+        $('#next, #start, #pause, #test-values, #data, #data-age, #test').on('click',
             (event) => {
                 this.handle_button(event);
             })
@@ -61,15 +63,11 @@ export class App {
         // register clicking on the canvas and log the position
         this.canvas.addEventListener('click', this.handleClick.bind(this));
 
-
+        this.GenerateScene()
     }
 
     GenerateScene() {
-        this.scene = new Scene(this.canvas, <CanvasRenderingContext2D>this.canvas.getContext("2d", {
-            //desynchronized: true,
-            willReadFrequently: true,
-            alpha: false
-        }), this.GRID_SIZE);
+        this.scene = new Scene(this.GRID_SIZE);
     }
 
     async InitializeRenderer() {
@@ -90,7 +88,7 @@ export class App {
         }
 
         //when pause button is pressed
-        if (event.target.id == "test") {
+        if (event.target.id == "test-values") {
             this.renderer.setBuffer(this.obj)
         }
 
@@ -104,37 +102,47 @@ export class App {
         //when data button is pressed
         if (event.target.id == "data") {
             await this.getRendererData()
-            .then(data => {
-                console.log(data)
-            })
-            
+                .then(data => {
+                    console.log(data)
+                    this.data = data
 
+                })
+
+
+        }
+
+        //when test button is pressed
+        if (event.target.id == "test") {
+            var test: cellInterface[] = [{ xy: 0, value: 1 }]
+            await this.getRendererData()
+                .then(data => {
+                    this.updateScene(data)
+
+                })
+            
         }
 
     }
 
-    async getRendererData(): Promise<object> {
+    async getRendererData(): Promise<cellInterface[]> {
         try {
             const data = await this.renderer.getBuffer(1);
             // create a object from the uint32array
-            const obj: object = Array.from(data).reduce((result: { [key: number]: number }, value, index) => {
-                result[index] = value;
-                return result;
-                
-              }, {});
-            return obj
+            const cellInterface: cellInterface[] = convertUint32ArrayToCellInterface(data);
+            return cellInterface
+
         } catch (error) {
             console.error(error);
-            throw error; // Optional: rethrow the error
+            throw error;
         }
     }
 
     startAnimating() {
-        
-        if(!this.animationRunning){
+
+        if (!this.animationRunning) {
             this.animationRunning = true; // Flag to control the animation loop
-            this.animate();            
-        }   
+            this.animate();
+        }
     }
 
     stopAnimating() {
@@ -154,15 +162,19 @@ export class App {
         });
     }
 
-    stepRenderer() {
+    async stepRenderer() {
         //get the renderer to update the grid by one step
         this.renderer.updateGrid().then(data => {
         })
             .catch(error => {
                 console.error(error);
             });
-        //update the generations label
-        this.updateGenerations()
+       /*  //update the generations label
+        await this.getRendererData()
+                .then(data => {
+                    this.updateScene(data)
+
+                }) */
         this.renderer.randomiseGrid()
 
     }
@@ -170,9 +182,9 @@ export class App {
     sendCellstoRenderer() {
     }
 
-    updateScene() {
+    updateScene(data: cellInterface[]) {
         //update which cells are alive
-        this.scene.updateCells()
+        this.scene.updateCells(data)
         //update the generations label
         this.updateGenerations()
     }
@@ -190,35 +202,32 @@ export class App {
         const canvasRect = this.canvas.getBoundingClientRect();
         const mouseX = event.clientX - canvasRect.left;
         const mouseY = event.clientY - canvasRect.top;
-        //console.log(`Clicked on canvas at position: (${mouseX}, ${mouseY})`);
 
         //get the cell that was clicked on
         const cellsize = this.canvas.width / this.GRID_SIZE;
 
         const cellX = Math.floor(mouseX / cellsize);
         //grid coordinates are flipped for the y axis
-        const cellY = this.GRID_SIZE-1 - Math.floor(mouseY / cellsize);
-        //console.log(`Clicked on cell: (${cellX}, ${cellY})`);
+        const cellY = this.GRID_SIZE - 1 - Math.floor(mouseY / cellsize);
 
-        // Declare the variable outside the block
-        let cellAliveArray: Uint32Array;
-
-        // get the arraybuffer of the grid
+        
+        // get the data of the grid
         await this.getRendererData()
-        .then(data => {
-            const typedData = data as { [key: number]: number };
-            //make the cell that was clicked on alive or dead
-            typedData[cellX + cellY * this.GRID_SIZE] = typedData[cellX + cellY * this.GRID_SIZE] == 0 ? 1 : 0;
-            //rerender objects
-            this.renderer.setBuffer(typedData);
-            this.updateGenerations()
+            .then(data => {
 
-              
-            
-        })
-        .catch(error => {
-            console.error(error);
-        });
+                //change the value of the cell to the opposite
+                var newvalue: number = this.getCellValue(data, cellX + cellY * this.GRID_SIZE) == 1 ? 0 : 1
+                this.updateCellValue(data, cellX + cellY * this.GRID_SIZE, newvalue)
+                //convert the cell interface to a uint32array for the renderer
+                var newdata: Uint32Array = convertCellInterfaceToUint32Array(data)
+                //send it to the renderer
+                this.renderer.setBuffer(newdata);
+                
+                this.updateGenerations()
+            })
+            .catch(error => {
+                console.error(error);
+            });
     }
 
     handle_keyrelease(event: JQuery.KeyUpEvent) {
@@ -236,8 +245,8 @@ export class App {
     }
 
     obj: object = {
-        "0": 0,
-        "1": 0,
+        "0": 1,
+        "1": 1,
         "2": 0,
         "3": 0,
         "4": 0,
@@ -252,7 +261,7 @@ export class App {
         "13": 0,
         "14": 0,
         "15": 0,
-        "16": 0,
+        "16": 1,
         "17": 1,
         "18": 0,
         "19": 0,
@@ -493,6 +502,24 @@ export class App {
         "254": 0,
         "255": 0
     }
+
+    updateCellValue(cellArray: cellInterface[], xy: number, newValue: number): void {
+        for (let i = 0; i < cellArray.length; i++) {
+            if (cellArray[i].xy === xy) {
+                cellArray[i].value = newValue;
+                break; // Once the value is updated, exit the loop
+            }
+        }
+    }
+    getCellValue(cellArray: cellInterface[], xy: number): number | undefined {
+        for (const cell of cellArray) {
+            if (cell.xy === xy) {
+                return cell.value;
+            }
+        }
+        return undefined;
+    }
+
 
 
 }

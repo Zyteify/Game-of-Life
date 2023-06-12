@@ -9,6 +9,12 @@ export type ComputeBufferLayout = {
   attributes: Attribute[];
 };
 
+export function getCoordinates(index: number, gridSize: number): { x: number, y: number } {
+  const y = Math.floor(index / gridSize);  // Calculate the row (x)
+  const x = index % gridSize;  // Calculate the column (y)
+  return { x, y };
+}
+
 const computeBufferLayout: ComputeBufferLayout = {
   arrayStride: 8,
   attributes: [
@@ -19,3 +25,5 @@ const computeBufferLayout: ComputeBufferLayout = {
     },
   ],
 };
+
+

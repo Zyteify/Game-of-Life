@@ -589,12 +589,10 @@ export class Renderer {
         //if the step is even, copy buffer 1 to buffer 2
         //if the step is odd, copy buffer 2 to buffer 1
         if(this.step %2 == 0){
-            console.log("even")
             var bufferSRC: GPUBuffer = buffer1; 
             var bufferDST: GPUBuffer = buffer2; 
         }
         else{
-            console.log("odd")
             var bufferSRC: GPUBuffer = buffer2; 
             var bufferDST: GPUBuffer = buffer1; 
         }
