@@ -230,20 +230,29 @@ export class App {
             });
     }
 
-    handle_keyrelease(event: JQuery.KeyUpEvent) {
-        this.keyLabel.innerText = event.code;
-    }
-
-    handle_mouse_move(event: MouseEvent) {
-        this.mouseXLabel.innerText = event.clientX.toString();
-        this.mouseYLabel.innerText = event.clientY.toString();
-    }
-
     updateGenerations() {
         //get the generations from the scene
         this.generationsLabel.innerText = "Generations: " + this.renderer.getStep().toString();
     }
 
+    
+
+    updateCellValue(cellArray: cellInterface[], xy: number, newValue: number): void {
+        for (let i = 0; i < cellArray.length; i++) {
+            if (cellArray[i].xy === xy) {
+                cellArray[i].value = newValue;
+                break; // Once the value is updated, exit the loop
+            }
+        }
+    }
+    getCellValue(cellArray: cellInterface[], xy: number): number | undefined {
+        for (const cell of cellArray) {
+            if (cell.xy === xy) {
+                return cell.value;
+            }
+        }
+        return undefined;
+    }
     obj: object = {
         "0": 1,
         "1": 1,
@@ -502,24 +511,6 @@ export class App {
         "254": 0,
         "255": 0
     }
-
-    updateCellValue(cellArray: cellInterface[], xy: number, newValue: number): void {
-        for (let i = 0; i < cellArray.length; i++) {
-            if (cellArray[i].xy === xy) {
-                cellArray[i].value = newValue;
-                break; // Once the value is updated, exit the loop
-            }
-        }
-    }
-    getCellValue(cellArray: cellInterface[], xy: number): number | undefined {
-        for (const cell of cellArray) {
-            if (cell.xy === xy) {
-                return cell.value;
-            }
-        }
-        return undefined;
-    }
-
 
 
 }
