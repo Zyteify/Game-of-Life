@@ -48,6 +48,7 @@ export class Scene {
         this.generations++;
     }
 
+    //todo update generations properly. this isnt called every generation now
     updateCells(data: cellInterface[]) {
     
         for (let i = 0; i < data.length; i++) {

@@ -87,12 +87,13 @@ export class App {
             this.startAnimating()
         }
 
-        //when pause button is pressed
+        //todo fix this for the grid size
+        //when test-values button is pressed
         if (event.target.id == "test-values") {
             this.renderer.setBuffer(this.obj)
         }
 
-        //when reset button is pressed
+        //when pause button is pressed
         if (event.target.id == "pause") {
             //stop the animation frames
             this.stopAnimating()
@@ -230,6 +231,7 @@ export class App {
             });
     }
 
+    //todo fix this to use the stored value inside scene
     updateGenerations() {
         //get the generations from the scene
         this.generationsLabel.innerText = "Generations: " + this.renderer.getStep().toString();
