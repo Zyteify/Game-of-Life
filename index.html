@@ -8,6 +8,7 @@
 <link rel="icon" href="src/img/fav.png" type="image/png">
 <body>
     <!-- create buttons for start game, pause game, next step, and reset game -->
+    <button id="generate">Generate</button>
     <button id="start">Start</button>
     <button id="pause">Pause</button>
     <button id="next">Next</button>
@@ -16,10 +17,13 @@
     <button id="test">test</button>
     <!-- create a input for fps and autofill with 10-->
     <input type="number" id="fps" value="1">
+    <input type="number" id="grid_size" value="256">
    
     <!-- create a text for generations -->
     <p id="generations">Generations: 0</p>
     <canvas width="512" height="512" id="gfx-main"></canvas>
+    <canvas width="512" height="512" id="gfx-test0"></canvas>
+    <!-- <canvas width="512" height="512" id="gfx-test1"></canvas> -->
     <!-- create a h1 for when the WEBGPU doesn't initialise with the id of MESSAGE -->
     <h1 id="MESSAGE"></h1>
     

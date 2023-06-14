@@ -7,8 +7,8 @@ struct VertexOutput {
 
 @group(0) @binding(0) var<uniform> grid: vec2f;
 @group(1) @binding(0) var<storage> cellState: array<u32>;
-@group(2) @binding(0) var<storage> cellStateAge: array<u32>;
 @group(1) @binding(2) var<storage> cellState2: array<u32>;
+@group(2) @binding(0) var<storage> cellStateAge: array<u32>;
 @group(2) @binding(2) var<storage> cellStateAge2: array<u32>;
 
 @vertex
@@ -19,15 +19,8 @@ fn vertexMain(@location(0) position: vec2f,
 	let i = f32(instance);
 	let cell = vec2f(i % grid.x, floor(i / grid.x));
 
-	//get the state of the cell
-	var state = f32(cellState[instance]);
-	var cellType = f32(state);
-
-	//if the set the cell type to 
-	if(state == 0){
-		state = f32(cellState2[instance]);
-		cellType = 2.0;
-	}
+	var state = f32(cellState2[instance]);
+	var cellType = 2.0;
 
 	let cellOffset = cell / grid * 2;
 	let gridPos = (position*state+1) / grid - 1 + cellOffset;
@@ -37,7 +30,7 @@ fn vertexMain(@location(0) position: vec2f,
 	output.position = vec4f(gridPos, 0, 1);
 	output.cell = cell / grid;
 	//get the age of the current cell
-	output.cellAge = f32(cellStateAge[instance])/100.0;
+	output.cellAge = f32(cellStateAge[instance])/256.0;
 	output.cellType = cellType;
 	return output;
 }
@@ -49,7 +42,7 @@ fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
 		return vec4f(1.0, 0.0, 0.0, 1);
 	}
 	else if(input.cellType == 1.0){
-		return vec4f(0.0+10.0*input.cellAge, 1.0-10.0*input.cellAge, 0.0, 1);
+		return vec4f(0.0, 1.0, 0.0, 1);
 	}
 	else if(input.cellType == 2.0){
 		return vec4f(0.0, 0.0, 1.0, 1);

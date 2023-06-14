@@ -9,7 +9,7 @@ export class App {
 
     renderingCanvas: CanvasRenderingContext2D
     //make the grid size equal to a multiple of x^2
-    GRID_SIZE: number = 32;
+    GRID_SIZE: number = 256;
 
     renderer: Renderer;
     scene: Scene;
@@ -32,10 +32,10 @@ export class App {
     data: object;
 
 
-    constructor(canvas: HTMLCanvasElement) {
+    constructor(canvas: HTMLCanvasElement, GRID_SIZE: number) {
 
         //get the value inside an input html element
-
+        this.GRID_SIZE = GRID_SIZE;
 
         this.canvas = canvas;
 
