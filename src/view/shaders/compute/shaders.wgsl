@@ -6,7 +6,6 @@
 @group(1) @binding(3) var<storage, read_write> cellStateOut2: array<u32>;
 @group(2) @binding(0) var<storage, read> cellStateAgeIn: array<u32>;
 @group(2) @binding(1) var<storage, read_write> cellStateAgeOut: array<u32>;
-@group(3) @binding(0) var<storage, read> cellStateRandom: array<u32>;
 
 fn cellIndex(cell: vec2u) -> u32 {
   return (cell.y % u32(grid.y)) * u32(grid.x) +
@@ -50,14 +49,9 @@ fn computeMain(@builtin(global_invocation_id) cell: vec3u){
 			cellStateAgeOut[i] = cellStateAgeIn[i]+1;
 		}
 		default: { // Cells with < 2 or > 3 neighbors become inactive.
-			if(cellStateRandom[i] == 1){
-				cellStateOut[i] = 1;
-				cellStateAgeOut[i] = cellStateAgeIn[i]+1;
-			}
-			else{
-				cellStateOut[i] = 0;
-				cellStateAgeOut[i] = 0;
-			}
+			cellStateOut[i] = 0;
+			cellStateAgeOut[i] = 0;
+			
 		}
 	}
 
@@ -80,12 +74,8 @@ fn computeMain(@builtin(global_invocation_id) cell: vec3u){
 			cellStateOut2[i] = 1;
 		}
 		default: { // Cells with < 2 or > 3 neighbors become inactive.
-			if(cellStateRandom[i] == 1){
-				cellStateOut2[i] = 1;
-			}
-			else{
 				cellStateOut2[i] = 0;
-			}
+			
 		}
 	}
 

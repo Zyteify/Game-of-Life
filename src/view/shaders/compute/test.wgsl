@@ -6,7 +6,6 @@
 @group(1) @binding(3) var<storage, read_write> cellStateOut2: array<u32>;
 @group(2) @binding(0) var<storage, read> cellStateAgeIn: array<u32>;
 @group(2) @binding(1) var<storage, read_write> cellStateAgeOut: array<u32>;
-@group(3) @binding(0) var<storage, read> cellStateRandom: array<u32>;
 
 fn cellIndex(cell: vec2u) -> u32 {
 	return (cell.y % u32(grid.y)) * u32(grid.x) +
@@ -19,9 +18,6 @@ fn cellActive(cellType: u32, x: u32, y: u32) -> u32 {
 	}
 	else if (cellType == 1){
 		return cellStateIn2[cellIndex(vec2(x, y))];
-	}
-	else if (cellType == 2){
-		return cellStateRandom[cellIndex(vec2(x, y))];
 	}
 	else{
 		return 0;
@@ -51,6 +47,7 @@ fn random(p: vec2<f32>) -> f32 {
 
 fn computeMain(@builtin(global_invocation_id) cell: vec3u){
     let i = cellIndex(cell.xy);
+	let random = random(vec2<f32>(f32(cell.x)+seed, f32(cell.y)));
 
 	let activeNeighbors = 
 		cellActive(u32(0), cell.x+1, cell.y+1) +
@@ -118,14 +115,10 @@ fn computeMain(@builtin(global_invocation_id) cell: vec3u){
 
 
     //if the cell should explode
-	if(explodeNeighbors == 1){
-		cellStateOut[i] = 1;
-	}	
+	//if(explodeNeighbors == 1){
+	//	cellStateOut[i] = 1;
+	//}	
 
-    //if the cell is randomly set to be a B cell, set it to be a B cell
-    if(cellStateRandom[i] == 1){
-        cellStateOut2[i] = 1;
-    }
 
     //ensure that each cell only exists in either the A or B state
     if(cellStateOut2[i] == 1){
@@ -141,18 +134,4 @@ fn computeMain(@builtin(global_invocation_id) cell: vec3u){
 	else{
 		cellStateAgeOut[i] = 0;
 	}
-
-	//kill all cells
-	cellStateOut[i] = 0;
-	cellStateOut2[i] = 0;
-	//generate a random number
-	let random = random(vec2<f32>(f32(cell.x), f32(cell.y)));
-	if(random > 0.9){
-	cellStateOut2[i] = 1;
-	} 
-
-	
-
-  
-
 }

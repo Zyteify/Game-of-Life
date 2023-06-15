@@ -3,12 +3,9 @@ import shader_test from "./shaders/compute/test.wgsl";
 import copier_shader from "./shaders/compute/copier_shader.wgsl";
 import vertexshader from "./shaders/vertexshaders.wgsl";
 import vertexshaderTest from "./shaders/vertexshaders_test.wgsl";
-import { arrayBuffer } from "stream/consumers";
-import { createHash } from 'crypto';
 
 
 export class Renderer {
-
 
     GRID_SIZE: number;
 
@@ -45,7 +42,6 @@ export class Renderer {
     cellStateStorageA: GPUBuffer[];
     cellStateStorageB: GPUBuffer[];
     stagingBuffer: GPUBuffer;
-    randomArrayBuffer: GPUBuffer;
 
     computeBufferLayout: GPUVertexBufferLayout;
     verFragtexBufferLayout: GPUVertexBufferLayout
@@ -58,12 +54,10 @@ export class Renderer {
     cellBindGroupLayout: GPUBindGroupLayout
     cellAgeBindGroupLayout: GPUBindGroupLayout
     UniformBindGroupLayout: GPUBindGroupLayout
-    randomArrayBindGroupLayout: GPUBindGroupLayout
 
     cellAliveBindGroups: GPUBindGroup[];
     cellAgeBindGroups: GPUBindGroup[];
     uniformBindGroup: GPUBindGroup;
-    randomArrayBindGroup: GPUBindGroup;
 
     step: number = 0;
     globalStep: number = 0;
@@ -87,7 +81,7 @@ export class Renderer {
 
         this.GRID_SIZE = GRID_SIZE;
 
-        this.seed = 'hi';
+        this.seed = 'hieqweqweqeqeqeqeqe';
 
         await this.setupDevice();
 
@@ -95,7 +89,7 @@ export class Renderer {
 
         await this.createAssets();
 
-        await this.randomiseGrid()
+        await this.createHash()
 
         await this.makeBindGroup();
 
@@ -205,18 +199,12 @@ export class Renderer {
         this.seedBuffer = this.device.createBuffer({
             label: "Seed+GlobalStep",
             //todo research length of seed
-            size: 64,
+            size: 4,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
 
         
-
-        // Usage example
-        const seed = 'example_seed';
-        const u32Value = 12345;
-
-        const result = this.generateUInt32(seed, u32Value);
-        console.log(result);
+        
 
 
         //this.device.queue.writeBuffer(this.seedBuffer, 0, buffer);
@@ -355,14 +343,6 @@ export class Renderer {
             }]
         });
 
-        this.randomArrayBindGroupLayout = this.device.createBindGroupLayout({
-            label: "Cell Bind Group Layout",
-            entries: [{
-                binding: 0,
-                visibility: GPUShaderStage.COMPUTE,
-                buffer: { type: "read-only-storage" } // Cell state input buffer
-            }]
-        });
     }
 
 
@@ -454,17 +434,6 @@ export class Renderer {
                 ]
             })
 
-        this.randomArrayBindGroup =
-            this.device.createBindGroup({
-                label: "randomArray bind group",
-                layout: this.randomArrayBindGroupLayout,
-                entries: [{
-                    binding: 0,
-                    resource: { buffer: this.randomArrayBuffer }
-                }
-                ]
-            })
-
     }
 
     async makePipeline() {
@@ -475,7 +444,6 @@ export class Renderer {
                     this.UniformBindGroupLayout, //group 0 
                     this.cellBindGroupLayout, //group 1 
                     this.cellAgeBindGroupLayout, //group 2
-                    this.randomArrayBindGroupLayout
                 ],
             },
         );
@@ -573,7 +541,6 @@ export class Renderer {
         this.computePass.setBindGroup(0, this.uniformBindGroup);
         this.computePass.setBindGroup(1, this.cellAliveBindGroups[this.step % 2]);
         this.computePass.setBindGroup(2, this.cellAgeBindGroups[this.step % 2]);
-        this.computePass.setBindGroup(3, this.randomArrayBindGroup);
         this.workgroupCount = Math.ceil(this.GRID_SIZE / this.WORKGROUP_SIZE);
         this.computePass.dispatchWorkgroups(this.workgroupCount, this.workgroupCount);
         this.computePass.end();
@@ -684,8 +651,8 @@ export class Renderer {
         this.renderGrid()
     }
 
-    getStep() {
-        return this.step
+    getGlobalStep() {
+        return this.globalStep
     }
 
     //set the step number. this is used to determine which bind group to use. 0 for A, 1 for B
@@ -822,43 +789,62 @@ export class Renderer {
 
     }
 
-    //todo optimise
-    async randomiseGrid() {
-        if (!this.randomArrayBuffer) {
-            //creating new random array buffer
-            console.log("creating new random array buffer")
-            this.randomArrayBuffer = this.device.createBuffer({
-                label: "Random Array Buffer",
-                size: this.BUFFER_SIZE,
-                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-            });
-        }
+    async createHash() {
+        const result = this.hashCode(this.seed)
+        var hash = result / Math.pow(2, 32);
+
+        //create an arraybuffer and store result inside it
+        var buffer = new ArrayBuffer(4);
+        var view = new DataView(buffer);
+        view.setFloat32(0, hash, true);
+
+        //write the arraybuffer into the seed buffer
+        this.device.queue.writeBuffer(this.seedBuffer, 0, buffer);
 
 
-
-        var randomArray: Uint32Array;
-
-        randomArray = new Uint32Array(this.GRID_SIZE * this.GRID_SIZE);
-
-        var random: number;
-        for (let i = 0; i < randomArray.length; ++i) {
-            random = Math.random() > 0.00001 ? 0 : 1;
-            //random = 0;
-            randomArray[i] = random
-        }
-        //finished copying random array to buffer
-        this.device.queue.writeBuffer(this.randomArrayBuffer, 0, randomArray)
     }
 
-    generateUInt32(seed: string, value: number): number {
-        const hash = createHash('sha256');
-        hash.update(seed);
-        hash.update(value.toString());
-      
-        const digest = hash.digest('hex');
-        const uint32 = parseInt(digest.substr(0, 8), 16);
-      
-        return uint32;
-      }
+    hashCode(string: string) {
+        var length = string.length
+        var hash = 0,
+        i, chr;
+        if (length === 0) return hash;
+            for (i = 0; i < length; i++) {
+                chr = string.charCodeAt(i);
+                hash = ((hash << 5) - hash) + chr + this.globalStep;
+                hash |= 0; // Convert to 32bit integer
+                //divide by 10000000 to get a number between 0 and 1
+                hash = hash
+        }
+    return hash;
+  }
+
+  Unconfigure(){
+    if(this.device){
+        this.device.destroy();
+        //destroy buffers
+        this.cellStateStorageA[0].destroy();
+        this.cellStateStorageA[1].destroy();
+        this.cellStateStorageA[2].destroy();
+        this.cellStateStorageA[3].destroy();
+        this.cellStateStorageB[0].destroy();
+        this.cellStateStorageB[1].destroy();
+        this.cellStateStorageB[2].destroy();
+        this.cellStateStorageB[3].destroy();
+        this.uniformBuffer.destroy();
+        this.seedBuffer.destroy();
+        this.stagingBuffer.destroy();
+        this.vertexBuffer.destroy();
+
+        //remove references to the state
+        this.globalStep = 0;
+        this.step = 0;
+
+
+
+    }
+    
+
+  }
 
 }

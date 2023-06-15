@@ -48,7 +48,7 @@ export class App {
         this.generationsLabel = <HTMLElement>document.getElementById("generations");
 
         //register clicking on buttons
-        $('#next, #start, #pause, #test-values, #data, #data-age, #test').on('click',
+        $('#next, #start, #pause, #test-values, #data, #data-age, #test, #generate').on('click',
             (event) => {
                 this.handle_button(event);
             })
@@ -108,20 +108,16 @@ export class App {
                     this.data = data
 
                 })
-
-
         }
 
-        //when test button is pressed
-        if (event.target.id == "test") {
-            var test: cellInterface[] = [{ xy: 0, value: 1 }]
-            await this.getRendererData()
-                .then(data => {
-                    this.updateScene(data)
-
-                })
-            
+        //when data button is pressed
+        if (event.target.id == "generate") {
+            this.GRID_SIZE = parseInt((<HTMLInputElement>document.getElementById("grid_size")).value);
+            this.renderer.Unconfigure();
+            this.InitializeRenderer()
+            this.updateGenerations();
         }
+        
 
     }
 
@@ -170,13 +166,8 @@ export class App {
             .catch(error => {
                 console.error(error);
             });
-       /*  //update the generations label
-        await this.getRendererData()
-                .then(data => {
-                    this.updateScene(data)
-
-                }) */
-        this.renderer.randomiseGrid()
+        this.renderer.createHash()
+        this.updateGenerations();
 
     }
 
@@ -186,6 +177,7 @@ export class App {
     updateScene(data: cellInterface[]) {
         //update which cells are alive
         this.scene.updateCells(data)
+
         //update the generations label
         this.updateGenerations()
     }
@@ -233,8 +225,7 @@ export class App {
 
     //todo fix this to use the stored value inside scene
     updateGenerations() {
-        //get the generations from the scene
-        this.generationsLabel.innerText = "Generations: " + this.renderer.getStep().toString();
+        this.generationsLabel.innerText = "Generations: " + this.renderer.getGlobalStep().toString();
     }
 
     
@@ -513,6 +504,8 @@ export class App {
         "254": 0,
         "255": 0
     }
+
+    
 
 
 }

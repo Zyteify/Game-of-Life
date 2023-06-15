@@ -11010,7 +11010,7 @@ class App {
         this.mouseYLabel = document.getElementById("mouse-y-label");
         this.generationsLabel = document.getElementById("generations");
         //register clicking on buttons
-        jquery__WEBPACK_IMPORTED_MODULE_2___default()('#next, #start, #pause, #test-values, #data, #data-age, #test').on('click', (event) => {
+        jquery__WEBPACK_IMPORTED_MODULE_2___default()('#next, #start, #pause, #test-values, #data, #data-age, #test, #generate').on('click', (event) => {
             this.handle_button(event);
         });
         //get when the input box fps changes
@@ -11057,13 +11057,12 @@ class App {
                 this.data = data;
             });
         }
-        //when test button is pressed
-        if (event.target.id == "test") {
-            var test = [{ xy: 0, value: 1 }];
-            await this.getRendererData()
-                .then(data => {
-                this.updateScene(data);
-            });
+        //when data button is pressed
+        if (event.target.id == "generate") {
+            this.GRID_SIZE = parseInt(document.getElementById("grid_size").value);
+            this.renderer.Unconfigure();
+            this.InitializeRenderer();
+            this.updateGenerations();
         }
     }
     async getRendererData() {
@@ -11113,7 +11112,8 @@ class App {
                      this.updateScene(data)
  
                  }) */
-        this.renderer.randomiseGrid();
+        this.renderer.createHash();
+        this.updateGenerations();
     }
     sendCellstoRenderer() {
     }
@@ -11158,8 +11158,7 @@ class App {
     }
     //todo fix this to use the stored value inside scene
     updateGenerations() {
-        //get the generations from the scene
-        this.generationsLabel.innerText = "Generations: " + this.renderer.getStep().toString();
+        this.generationsLabel.innerText = "Generations: " + this.renderer.getGlobalStep().toString();
     }
     updateCellValue(cellArray, xy, newValue) {
         for (let i = 0; i < cellArray.length; i++) {
@@ -11333,8 +11332,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _shaders_compute_copier_shader_wgsl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./shaders/compute/copier_shader.wgsl */ "./src/view/shaders/compute/copier_shader.wgsl");
 /* harmony import */ var _shaders_vertexshaders_wgsl__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./shaders/vertexshaders.wgsl */ "./src/view/shaders/vertexshaders.wgsl");
 /* harmony import */ var _shaders_vertexshaders_test_wgsl__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./shaders/vertexshaders_test.wgsl */ "./src/view/shaders/vertexshaders_test.wgsl");
-Object(function webpackMissingModule() { var e = new Error("Cannot find module 'crypto'"); e.code = 'MODULE_NOT_FOUND'; throw e; }());
-
 
 
 
@@ -11350,11 +11347,11 @@ class Renderer {
     }
     async Initialize(GRID_SIZE) {
         this.GRID_SIZE = GRID_SIZE;
-        this.seed = 'hi';
+        this.seed = 'hieqweqweqeqeqeqeqe';
         await this.setupDevice();
         await this.makeBindGroupsLayouts();
         await this.createAssets();
-        await this.randomiseGrid();
+        await this.createHash();
         await this.makeBindGroup();
         await this.makePipeline();
     }
@@ -11444,14 +11441,9 @@ class Renderer {
         this.seedBuffer = this.device.createBuffer({
             label: "Seed+GlobalStep",
             //todo research length of seed
-            size: 64,
+            size: 4,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
-        // Usage example
-        const seed = 'example_seed';
-        const u32Value = 12345;
-        const result = this.generateUInt32(seed, u32Value);
-        console.log(result);
         //this.device.queue.writeBuffer(this.seedBuffer, 0, buffer);
         // Create an array representing the active state of each cell.
         this.cellStateArray = new Uint32Array(this.GRID_SIZE * this.GRID_SIZE);
@@ -11571,14 +11563,6 @@ class Renderer {
                     buffer: { type: "storage" }
                 }]
         });
-        this.randomArrayBindGroupLayout = this.device.createBindGroupLayout({
-            label: "Cell Bind Group Layout",
-            entries: [{
-                    binding: 0,
-                    visibility: GPUShaderStage.COMPUTE,
-                    buffer: { type: "read-only-storage" } // Cell state input buffer
-                }]
-        });
     }
     async makeBindGroup() {
         this.cellAgeBindGroups = [
@@ -11663,16 +11647,6 @@ class Renderer {
                     }
                 ]
             });
-        this.randomArrayBindGroup =
-            this.device.createBindGroup({
-                label: "randomArray bind group",
-                layout: this.randomArrayBindGroupLayout,
-                entries: [{
-                        binding: 0,
-                        resource: { buffer: this.randomArrayBuffer }
-                    }
-                ]
-            });
     }
     async makePipeline() {
         this.pipelineLayout = this.device.createPipelineLayout({
@@ -11680,8 +11654,7 @@ class Renderer {
             bindGroupLayouts: [
                 this.UniformBindGroupLayout,
                 this.cellBindGroupLayout,
-                this.cellAgeBindGroupLayout,
-                this.randomArrayBindGroupLayout
+                this.cellAgeBindGroupLayout, //group 2
             ],
         });
         this.renderPipelineLayout = this.device.createPipelineLayout({
@@ -11760,7 +11733,6 @@ class Renderer {
             this.computePass.setBindGroup(0, this.uniformBindGroup);
         this.computePass.setBindGroup(1, this.cellAliveBindGroups[this.step % 2]);
         this.computePass.setBindGroup(2, this.cellAgeBindGroups[this.step % 2]);
-        this.computePass.setBindGroup(3, this.randomArrayBindGroup);
         this.workgroupCount = Math.ceil(this.GRID_SIZE / this.WORKGROUP_SIZE);
         this.computePass.dispatchWorkgroups(this.workgroupCount, this.workgroupCount);
         this.computePass.end();
@@ -11849,8 +11821,8 @@ class Renderer {
         this.copyBufferUsingCompute(this.cellStateStorageA[0], this.cellStateStorageA[1]);
         this.renderGrid();
     }
-    getStep() {
-        return this.step;
+    getGlobalStep() {
+        return this.globalStep;
     }
     //set the step number. this is used to determine which bind group to use. 0 for A, 1 for B
     setStep(step) {
@@ -11958,35 +11930,50 @@ class Renderer {
         this.computePass.end();
         this.device.queue.submit([encoder.finish()]);
     }
-    //todo optimise
-    async randomiseGrid() {
-        if (!this.randomArrayBuffer) {
-            //creating new random array buffer
-            console.log("creating new random array buffer");
-            this.randomArrayBuffer = this.device.createBuffer({
-                label: "Random Array Buffer",
-                size: this.BUFFER_SIZE,
-                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-            });
-        }
-        var randomArray;
-        randomArray = new Uint32Array(this.GRID_SIZE * this.GRID_SIZE);
-        var random;
-        for (let i = 0; i < randomArray.length; ++i) {
-            random = Math.random() > 0.00001 ? 0 : 1;
-            //random = 0;
-            randomArray[i] = random;
-        }
-        //finished copying random array to buffer
-        this.device.queue.writeBuffer(this.randomArrayBuffer, 0, randomArray);
+    async createHash() {
+        const result = this.hashCode(this.seed);
+        var hash = result / Math.pow(2, 32);
+        //create an arraybuffer and store result inside it
+        var buffer = new ArrayBuffer(4);
+        var view = new DataView(buffer);
+        view.setFloat32(0, hash, true);
+        //write the arraybuffer into the seed buffer
+        this.device.queue.writeBuffer(this.seedBuffer, 0, buffer);
     }
-    generateUInt32(seed, value) {
-        const hash = Object(function webpackMissingModule() { var e = new Error("Cannot find module 'crypto'"); e.code = 'MODULE_NOT_FOUND'; throw e; }())('sha256');
-        hash.update(seed);
-        hash.update(value.toString());
-        const digest = hash.digest('hex');
-        const uint32 = parseInt(digest.substr(0, 8), 16);
-        return uint32;
+    hashCode(string) {
+        var length = string.length;
+        var hash = 0, i, chr;
+        if (length === 0)
+            return hash;
+        for (i = 0; i < length; i++) {
+            chr = string.charCodeAt(i);
+            hash = ((hash << 5) - hash) + chr + this.globalStep;
+            hash |= 0; // Convert to 32bit integer
+            //divide by 10000000 to get a number between 0 and 1
+            hash = hash;
+        }
+        return hash;
+    }
+    Unconfigure() {
+        if (this.device) {
+            this.device.destroy();
+            //destroy buffers
+            this.cellStateStorageA[0].destroy();
+            this.cellStateStorageA[1].destroy();
+            this.cellStateStorageA[2].destroy();
+            this.cellStateStorageA[3].destroy();
+            this.cellStateStorageB[0].destroy();
+            this.cellStateStorageB[1].destroy();
+            this.cellStateStorageB[2].destroy();
+            this.cellStateStorageB[3].destroy();
+            this.uniformBuffer.destroy();
+            this.seedBuffer.destroy();
+            this.stagingBuffer.destroy();
+            this.vertexBuffer.destroy();
+            //remove references to the state
+            this.globalStep = 0;
+            this.step = 0;
+        }
     }
 }
 
@@ -12019,7 +12006,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("@group(0) @binding(0) var<uniform> grid: vec2f;\r\n@group(0) @binding(1) var<uniform> seed: f32;\r\n@group(1) @binding(0) var<storage, read> cellStateIn: array<u32>;\r\n@group(1) @binding(1) var<storage, read_write> cellStateOut: array<u32>;\r\n@group(1) @binding(2) var<storage, read> cellStateIn2: array<u32>;\r\n@group(1) @binding(3) var<storage, read_write> cellStateOut2: array<u32>;\r\n@group(2) @binding(0) var<storage, read> cellStateAgeIn: array<u32>;\r\n@group(2) @binding(1) var<storage, read_write> cellStateAgeOut: array<u32>;\r\n@group(3) @binding(0) var<storage, read> cellStateRandom: array<u32>;\r\n\r\nfn cellIndex(cell: vec2u) -> u32 {\r\n\treturn (cell.y % u32(grid.y)) * u32(grid.x) +\r\n\t\t(cell.x % u32(grid.x));\r\n}\r\n\r\nfn cellActive(cellType: u32, x: u32, y: u32) -> u32 {\r\n\tif(cellType == 0){\r\n\t\treturn cellStateIn[cellIndex(vec2(x, y))];\r\n\t}\r\n\telse if (cellType == 1){\r\n\t\treturn cellStateIn2[cellIndex(vec2(x, y))];\r\n\t}\r\n\telse if (cellType == 2){\r\n\t\treturn cellStateRandom[cellIndex(vec2(x, y))];\r\n\t}\r\n\telse{\r\n\t\treturn 0;\r\n\t}\r\n}\r\n\r\n//set to 1 if the cell should explode\r\nfn cellExplode(x: u32, y: u32) -> u32 {\r\n\tvar age = cellStateAgeIn[cellIndex(vec2(x, y))];\r\n\tif(age == 10){\r\n\t\treturn 1;\r\n\t}\r\n\telse {\r\n\t\treturn 0;\r\n\t}\r\n}\r\n\r\nfn random(p: vec2<f32>) -> f32 {\r\n    let K1: vec2<f32> = vec2<f32>(\r\n        23.14069263277926, // e^pi (Gelfond's constant)\r\n        2.665144142690225 // 2^sqrt(2) (Gelfond–Schneider constant)\r\n    );\r\n    return fract(cos(dot(p, K1)) * 12345.6789);\r\n}\r\n\r\n@compute @workgroup_size(8, 8)\r\n\r\nfn computeMain(@builtin(global_invocation_id) cell: vec3u){\r\n    let i = cellIndex(cell.xy);\r\n\r\n\tlet activeNeighbors = \r\n\t\tcellActive(u32(0), cell.x+1, cell.y+1) +\r\n\t\tcellActive(u32(0), cell.x+1, cell.y) +\r\n\t\tcellActive(u32(0), cell.x+1, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y+1) +\r\n\t\tcellActive(u32(0), cell.x, cell.y+1);\r\n\r\n    let activeBNeighbors = \r\n\t\tcellActive(u32(1), cell.x+1, cell.y+1) +\r\n\t\tcellActive(u32(1), cell.x+1, cell.y) +\r\n\t\tcellActive(u32(1), cell.x+1, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y+1) +\r\n\t\tcellActive(u32(1), cell.x, cell.y+1);\r\n\r\n    let explodeNeighbors = \r\n\t\tcellExplode(cell.x+1, cell.y+1) +\r\n\t\tcellExplode(cell.x+1, cell.y) +\r\n\t\tcellExplode(cell.x+1, cell.y-1) +\r\n\t\tcellExplode(cell.x, cell.y-1) +\r\n\t\tcellExplode(cell.x-1, cell.y-1) +\r\n\t\tcellExplode(cell.x-1, cell.y) +\r\n\t\tcellExplode(cell.x-1, cell.y+1) +\r\n\t\tcellExplode(cell.x, cell.y+1)  + \r\n\t\tcellExplode(cell.x, cell.y);;\r\n\r\n\r\n\t// Conway's game of life rules:\r\n\tswitch activeNeighbors {\r\n\t\tcase 2: { \r\n\t\t\tcellStateOut[i] = cellStateIn[i];\r\n\t\t}\r\n        case 3: { \r\n\t\t\tcellStateOut[i] = 1;\r\n\t\t}\r\n\t\tdefault: { // Cells with < 2 or > 3 neighbors become inactive.\r\n            cellStateOut[i] = 0;\r\n\t\t}\r\n\t}\r\n\r\n\t// B Cells rules:\r\n\tswitch activeBNeighbors {\r\n\t\tcase 2: { \r\n\t\t\tcellStateOut2[i] = cellStateIn2[i];\r\n\t\t}\r\n        case 3: { \r\n\t\t\tcellStateOut2[i] = 1;\r\n\t\t}\r\n\t\tdefault: { // Cells with < 2 or > 3 neighbors become inactive.\r\n            cellStateOut2[i] = 0;\r\n\t\t}\r\n\t}\r\n\r\n\tlet upCell = cellStateIn2[cellIndex(vec2(cell.x, cell.y+1))];\r\n\t//move B cells right\r\n\tif(upCell == 1 && cell.y!=0){\r\n\t\tcellStateOut2[i] = 1;\r\n\t}\r\n\r\n\r\n    //if the cell should explode\r\n\tif(explodeNeighbors == 1){\r\n\t\tcellStateOut[i] = 1;\r\n\t}\t\r\n\r\n    //if the cell is randomly set to be a B cell, set it to be a B cell\r\n    if(cellStateRandom[i] == 1){\r\n        cellStateOut2[i] = 1;\r\n    }\r\n\r\n    //ensure that each cell only exists in either the A or B state\r\n    if(cellStateOut2[i] == 1){\r\n        cellStateOut[i] = 0;\r\n    }\r\n    else if cellStateOut2[i] == 0{\r\n    }\r\n\r\n    //add the age if it is still alive\r\n\tif(cellStateOut[i] == 1){\r\n\t\tcellStateAgeOut[i] = cellStateAgeIn[i]+1;\r\n\t}\r\n\telse{\r\n\t\tcellStateAgeOut[i] = 0;\r\n\t}\r\n\r\n\t//kill all cells\r\n\tcellStateOut[i] = 0;\r\n\tcellStateOut2[i] = 0;\r\n\t//generate a random number\r\n\tlet random = random(vec2<f32>(f32(cell.x), f32(cell.y)));\r\n\tif(random > 0.9){\r\n\tcellStateOut2[i] = 1;\r\n\t} \r\n\r\n\t\r\n\r\n  \r\n\r\n}");
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("@group(0) @binding(0) var<uniform> grid: vec2f;\r\n@group(0) @binding(1) var<uniform> seed: f32;\r\n@group(1) @binding(0) var<storage, read> cellStateIn: array<u32>;\r\n@group(1) @binding(1) var<storage, read_write> cellStateOut: array<u32>;\r\n@group(1) @binding(2) var<storage, read> cellStateIn2: array<u32>;\r\n@group(1) @binding(3) var<storage, read_write> cellStateOut2: array<u32>;\r\n@group(2) @binding(0) var<storage, read> cellStateAgeIn: array<u32>;\r\n@group(2) @binding(1) var<storage, read_write> cellStateAgeOut: array<u32>;\r\n\r\nfn cellIndex(cell: vec2u) -> u32 {\r\n\treturn (cell.y % u32(grid.y)) * u32(grid.x) +\r\n\t\t(cell.x % u32(grid.x));\r\n}\r\n\r\nfn cellActive(cellType: u32, x: u32, y: u32) -> u32 {\r\n\tif(cellType == 0){\r\n\t\treturn cellStateIn[cellIndex(vec2(x, y))];\r\n\t}\r\n\telse if (cellType == 1){\r\n\t\treturn cellStateIn2[cellIndex(vec2(x, y))];\r\n\t}\r\n\telse{\r\n\t\treturn 0;\r\n\t}\r\n}\r\n\r\n//set to 1 if the cell should explode\r\nfn cellExplode(x: u32, y: u32) -> u32 {\r\n\tvar age = cellStateAgeIn[cellIndex(vec2(x, y))];\r\n\tif(age == 10){\r\n\t\treturn 1;\r\n\t}\r\n\telse {\r\n\t\treturn 0;\r\n\t}\r\n}\r\n\r\nfn random(p: vec2<f32>) -> f32 {\r\n    let K1: vec2<f32> = vec2<f32>(\r\n        23.14069263277926, // e^pi (Gelfond's constant)\r\n        2.665144142690225 // 2^sqrt(2) (Gelfond–Schneider constant)\r\n    );\r\n    return fract(cos(dot(p, K1)) * 12345.6789);\r\n}\r\n\r\n@compute @workgroup_size(8, 8)\r\n\r\nfn computeMain(@builtin(global_invocation_id) cell: vec3u){\r\n    let i = cellIndex(cell.xy);\r\n\tlet random = random(vec2<f32>(f32(cell.x)+seed, f32(cell.y)));\r\n\r\n\tlet activeNeighbors = \r\n\t\tcellActive(u32(0), cell.x+1, cell.y+1) +\r\n\t\tcellActive(u32(0), cell.x+1, cell.y) +\r\n\t\tcellActive(u32(0), cell.x+1, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y+1) +\r\n\t\tcellActive(u32(0), cell.x, cell.y+1);\r\n\r\n    let activeBNeighbors = \r\n\t\tcellActive(u32(1), cell.x+1, cell.y+1) +\r\n\t\tcellActive(u32(1), cell.x+1, cell.y) +\r\n\t\tcellActive(u32(1), cell.x+1, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y+1) +\r\n\t\tcellActive(u32(1), cell.x, cell.y+1);\r\n\r\n    let explodeNeighbors = \r\n\t\tcellExplode(cell.x+1, cell.y+1) +\r\n\t\tcellExplode(cell.x+1, cell.y) +\r\n\t\tcellExplode(cell.x+1, cell.y-1) +\r\n\t\tcellExplode(cell.x, cell.y-1) +\r\n\t\tcellExplode(cell.x-1, cell.y-1) +\r\n\t\tcellExplode(cell.x-1, cell.y) +\r\n\t\tcellExplode(cell.x-1, cell.y+1) +\r\n\t\tcellExplode(cell.x, cell.y+1)  + \r\n\t\tcellExplode(cell.x, cell.y);;\r\n\r\n\r\n\t// Conway's game of life rules:\r\n\tswitch activeNeighbors {\r\n\t\tcase 2: { \r\n\t\t\tcellStateOut[i] = cellStateIn[i];\r\n\t\t}\r\n        case 3: { \r\n\t\t\tcellStateOut[i] = 1;\r\n\t\t}\r\n\t\tdefault: { // Cells with < 2 or > 3 neighbors become inactive.\r\n            cellStateOut[i] = 0;\r\n\t\t}\r\n\t}\r\n\r\n\t// B Cells rules:\r\n\tswitch activeBNeighbors {\r\n\t\tcase 2: { \r\n\t\t\tcellStateOut2[i] = cellStateIn2[i];\r\n\t\t}\r\n        case 3: { \r\n\t\t\tcellStateOut2[i] = 1;\r\n\t\t}\r\n\t\tdefault: { // Cells with < 2 or > 3 neighbors become inactive.\r\n            cellStateOut2[i] = 0;\r\n\t\t}\r\n\t}\r\n\r\n\tlet upCell = cellStateIn2[cellIndex(vec2(cell.x, cell.y+1))];\r\n\t//move B cells right\r\n\tif(upCell == 1 && cell.y!=0){\r\n\t\tcellStateOut2[i] = 1;\r\n\t}\r\n\r\n\r\n    //if the cell should explode\r\n\t//if(explodeNeighbors == 1){\r\n\t//\tcellStateOut[i] = 1;\r\n\t//}\t\r\n\r\n\r\n    //ensure that each cell only exists in either the A or B state\r\n    if(cellStateOut2[i] == 1){\r\n        cellStateOut[i] = 0;\r\n    }\r\n    else if cellStateOut2[i] == 0{\r\n    }\r\n\r\n    //add the age if it is still alive\r\n\tif(cellStateOut[i] == 1){\r\n\t\tcellStateAgeOut[i] = cellStateAgeIn[i]+1;\r\n\t}\r\n\telse{\r\n\t\tcellStateAgeOut[i] = 0;\r\n\t}\r\n}");
 
 /***/ }),
 
@@ -12130,25 +12117,10 @@ var __webpack_exports__ = {};
   \*********************/
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _control_app__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./control/app */ "./src/control/app.ts");
-/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! jquery */ "./node_modules/jquery/dist/jquery.js");
-/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_1__);
-
 
 const canvas = document.getElementById("gfx-main");
-//register clicking on buttons
-jquery__WEBPACK_IMPORTED_MODULE_1___default()('#generate').on('click', (event) => {
-    handle_button(event);
-});
-var state = 0;
-function handle_button(event) {
-    if (state != 1) {
-        //get the value of the grid size from the input with id grid_size
-        var GRID_SIZE = parseInt(document.getElementById("grid_size").value);
-        const app = new _control_app__WEBPACK_IMPORTED_MODULE_0__.App(canvas, GRID_SIZE);
-        app.InitializeRenderer();
-        state = 1;
-    }
-}
+var GRID_SIZE = parseInt(document.getElementById("grid_size").value);
+const app = new _control_app__WEBPACK_IMPORTED_MODULE_0__.App(canvas, GRID_SIZE);
 
 })();
 
