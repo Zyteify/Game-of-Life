@@ -1,5 +1,5 @@
 import shader from "./shaders/compute/shaders.wgsl";
-import shader_test from "./shaders/compute/test.wgsl";
+import defaultGOL from "./shaders/compute/defaultGOL.wgsl";
 import copier_shader from "./shaders/compute/copier_shader.wgsl";
 import vertexshader from "./shaders/vertexshaders.wgsl";
 import vertexshaderTest from "./shaders/vertexshaders_test.wgsl";
@@ -511,7 +511,7 @@ export class Renderer {
         const simulationShaderModule = this.device.createShaderModule({
             label: "Simulation shader1",
             code:
-            shader_test
+            defaultGOL
         })
             ;
 

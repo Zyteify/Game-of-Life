@@ -11106,12 +11106,6 @@ class App {
             .catch(error => {
             console.error(error);
         });
-        /*  //update the generations label
-         await this.getRendererData()
-                 .then(data => {
-                     this.updateScene(data)
- 
-                 }) */
         this.renderer.createHash();
         this.updateGenerations();
     }
@@ -11328,7 +11322,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   Renderer: () => (/* binding */ Renderer)
 /* harmony export */ });
-/* harmony import */ var _shaders_compute_test_wgsl__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./shaders/compute/test.wgsl */ "./src/view/shaders/compute/test.wgsl");
+/* harmony import */ var _shaders_compute_defaultGOL_wgsl__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./shaders/compute/defaultGOL.wgsl */ "./src/view/shaders/compute/defaultGOL.wgsl");
 /* harmony import */ var _shaders_compute_copier_shader_wgsl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./shaders/compute/copier_shader.wgsl */ "./src/view/shaders/compute/copier_shader.wgsl");
 /* harmony import */ var _shaders_vertexshaders_wgsl__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./shaders/vertexshaders.wgsl */ "./src/view/shaders/vertexshaders.wgsl");
 /* harmony import */ var _shaders_vertexshaders_test_wgsl__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./shaders/vertexshaders_test.wgsl */ "./src/view/shaders/vertexshaders_test.wgsl");
@@ -11712,7 +11706,7 @@ class Renderer {
         // Create the compute shader that will process the game of life simulation.
         const simulationShaderModule = this.device.createShaderModule({
             label: "Simulation shader1",
-            code: _shaders_compute_test_wgsl__WEBPACK_IMPORTED_MODULE_0__["default"]
+            code: _shaders_compute_defaultGOL_wgsl__WEBPACK_IMPORTED_MODULE_0__["default"]
         });
         // Create a compute pipeline that updates the game state.
         this.simulationPipeline = this.device.createComputePipeline({
@@ -11995,10 +11989,10 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ "./src/view/shaders/compute/test.wgsl":
-/*!********************************************!*\
-  !*** ./src/view/shaders/compute/test.wgsl ***!
-  \********************************************/
+/***/ "./src/view/shaders/compute/defaultGOL.wgsl":
+/*!**************************************************!*\
+  !*** ./src/view/shaders/compute/defaultGOL.wgsl ***!
+  \**************************************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
