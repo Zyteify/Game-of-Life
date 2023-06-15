@@ -69,4 +69,5 @@ export class Scene {
         this.createCells()
     }
 
+    //todo getCells() should return a copy of the cells
 }

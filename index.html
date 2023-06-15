@@ -3,23 +3,28 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Game of Life</title>
+    <title>Game of Zyteify</title>
 </head>
-<link rel="icon" href="src/img/fav.png" type="image/png">
+<link rel="icon" href="src/img/icon.jpg" type="image/jpg">
 <body>
     <!-- create buttons for start game, pause game, next step, and reset game -->
+    <button id="generate">Generate</button>
     <button id="start">Start</button>
     <button id="pause">Pause</button>
     <button id="next">Next</button>
-    <button id="test-values">Insert test values</button>
     <button id="data">get data</button>
-    <button id="test">test</button>
     <!-- create a input for fps and autofill with 10-->
-    <input type="number" id="fps" value="1">
+    <label for="fps">FPS:</label>
+    <input type="number" id="fps" value="30">
+    <!-- create a input for grid size and autofill with 16-->
+    <label for="grid_size">Grid Size:</label>
+    <input type="number" id="grid_size" value="16">
    
     <!-- create a text for generations -->
     <p id="generations">Generations: 0</p>
     <canvas width="512" height="512" id="gfx-main"></canvas>
+    <!-- <canvas width="512" height="512" id="gfx-test0"></canvas> -->
+    <!-- <canvas width="512" height="512" id="gfx-test1"></canvas> -->
     <!-- create a h1 for when the WEBGPU doesn't initialise with the id of MESSAGE -->
     <h1 id="MESSAGE"></h1>
     
