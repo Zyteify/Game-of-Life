@@ -1,0 +1,59 @@
+/*!******************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js!./src/styles.css ***!
+  \******************************************************************/
+@import url(https://fonts.googleapis.com/css2?family=Noto+Sans+Display:ital,wght@1,500&display=swap);
+/*!**********************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js!./src/styles.css (1) ***!
+  \**********************************************************************/
+/* @font-face {
+  font-family: "FFFForward";
+  src: url("./font/FFFFORWARD.TTF") format("ttf");
+}
+
+@font-face {
+  font-family: "Noto";
+  src: url("font.ttf") format("ttf");
+} */
+
+body {
+  font-family: 'Noto Sans Display', sans-serif;
+}
+
+html{
+  background-color: black; /* Set the background color to black */
+}
+#column button,
+#column label,
+#column input,
+#column p {
+  display: block;
+  font-family: 'Noto Sans Display', sans-serif;
+}
+
+#column {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 200px; /* Adjust the width as needed */
+  height: 100vh; /* Adjust the height as needed */
+  overflow-y: auto; /* Display scroll bar only if necessary */
+  background-color: #9a9a9a; /* Optional background color */
+  display: flex; /* Add flexbox layout */
+  flex-direction: column; /* Arrange elements vertically */
+  align-items: center; /* Center items horizontally */
+}
+
+body {
+  margin: 0;
+  overflow: hidden; /* Hide scroll bars for the main page */
+}
+
+#canvasmain {
+  margin-left: 200px; /* Adjust the margin as needed */
+}
+
+#gfx-main {
+  
+  border: 1px solid #ff0000; /* Add a 1px black border */
+}
+

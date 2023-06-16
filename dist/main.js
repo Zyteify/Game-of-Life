@@ -10716,6 +10716,19 @@ return jQuery;
 
 /***/ }),
 
+/***/ "./src/styles.css":
+/*!************************!*\
+  !*** ./src/styles.css ***!
+  \************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+// extracted by mini-css-extract-plugin
+
+
+/***/ }),
+
 /***/ "./src/control/app.ts":
 /*!****************************!*\
   !*** ./src/control/app.ts ***!
@@ -10737,10 +10750,11 @@ __webpack_require__.r(__webpack_exports__);
 
 
 class App {
-    constructor(canvas, GRID_SIZE) {
+    constructor(canvas, GRID_SIZEX, GRID_SIZEY) {
         //make the grid size equal to a multiple of x^2
-        this.GRID_SIZE = 256;
-        this.fps = 30;
+        this.GRID_SIZEX = 16;
+        this.GRID_SIZEY = 16;
+        this.fps = 2;
         this.animationId = 0;
         this.animationRunning = false;
         this.obj = {
@@ -11002,7 +11016,8 @@ class App {
             "255": 0
         };
         //get the value inside an input html element
-        this.GRID_SIZE = GRID_SIZE;
+        this.GRID_SIZEX = GRID_SIZEX;
+        this.GRID_SIZEY = GRID_SIZEY;
         this.canvas = canvas;
         this.renderer = new _view_renderer__WEBPACK_IMPORTED_MODULE_0__.Renderer(canvas);
         this.keyLabel = document.getElementById("key-label");
@@ -11023,10 +11038,14 @@ class App {
         this.GenerateScene();
     }
     GenerateScene() {
-        this.scene = new _scene_scene__WEBPACK_IMPORTED_MODULE_1__.Scene(this.GRID_SIZE);
+        this.scene = new _scene_scene__WEBPACK_IMPORTED_MODULE_1__.Scene(this.GRID_SIZEX, this.GRID_SIZEY);
+        this.GRID_SIZEX = parseInt(document.getElementById("grid_sizex").value);
+        this.GRID_SIZEY = parseInt(document.getElementById("grid_sizey").value);
+        this.renderer.Unconfigure();
+        this.InitializeRenderer();
     }
     async InitializeRenderer() {
-        await this.renderer.Initialize(this.GRID_SIZE);
+        await this.renderer.Initialize(this.GRID_SIZEX, this.GRID_SIZEY);
         this.renderer.renderGrid();
         //this.renderer.updateGrid()
     }
@@ -11059,10 +11078,13 @@ class App {
         }
         //when data button is pressed
         if (event.target.id == "generate") {
-            this.GRID_SIZE = parseInt(document.getElementById("grid_size").value);
+            this.stopAnimating();
+            this.GRID_SIZEX = parseInt(document.getElementById("grid_sizex").value);
+            this.GRID_SIZEY = parseInt(document.getElementById("grid_sizey").value);
             this.renderer.Unconfigure();
             this.InitializeRenderer();
             this.updateGenerations();
+            this.resizeCanvas();
         }
     }
     async getRendererData() {
@@ -11130,25 +11152,28 @@ class App {
         const mouseX = event.clientX - canvasRect.left;
         const mouseY = event.clientY - canvasRect.top;
         //get the cell that was clicked on
-        const cellsize = this.canvas.width / this.GRID_SIZE;
-        const cellX = Math.floor(mouseX / cellsize);
+        const cellsizex = this.canvas.width / this.GRID_SIZEX;
+        const cellsizey = this.canvas.height / this.GRID_SIZEY;
+        const cellX = Math.floor(mouseX / cellsizex);
         //grid coordinates are flipped for the y axis
-        const cellY = this.GRID_SIZE - 1 - Math.floor(mouseY / cellsize);
-        // get the data of the grid
-        await this.getRendererData()
-            .then(data => {
-            //change the value of the cell to the opposite
-            var newvalue = this.getCellValue(data, cellX + cellY * this.GRID_SIZE) == 1 ? 0 : 1;
-            this.updateCellValue(data, cellX + cellY * this.GRID_SIZE, newvalue);
-            //convert the cell interface to a uint32array for the renderer
-            var newdata = (0,_scene_cell__WEBPACK_IMPORTED_MODULE_3__.convertCellInterfaceToUint32Array)(data);
-            //send it to the renderer
-            this.renderer.setBuffer(newdata);
-            this.updateGenerations();
-        })
-            .catch(error => {
-            console.error(error);
-        });
+        const cellY = this.GRID_SIZEY - 1 - Math.floor(mouseY / cellsizey);
+        if (this.renderer.initialized) {
+            // get the data of the grid
+            await this.getRendererData()
+                .then(data => {
+                //change the value of the cell to the opposite
+                var newvalue = this.getCellValue(data, cellX + cellY * this.GRID_SIZEX) == 1 ? 0 : 1;
+                this.updateCellValue(data, cellX + cellY * this.GRID_SIZEX, newvalue);
+                //convert the cell interface to a uint32array for the renderer
+                var newdata = (0,_scene_cell__WEBPACK_IMPORTED_MODULE_3__.convertCellInterfaceToUint32Array)(data);
+                //send it to the renderer
+                this.renderer.setBuffer(newdata);
+                this.updateGenerations();
+            })
+                .catch(error => {
+                console.error(error);
+            });
+        }
     }
     //todo fix this to use the stored value inside scene
     updateGenerations() {
@@ -11169,6 +11194,31 @@ class App {
             }
         }
         return undefined;
+    }
+    //calculate the size of the canvas based on the grid size
+    resizeCanvas() {
+        const header = document.getElementById("header");
+        var headerHeight = 0;
+        if (header) {
+            headerHeight = header.offsetHeight;
+            console.log("Header Height:", headerHeight);
+        }
+        const column = document.getElementById("column");
+        var columnwidth = 0;
+        if (column) {
+            columnwidth = column.offsetWidth;
+            console.log("Column Height:", columnwidth);
+        }
+        //set the canvas size to the window size minus the header and column and 2 pixels for the border
+        var width = window.innerWidth - columnwidth - 2;
+        var height = window.innerHeight - headerHeight - 2;
+        var GRID_SIZEX = parseInt(document.getElementById("grid_sizex").value);
+        var GRID_SIZEY = parseInt(document.getElementById("grid_sizey").value);
+        // Calculate the size of each square in pixels based on the grid size
+        const squareSize = Math.min(width / GRID_SIZEX, height / GRID_SIZEY);
+        this.canvas.width = squareSize * GRID_SIZEX;
+        this.canvas.height = squareSize * GRID_SIZEY;
+        console.log(squareSize, GRID_SIZEX, GRID_SIZEY, window.innerWidth, window.innerHeight, width, height);
     }
 }
 
@@ -11235,12 +11285,11 @@ __webpack_require__.r(__webpack_exports__);
 
 
 class Scene {
-    constructor(GRID_SIZE) {
+    constructor(GRID_SIZEX, GRID_SIZEY) {
         this.generations = 0;
         console.log("Initializing scene");
-        this.GRID_SIZE = GRID_SIZE;
-        this.GRID_SIZEX = GRID_SIZE;
-        this.GRID_SIZEY = GRID_SIZE;
+        this.GRID_SIZEX = GRID_SIZEX;
+        this.GRID_SIZEY = GRID_SIZEY;
         this.createCells();
     }
     createCells() {
@@ -11332,15 +11381,17 @@ __webpack_require__.r(__webpack_exports__);
 
 class Renderer {
     constructor(canvas) {
+        this.initialized = false;
         this.step = 0;
         this.globalStep = 0;
         this.seed = 'hi';
         this.WORKGROUP_SIZE = 8;
         this.canvas = canvas;
-        this.GRID_SIZE = 8;
     }
-    async Initialize(GRID_SIZE) {
-        this.GRID_SIZE = GRID_SIZE;
+    async Initialize(GRID_SIZEX, GRID_SIZEY) {
+        this.initialized = true;
+        this.GRID_SIZEX = GRID_SIZEX;
+        this.GRID_SIZEY = GRID_SIZEY;
         this.seed = 'hieqweqweqeqeqeqeqe';
         await this.setupDevice();
         await this.makeBindGroupsLayouts();
@@ -11424,7 +11475,7 @@ class Renderer {
                 }],
         };
         // Create a uniform buffer that describes the grid.
-        this.uniformArray = new Float32Array([this.GRID_SIZE, this.GRID_SIZE]);
+        this.uniformArray = new Float32Array([this.GRID_SIZEX, this.GRID_SIZEY]);
         this.uniformBuffer = this.device.createBuffer({
             label: "Grid Uniforms",
             size: this.uniformArray.byteLength,
@@ -11440,9 +11491,9 @@ class Renderer {
         });
         //this.device.queue.writeBuffer(this.seedBuffer, 0, buffer);
         // Create an array representing the active state of each cell.
-        this.cellStateArray = new Uint32Array(this.GRID_SIZE * this.GRID_SIZE);
+        this.cellStateArray = new Uint32Array(this.GRID_SIZEX * this.GRID_SIZEY);
         this.BUFFER_SIZE = this.cellStateArray.byteLength;
-        this.cellStateAgeArray = new Uint32Array(this.GRID_SIZE * this.GRID_SIZE);
+        this.cellStateAgeArray = new Uint32Array(this.GRID_SIZEX * this.GRID_SIZEY);
         // Create two storage buffers to hold the cell state.
         this.cellStateStorageA = [
             this.device.createBuffer({
@@ -11497,8 +11548,15 @@ class Renderer {
             // Set each cell to a random state, then copy the JavaScript array into
             // the storage buffer.
             for (let i = 0; i < cellStateArray.length; ++i) {
-                cellStateArray[i] = Math.random() > 0.9 ? 1 : 0;
+                if (Math.random() > 0.8) {
+                    cellStateArray[i] = 1;
+                }
+                else {
+                    cellStateArray[i] = 0;
+                }
+                //cellStateArray[i] = Math.random() > 0.9 ? 1 : 0;
             }
+            console.log(cellStateArray);
             device.queue.writeBuffer(cellStateStorageA[0], 0, cellStateArray);
         }
         initialiseGrid(this.device, this.cellStateStorageA, this.cellStateArray);
@@ -11727,7 +11785,9 @@ class Renderer {
             this.computePass.setBindGroup(0, this.uniformBindGroup);
         this.computePass.setBindGroup(1, this.cellAliveBindGroups[this.step % 2]);
         this.computePass.setBindGroup(2, this.cellAgeBindGroups[this.step % 2]);
-        this.workgroupCount = Math.ceil(this.GRID_SIZE / this.WORKGROUP_SIZE);
+        //todo understand workgroupcount
+        //fornow just use the grid size x
+        this.workgroupCount = Math.ceil(this.GRID_SIZEX / this.WORKGROUP_SIZE);
         this.computePass.dispatchWorkgroups(this.workgroupCount, this.workgroupCount);
         this.computePass.end();
         // End the compute pass and submit the command buffer
@@ -11738,7 +11798,7 @@ class Renderer {
             colorAttachments: [{
                     view: this.context.getCurrentTexture().createView(),
                     loadOp: "clear",
-                    clearValue: { r: 0.1, g: 0.1, b: 0.1, a: 1.0 },
+                    clearValue: this.backgroundColor,
                     storeOp: "store",
                 }]
         });
@@ -11748,7 +11808,7 @@ class Renderer {
         this.pass.setBindGroup(1, this.cellAliveBindGroups[this.step % 2]);
         this.pass.setBindGroup(2, this.cellAgeBindGroups[this.step % 2]);
         this.pass.setVertexBuffer(0, this.vertexBuffer);
-        this.pass.draw(this.vertices.length / 2, this.GRID_SIZE * this.GRID_SIZE);
+        this.pass.draw(this.vertices.length / 2, this.GRID_SIZEX * this.GRID_SIZEY);
         // End the render pass and submit the command buffer
         this.pass.end();
         this.device.queue.submit([encoder.finish()]);
@@ -11765,7 +11825,7 @@ class Renderer {
             colorAttachments: [{
                     view: this.context.getCurrentTexture().createView(),
                     loadOp: "clear",
-                    clearValue: { r: 0.1, g: 0.1, b: 0.1, a: 1.0 },
+                    clearValue: this.backgroundColor,
                     storeOp: "store",
                 }]
         });
@@ -11775,7 +11835,7 @@ class Renderer {
         this.pass.setBindGroup(1, this.cellAliveBindGroups[this.step % 2]);
         this.pass.setBindGroup(2, this.cellAgeBindGroups[this.step % 2]);
         this.pass.setVertexBuffer(0, this.vertexBuffer);
-        this.pass.draw(this.vertices.length / 2, this.GRID_SIZE * this.GRID_SIZE);
+        this.pass.draw(this.vertices.length / 2, this.GRID_SIZEX * this.GRID_SIZEY);
         // End the render pass and submit the command buffer
         this.pass.end();
         this.device.queue.submit([encoder.finish()]);
@@ -11789,7 +11849,7 @@ class Renderer {
                 colorAttachments: [{
                         view: context.getCurrentTexture().createView(),
                         loadOp: "clear",
-                        clearValue: { r: 0.1, g: 0.1, b: 0.1, a: 1.0 },
+                        clearValue: this.backgroundColor,
                         storeOp: "store",
                     }]
             });
@@ -11799,7 +11859,7 @@ class Renderer {
             this.pass.setBindGroup(1, this.cellAliveBindGroups[this.step % 2]);
             this.pass.setBindGroup(2, this.cellAgeBindGroups[this.step % 2]);
             this.pass.setVertexBuffer(0, this.vertexBuffer);
-            this.pass.draw(this.vertices.length / 2, this.GRID_SIZE * this.GRID_SIZE);
+            this.pass.draw(this.vertices.length / 2, this.GRID_SIZEX * this.GRID_SIZEY);
             // End the render pass and submit the command buffer
             this.pass.end();
             this.device.queue.submit([encoder.finish()]);
@@ -11919,7 +11979,7 @@ class Renderer {
         this.computePass.setPipeline(copierPipeline);
         this.computePass.setBindGroup(0, this.uniformBindGroup);
         this.computePass.setBindGroup(1, copierBindGroup);
-        this.workgroupCount = Math.ceil(this.GRID_SIZE / this.WORKGROUP_SIZE);
+        this.workgroupCount = Math.ceil(this.GRID_SIZEX / this.WORKGROUP_SIZE);
         this.computePass.dispatchWorkgroups(this.workgroupCount, this.workgroupCount);
         this.computePass.end();
         this.device.queue.submit([encoder.finish()]);
@@ -11967,6 +12027,7 @@ class Renderer {
             //remove references to the state
             this.globalStep = 0;
             this.step = 0;
+            this.initialized = false;
         }
     }
 }
@@ -12111,10 +12172,43 @@ var __webpack_exports__ = {};
   \*********************/
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _control_app__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./control/app */ "./src/control/app.ts");
+/* harmony import */ var _styles_css__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./styles.css */ "./src/styles.css");
+
 
 const canvas = document.getElementById("gfx-main");
-var GRID_SIZE = parseInt(document.getElementById("grid_size").value);
-const app = new _control_app__WEBPACK_IMPORTED_MODULE_0__.App(canvas, GRID_SIZE);
+var GRID_SIZEX = parseInt(document.getElementById("grid_sizex").value);
+var GRID_SIZEY = parseInt(document.getElementById("grid_sizey").value);
+const app = new _control_app__WEBPACK_IMPORTED_MODULE_0__.App(canvas, GRID_SIZEX, GRID_SIZEY);
+resizeCanvas();
+//when the window is resized
+window.addEventListener('resize', function () {
+    resizeCanvas();
+});
+//calculate the size of the canvas based on the grid size
+function resizeCanvas() {
+    const header = document.getElementById("header");
+    var headerHeight = 0;
+    if (header) {
+        headerHeight = header.offsetHeight;
+        console.log("Header Height:", headerHeight);
+    }
+    const column = document.getElementById("column");
+    var columnwidth = 0;
+    if (column) {
+        columnwidth = column.offsetWidth;
+        console.log("Column Height:", columnwidth);
+    }
+    //set the canvas size to the window size minus the header and column and 2 pixels for the border
+    var width = window.innerWidth - columnwidth - 2;
+    var height = window.innerHeight - headerHeight - 2;
+    var GRID_SIZEX = parseInt(document.getElementById("grid_sizex").value);
+    var GRID_SIZEY = parseInt(document.getElementById("grid_sizey").value);
+    // Calculate the size of each square in pixels based on the grid size
+    const squareSize = Math.min(width / GRID_SIZEX, height / GRID_SIZEY);
+    canvas.width = squareSize * GRID_SIZEX;
+    canvas.height = squareSize * GRID_SIZEY;
+    console.log(squareSize, GRID_SIZEX, GRID_SIZEY, window.innerWidth, window.innerHeight, width, height);
+}
 
 })();
 

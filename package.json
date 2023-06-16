@@ -15,6 +15,7 @@
   "dependencies": {
     "@webgpu/types": "^0.1.15",
     "crypto": "^1.0.1",
+    "file-loader": "^6.2.0",
     "gl-matrix": "^3.4.3",
     "http-server": "^14.1.0",
     "jquery": "^3.6.1",
@@ -29,7 +30,10 @@
   "devDependencies": {
     "@types/jquery": "^3.5.14",
     "@types/node": "^20.2.5",
+    "css-loader": "^6.8.1",
+    "mini-css-extract-plugin": "^2.7.6",
     "spectorjs": "^0.9.29",
+    "style-loader": "^3.3.3",
     "wgsl-debug": "^0.0.1"
   }
 }
