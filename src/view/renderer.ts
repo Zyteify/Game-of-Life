@@ -6,8 +6,9 @@ import vertexshaderTest from "./shaders/vertexshaders_test.wgsl";
 
 
 export class Renderer {
-
-    GRID_SIZE: number;
+    initialized: boolean = false;
+    GRID_SIZEX: number;
+    GRID_SIZEY: number;
 
     canvas: HTMLCanvasElement;
 
@@ -25,6 +26,8 @@ export class Renderer {
     cellPipeline: GPURenderPipeline;
     cellPipelineTest: GPURenderPipeline;
     cellRenderPipeline: GPURenderPipeline;
+
+    backgroundColor: {r: 0.0, g: 0.0, b: 0.0, a: 1.0 };
 
 
     //rendering 
@@ -74,12 +77,14 @@ export class Renderer {
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
-        this.GRID_SIZE = 8;
     }
 
-    async Initialize(GRID_SIZE: number) {
+    async Initialize(GRID_SIZEX: number,GRID_SIZEY: number) {
 
-        this.GRID_SIZE = GRID_SIZE;
+        this.initialized = true;
+
+        this.GRID_SIZEX = GRID_SIZEX;
+        this.GRID_SIZEY = GRID_SIZEY;
 
         this.seed = 'hieqweqweqeqeqeqeqe';
 
@@ -141,7 +146,6 @@ export class Renderer {
         }
     }
 
-
     async createAssets() {
         // Create a buffer that will hold the vertices of the grid.
         //the vertices from -1 to 1 
@@ -187,7 +191,7 @@ export class Renderer {
 
 
         // Create a uniform buffer that describes the grid.
-        this.uniformArray = new Float32Array([this.GRID_SIZE, this.GRID_SIZE]);
+        this.uniformArray = new Float32Array([this.GRID_SIZEX, this.GRID_SIZEY]);
         this.uniformBuffer = this.device.createBuffer({
             label: "Grid Uniforms",
             size: this.uniformArray.byteLength,
@@ -212,9 +216,9 @@ export class Renderer {
 
 
         // Create an array representing the active state of each cell.
-        this.cellStateArray = new Uint32Array(this.GRID_SIZE * this.GRID_SIZE);
+        this.cellStateArray = new Uint32Array(this.GRID_SIZEX * this.GRID_SIZEY);
         this.BUFFER_SIZE = this.cellStateArray.byteLength;
-        this.cellStateAgeArray = new Uint32Array(this.GRID_SIZE * this.GRID_SIZE);
+        this.cellStateAgeArray = new Uint32Array(this.GRID_SIZEX * this.GRID_SIZEY);
 
         // Create two storage buffers to hold the cell state.
         this.cellStateStorageA = [
@@ -272,8 +276,17 @@ export class Renderer {
             // Set each cell to a random state, then copy the JavaScript array into
             // the storage buffer.
             for (let i = 0; i < cellStateArray.length; ++i) {
-                cellStateArray[i] = Math.random() > 0.9 ? 1 : 0;
+                if(Math.random() > 0.8){
+                    cellStateArray[i] = 1;
+                }
+                else{
+                    cellStateArray[i] = 0;
+                }
+
+                //cellStateArray[i] = Math.random() > 0.9 ? 1 : 0;
+                
             }
+            console.log(cellStateArray)
             device.queue.writeBuffer(cellStateStorageA[0], 0, cellStateArray);
         }
 
@@ -344,9 +357,6 @@ export class Renderer {
         });
 
     }
-
-
-
 
     async makeBindGroup() {
         this.cellAgeBindGroups = [
@@ -541,7 +551,9 @@ export class Renderer {
         this.computePass.setBindGroup(0, this.uniformBindGroup);
         this.computePass.setBindGroup(1, this.cellAliveBindGroups[this.step % 2]);
         this.computePass.setBindGroup(2, this.cellAgeBindGroups[this.step % 2]);
-        this.workgroupCount = Math.ceil(this.GRID_SIZE / this.WORKGROUP_SIZE);
+        //todo understand workgroupcount
+        //fornow just use the grid size x
+        this.workgroupCount = Math.ceil(this.GRID_SIZEX / this.WORKGROUP_SIZE);
         this.computePass.dispatchWorkgroups(this.workgroupCount, this.workgroupCount);
         this.computePass.end();
 
@@ -554,7 +566,7 @@ export class Renderer {
             colorAttachments: [{
                 view: this.context.getCurrentTexture().createView(),
                 loadOp: "clear",
-                clearValue: { r: 0.1, g: 0.1, b: 0.1, a: 1.0 },
+                clearValue: this.backgroundColor,
                 storeOp: "store",
             }]
         });
@@ -565,7 +577,7 @@ export class Renderer {
         this.pass.setBindGroup(1, this.cellAliveBindGroups[this.step % 2]);
         this.pass.setBindGroup(2, this.cellAgeBindGroups[this.step % 2]);
         this.pass.setVertexBuffer(0, this.vertexBuffer);
-        this.pass.draw(this.vertices.length / 2, this.GRID_SIZE * this.GRID_SIZE);
+        this.pass.draw(this.vertices.length / 2, this.GRID_SIZEX * this.GRID_SIZEY);
 
         // End the render pass and submit the command buffer
         this.pass.end();
@@ -587,7 +599,7 @@ export class Renderer {
             colorAttachments: [{
                 view: this.context.getCurrentTexture().createView(),
                 loadOp: "clear",
-                clearValue: { r: 0.1, g: 0.1, b: 0.1, a: 1.0 },
+                clearValue: this.backgroundColor,
                 storeOp: "store",
             }]
         });
@@ -598,7 +610,7 @@ export class Renderer {
         this.pass.setBindGroup(1, this.cellAliveBindGroups[this.step % 2]);
         this.pass.setBindGroup(2, this.cellAgeBindGroups[this.step % 2]);
         this.pass.setVertexBuffer(0, this.vertexBuffer);
-        this.pass.draw(this.vertices.length / 2, this.GRID_SIZE * this.GRID_SIZE);
+        this.pass.draw(this.vertices.length / 2, this.GRID_SIZEX * this.GRID_SIZEY);
 
         // End the render pass and submit the command buffer
         this.pass.end();
@@ -615,7 +627,7 @@ export class Renderer {
                 colorAttachments: [{
                     view: context.getCurrentTexture().createView(),
                     loadOp: "clear",
-                    clearValue: { r: 0.1, g: 0.1, b: 0.1, a: 1.0 },
+                    clearValue: this.backgroundColor,
                     storeOp: "store",
                 }]
             });
@@ -626,7 +638,7 @@ export class Renderer {
             this.pass.setBindGroup(1, this.cellAliveBindGroups[this.step % 2]);
             this.pass.setBindGroup(2, this.cellAgeBindGroups[this.step % 2]);
             this.pass.setVertexBuffer(0, this.vertexBuffer);
-            this.pass.draw(this.vertices.length / 2, this.GRID_SIZE * this.GRID_SIZE);
+            this.pass.draw(this.vertices.length / 2, this.GRID_SIZEX * this.GRID_SIZEY);
 
             // End the render pass and submit the command buffer
             this.pass.end();
@@ -782,7 +794,7 @@ export class Renderer {
         this.computePass.setPipeline(copierPipeline)
         this.computePass.setBindGroup(0, this.uniformBindGroup);
         this.computePass.setBindGroup(1, copierBindGroup);
-        this.workgroupCount = Math.ceil(this.GRID_SIZE / this.WORKGROUP_SIZE);
+        this.workgroupCount = Math.ceil(this.GRID_SIZEX / this.WORKGROUP_SIZE);
         this.computePass.dispatchWorkgroups(this.workgroupCount, this.workgroupCount);
         this.computePass.end();
         this.device.queue.submit([encoder.finish()]);
@@ -839,6 +851,8 @@ export class Renderer {
         //remove references to the state
         this.globalStep = 0;
         this.step = 0;
+
+        this.initialized = false;
 
 
 

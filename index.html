@@ -4,9 +4,11 @@
 <head>
     <meta charset="utf-8">
     <title>Game of Zyteify</title>
+    <link rel="stylesheet" href="dist/styles.css">
 </head>
 <link rel="icon" href="src/img/icon.jpg" type="image/jpg">
 <body>
+    <div id="column">   
     <!-- create buttons for start game, pause game, next step, and reset game -->
     <button id="generate">Generate</button>
     <button id="start">Start</button>
@@ -15,20 +17,21 @@
     <button id="data">get data</button>
     <!-- create a input for fps and autofill with 10-->
     <label for="fps">FPS:</label>
-    <input type="number" id="fps" value="30">
+    <input type="number" id="fps" value="2">
     <!-- create a input for grid size and autofill with 16-->
-    <label for="grid_size">Grid Size:</label>
-    <input type="number" id="grid_size" value="16">
-   
+    <label for="grid_sizex">Grid Size X:</label>
+    <input type="number" id="grid_sizex" value="4">
+    <label for="grid_sizey">Grid Size Y:</label>
+    <input type="number" id="grid_sizey" value="4">
+    
     <!-- create a text for generations -->
     <p id="generations">Generations: 0</p>
-    <canvas width="512" height="512" id="gfx-main"></canvas>
-    <!-- <canvas width="512" height="512" id="gfx-test0"></canvas> -->
-    <!-- <canvas width="512" height="512" id="gfx-test1"></canvas> -->
-    <!-- create a h1 for when the WEBGPU doesn't initialise with the id of MESSAGE -->
-    <h1 id="MESSAGE"></h1>
-    
-    <!-- include game-of-life.js -->
+
+
+    </div>
+    <div id="canvasmain">
+    <canvas id="gfx-main"></canvas>
+</div>
     <script type="module" src="dist/main.js"></script>
 </body>
 

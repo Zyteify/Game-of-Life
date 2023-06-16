@@ -4,7 +4,6 @@ import { getCoordinates } from "../view/definitions"
 export class Scene {
 
 
-    GRID_SIZE: number
     GRID_SIZEX: number
     GRID_SIZEY: number
     
@@ -15,12 +14,12 @@ export class Scene {
 
     aliveArray: Uint32Array;
 
-    constructor(GRID_SIZE: number) {
+    constructor(GRID_SIZEX: number,GRID_SIZEY: number) {
         console.log("Initializing scene");
 
-        this.GRID_SIZE = GRID_SIZE;
-        this.GRID_SIZEX = GRID_SIZE;
-        this.GRID_SIZEY = GRID_SIZE;
+        
+        this.GRID_SIZEX = GRID_SIZEX;
+        this.GRID_SIZEY = GRID_SIZEY;
 
         this.createCells()
     }

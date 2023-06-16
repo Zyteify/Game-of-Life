@@ -9,7 +9,8 @@ export class App {
 
     renderingCanvas: CanvasRenderingContext2D
     //make the grid size equal to a multiple of x^2
-    GRID_SIZE: number = 256;
+    GRID_SIZEX: number = 16;
+    GRID_SIZEY: number = 16;
 
     renderer: Renderer;
     scene: Scene;
@@ -32,10 +33,11 @@ export class App {
     data: object;
 
 
-    constructor(canvas: HTMLCanvasElement, GRID_SIZE: number) {
+    constructor(canvas: HTMLCanvasElement, GRID_SIZEX: number, GRID_SIZEY: number) {
 
         //get the value inside an input html element
-        this.GRID_SIZE = GRID_SIZE;
+        this.GRID_SIZEX = GRID_SIZEX;
+        this.GRID_SIZEY = GRID_SIZEY;
 
         this.canvas = canvas;
 
@@ -67,11 +69,15 @@ export class App {
     }
 
     GenerateScene() {
-        this.scene = new Scene(this.GRID_SIZE);
+        this.scene = new Scene(this.GRID_SIZEX, this.GRID_SIZEY);
+        this.GRID_SIZEX = parseInt((<HTMLInputElement>document.getElementById("grid_sizex")).value);
+        this.GRID_SIZEY = parseInt((<HTMLInputElement>document.getElementById("grid_sizey")).value);
+        this.renderer.Unconfigure();
+        this.InitializeRenderer()
     }
 
     async InitializeRenderer() {
-        await this.renderer.Initialize(this.GRID_SIZE);
+        await this.renderer.Initialize(this.GRID_SIZEX, this.GRID_SIZEY);
         this.renderer.renderGrid()
         //this.renderer.updateGrid()
     }
@@ -112,10 +118,13 @@ export class App {
 
         //when data button is pressed
         if (event.target.id == "generate") {
-            this.GRID_SIZE = parseInt((<HTMLInputElement>document.getElementById("grid_size")).value);
+            this.stopAnimating()
+            this.GRID_SIZEX = parseInt((<HTMLInputElement>document.getElementById("grid_sizex")).value);
+            this.GRID_SIZEY = parseInt((<HTMLInputElement>document.getElementById("grid_sizey")).value);
             this.renderer.Unconfigure();
             this.InitializeRenderer()
             this.updateGenerations();
+            this.resizeCanvas()
         }
         
 
@@ -197,20 +206,21 @@ export class App {
         const mouseY = event.clientY - canvasRect.top;
 
         //get the cell that was clicked on
-        const cellsize = this.canvas.width / this.GRID_SIZE;
+        const cellsizex = this.canvas.width / this.GRID_SIZEX;
+        const cellsizey = this.canvas.height / this.GRID_SIZEY;
 
-        const cellX = Math.floor(mouseX / cellsize);
+        const cellX = Math.floor(mouseX / cellsizex);
         //grid coordinates are flipped for the y axis
-        const cellY = this.GRID_SIZE - 1 - Math.floor(mouseY / cellsize);
+        const cellY = this.GRID_SIZEY - 1 - Math.floor(mouseY / cellsizey);
 
-        
-        // get the data of the grid
-        await this.getRendererData()
+        if(this.renderer.initialized){
+            // get the data of the grid
+            await this.getRendererData()
             .then(data => {
 
                 //change the value of the cell to the opposite
-                var newvalue: number = this.getCellValue(data, cellX + cellY * this.GRID_SIZE) == 1 ? 0 : 1
-                this.updateCellValue(data, cellX + cellY * this.GRID_SIZE, newvalue)
+                var newvalue: number = this.getCellValue(data, cellX + cellY * this.GRID_SIZEX) == 1 ? 0 : 1
+                this.updateCellValue(data, cellX + cellY * this.GRID_SIZEX, newvalue)
                 //convert the cell interface to a uint32array for the renderer
                 var newdata: Uint32Array = convertCellInterfaceToUint32Array(data)
                 //send it to the renderer
@@ -221,6 +231,8 @@ export class App {
             .catch(error => {
                 console.error(error);
             });
+        }
+        
     }
 
     //todo fix this to use the stored value inside scene
@@ -505,6 +517,35 @@ export class App {
         "255": 0
     }
 
+    
+//calculate the size of the canvas based on the grid size
+    resizeCanvas() {
+    const header = document.getElementById("header");
+    var headerHeight = 0
+    if (header) {
+        headerHeight = header.offsetHeight;
+        console.log("Header Height:", headerHeight);
+    }
+
+    const column = document.getElementById("column");
+    var columnwidth = 0
+    if (column) {
+        columnwidth = column.offsetWidth;
+        console.log("Column Height:", columnwidth);
+    }
+    //set the canvas size to the window size minus the header and column and 2 pixels for the border
+    var width = window.innerWidth - columnwidth -2; 
+    var height = window.innerHeight - headerHeight -2;
+    var GRID_SIZEX: number = parseInt((<HTMLInputElement>document.getElementById("grid_sizex")).value);
+    var GRID_SIZEY: number = parseInt((<HTMLInputElement>document.getElementById("grid_sizey")).value);
+
+    // Calculate the size of each square in pixels based on the grid size
+    const squareSize = Math.min(width / GRID_SIZEX, height / GRID_SIZEY);
+    this.canvas.width = squareSize * GRID_SIZEX;
+    this.canvas.height = squareSize * GRID_SIZEY;
+    console.log(squareSize, GRID_SIZEX, GRID_SIZEY, window.innerWidth, window.innerHeight, width, height);
+
+}
     
 
 

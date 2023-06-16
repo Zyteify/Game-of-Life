@@ -29,7 +29,10 @@
   "devDependencies": {
     "@types/jquery": "^3.5.14",
     "@types/node": "^20.2.5",
+    "css-loader": "^6.8.1",
+    "mini-css-extract-plugin": "^2.7.6",
     "spectorjs": "^0.9.29",
+    "style-loader": "^3.3.3",
     "wgsl-debug": "^0.0.1"
   }
 }
