@@ -1,12 +1,22 @@
 /*!******************************************************************!*\
   !*** css ./node_modules/css-loader/dist/cjs.js!./src/styles.css ***!
   \******************************************************************/
-@font-face {
+@import url(https://fonts.googleapis.com/css2?family=Noto+Sans+Display:ital,wght@1,500&display=swap);
+/*!**********************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js!./src/styles.css (1) ***!
+  \**********************************************************************/
+/* @font-face {
   font-family: "FFFForward";
-  src: url(/dist/82f7ff73ad3454fbbf6f.TTF) format("ttf");
+  src: url("./font/FFFFORWARD.TTF") format("ttf");
 }
+
+@font-face {
+  font-family: "Noto";
+  src: url("font.ttf") format("ttf");
+} */
+
 body {
-  font-family: "FFFForward";
+  font-family: 'Noto Sans Display', sans-serif;
 }
 
 html{
@@ -17,6 +27,7 @@ html{
 #column input,
 #column p {
   display: block;
+  font-family: 'Noto Sans Display', sans-serif;
 }
 
 #column {
@@ -26,7 +37,7 @@ html{
   width: 200px; /* Adjust the width as needed */
   height: 100vh; /* Adjust the height as needed */
   overflow-y: auto; /* Display scroll bar only if necessary */
-  background-color: #aac5b6; /* Optional background color */
+  background-color: #9a9a9a; /* Optional background color */
   display: flex; /* Add flexbox layout */
   flex-direction: column; /* Arrange elements vertically */
   align-items: center; /* Center items horizontally */

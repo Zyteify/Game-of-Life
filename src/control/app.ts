@@ -26,7 +26,7 @@ export class App {
     sceneBuffer: ArrayBuffer;
 
 
-    fps: number = 30;
+    fps: number = 2;
     animationId: number = 0;
     animationRunning: boolean = false;
 

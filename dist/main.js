@@ -10754,7 +10754,7 @@ class App {
         //make the grid size equal to a multiple of x^2
         this.GRID_SIZEX = 16;
         this.GRID_SIZEY = 16;
-        this.fps = 30;
+        this.fps = 2;
         this.animationId = 0;
         this.animationRunning = false;
         this.obj = {
