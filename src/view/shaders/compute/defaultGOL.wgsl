@@ -1,4 +1,4 @@
-@group(0) @binding(0) var<uniform> grid: vec2f;
+@group(0) @binding(0) var<uniform> grid: vec2u;
 @group(0) @binding(1) var<uniform> seed: f32;
 @group(1) @binding(0) var<storage, read> cellStateIn: array<u32>;
 @group(1) @binding(1) var<storage, read_write> cellStateOut: array<u32>;
@@ -7,12 +7,22 @@
 @group(2) @binding(0) var<storage, read> cellStateAgeIn: array<u32>;
 @group(2) @binding(1) var<storage, read_write> cellStateAgeOut: array<u32>;
 
+fn isOnEdge(cell: vec2u) -> bool {
+	return cell.x == 0 || cell.x == grid.x - 1 || cell.y == 0 || cell.y == grid.y - 1;
+}
+
 fn cellIndex(cell: vec2u) -> u32 {
-	return (cell.y % u32(grid.y)) * u32(grid.x) +
-		(cell.x % u32(grid.x));
+	return (cell.y % grid.y) * grid.x +
+		(cell.x % grid.x);
 }
 
 fn cellActive(cellType: u32, x: u32, y: u32) -> u32 {
+	//if the cell is out of bounds, it is not active
+	if(x >= grid.x || y >= grid.y){
+		return 0;
+	}
+	
+
 	if(cellType == 0){
 		return cellStateIn[cellIndex(vec2(x, y))];
 	}
@@ -96,28 +106,27 @@ fn computeMain(@builtin(global_invocation_id) cell: vec3u){
 
 	// B Cells rules:
 	switch activeBNeighbors {
-		case 2: { 
-			cellStateOut2[i] = cellStateIn2[i];
-		}
-        case 3: { 
-			cellStateOut2[i] = 1;
+		case 1: { 
+			cellStateOut[i] = 1;
 		}
 		default: { // Cells with < 2 or > 3 neighbors become inactive.
-            cellStateOut2[i] = 0;
+            cellStateOut2[i] = cellStateOut2[i];
 		}
 	}
 
-	let upCell = cellStateIn2[cellIndex(vec2(cell.x, cell.y+1))];
-	//move B cells right
-	if(upCell == 1 && cell.y!=0){
-		cellStateOut2[i] = 1;
-	}
+	//move B cells down
+	//let upCell = cellStateIn2[cellIndex(vec2(cell.x, cell.y+1))];
+	//if(upCell == 1 && cell.y!=0){
+	//	cellStateOut2[i] = 1;
+	//}
+
+
 
 
     //if the cell should explode
-	//if(explodeNeighbors == 1){
-	//	cellStateOut[i] = 1;
-	//}	
+	if(explodeNeighbors == 1){
+		cellStateOut[i] = 1;
+	}	
 
 
     //ensure that each cell only exists in either the A or B state
@@ -134,4 +143,9 @@ fn computeMain(@builtin(global_invocation_id) cell: vec3u){
 	else{
 		cellStateAgeOut[i] = 0;
 	}
+
+	//if a cell is on the edge of the board, it should be dead
+	//if(isOnEdge(vec2u(cell.x, cell.y))){
+	//	cellStateOut[i] = 0;
+	//}
 }

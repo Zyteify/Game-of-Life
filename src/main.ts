@@ -28,14 +28,12 @@ function resizeCanvas() {
     var headerHeight = 0
     if (header) {
         headerHeight = header.offsetHeight;
-        console.log("Header Height:", headerHeight);
     }
 
     const column = document.getElementById("column");
     var columnwidth = 0
     if (column) {
         columnwidth = column.offsetWidth;
-        console.log("Column Height:", columnwidth);
     }
     //set the canvas size to the window size minus the header and column and 2 pixels for the border
     var width = window.innerWidth - columnwidth -2; 
@@ -47,6 +45,5 @@ function resizeCanvas() {
     const squareSize = Math.min(width / GRID_SIZEX, height / GRID_SIZEY);
     canvas.width = squareSize * GRID_SIZEX;
     canvas.height = squareSize * GRID_SIZEY;
-    console.log(squareSize, GRID_SIZEX, GRID_SIZEY, window.innerWidth, window.innerHeight, width, height);
 
 }

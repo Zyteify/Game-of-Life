@@ -35,7 +35,8 @@ export class Renderer {
     vertices: Float32Array;
 
     computePass: GPUComputePassEncoder;
-    workgroupCount: number;
+    workgroupCounty: number;
+    workgroupCountx: number;
     pass: GPURenderPassEncoder;
 
     //assets
@@ -68,7 +69,7 @@ export class Renderer {
 
     WORKGROUP_SIZE: number = 8;
 
-    uniformArray: Float32Array;
+    uniformArray: Uint32Array;
 
     BUFFER_SIZE: number;
 
@@ -191,7 +192,7 @@ export class Renderer {
 
 
         // Create a uniform buffer that describes the grid.
-        this.uniformArray = new Float32Array([this.GRID_SIZEX, this.GRID_SIZEY]);
+        this.uniformArray = new Uint32Array([this.GRID_SIZEX, this.GRID_SIZEY]);
         this.uniformBuffer = this.device.createBuffer({
             label: "Grid Uniforms",
             size: this.uniformArray.byteLength,
@@ -553,8 +554,9 @@ export class Renderer {
         this.computePass.setBindGroup(2, this.cellAgeBindGroups[this.step % 2]);
         //todo understand workgroupcount
         //fornow just use the grid size x
-        this.workgroupCount = Math.ceil(this.GRID_SIZEX / this.WORKGROUP_SIZE);
-        this.computePass.dispatchWorkgroups(this.workgroupCount, this.workgroupCount);
+        this.workgroupCountx = Math.ceil(this.GRID_SIZEX / this.WORKGROUP_SIZE);
+        this.workgroupCounty = Math.ceil(this.GRID_SIZEY / this.WORKGROUP_SIZE);
+        this.computePass.dispatchWorkgroups(this.workgroupCountx, this.workgroupCounty);
         this.computePass.end();
 
         // End the compute pass and submit the command buffer
@@ -651,14 +653,23 @@ export class Renderer {
     }
 
 
-    setBuffer(obj: object) {
+    setBuffer(obj: object, type: String) {
         this.setStep(0)
         const values = Object.values(obj);
         var testarray: Uint32Array;
         testarray = new Uint32Array(values);
-        this.device.queue.writeBuffer(this.cellStateStorageA[0], 0, testarray);
-        //copy the buffers of the first step to the buffers of the second step to render properly
-        this.copyBufferUsingCompute(this.cellStateStorageA[0], this.cellStateStorageA[1])
+        if(type == "G"){
+            this.device.queue.writeBuffer(this.cellStateStorageA[0], 0, testarray);
+            //copy the buffers of the first step to the buffers of the second step to render properly
+            this.copyBufferUsingCompute(this.cellStateStorageA[0], this.cellStateStorageA[0+1])
+        }
+        else if(type == "B"){
+            this.device.queue.writeBuffer(this.cellStateStorageB[0], 0, testarray);
+            //copy the buffers of the first step to the buffers of the second step to render properly
+            this.copyBufferUsingCompute(this.cellStateStorageB[0], this.cellStateStorageB[0+1])
+        }
+        //todo create function to ensure both buffers contain no overlapping cells
+        //this.verifyBuffers()
 
         this.renderGrid()
     }
@@ -673,14 +684,33 @@ export class Renderer {
     }
 
     //get the buffer and return as a uint32array in the promise
-    async getBuffer(index: number): Promise<Uint32Array> {
+    async getBuffer(cellType: number, index: number): Promise<Uint32Array> {
+        
+        var bufferSRC: GPUBuffer;
         return new Promise<Uint32Array>((resolve, reject) => {
-            this.copyBufferUsingCompute(this.cellStateStorageA[0], this.cellStateStorageA[1]);
-            this.copyBufferUsingCompute(this.cellStateStorageA[2], this.cellStateStorageA[3]);
 
+
+            //if looking for green cells
+            if(cellType == 0){
+                //copy the contents of green buffers to ensure correct step
+                this.copyBufferUsingCompute(this.cellStateStorageA[0], this.cellStateStorageA[1]);
+                this.copyBufferUsingCompute(this.cellStateStorageA[2], this.cellStateStorageA[3]);
+
+                //set the buffer to be sent to the staging buffer
+                bufferSRC = this.cellStateStorageA[index];
+            }
+            else if (cellType == 1){
+                //copy the contents of blue buffers to ensure correct step
+                this.copyBufferUsingCompute(this.cellStateStorageB[0], this.cellStateStorageB[1]);
+                this.copyBufferUsingCompute(this.cellStateStorageB[2], this.cellStateStorageB[3]);
+                //set the buffer to be sent to the staging buffer
+                bufferSRC = this.cellStateStorageB[index];
+            }
+
+            
             const encoder2 = this.device.createCommandEncoder();
             encoder2.copyBufferToBuffer(
-                this.cellStateStorageA[index],
+                bufferSRC,
                 0, // Source offset
                 this.stagingBuffer,
                 0, // Destination offset
@@ -699,9 +729,8 @@ export class Renderer {
                     resolve(returnValue);
                 })
                 .catch(error => {
+                    console.log('error');
                     console.log(error);
-                    console.log(this.stagingBuffer.mapState);
-                    console.log(this.stagingBuffer.getMappedRange);
                     reject(new Uint32Array(0));
                 });
 
@@ -794,8 +823,9 @@ export class Renderer {
         this.computePass.setPipeline(copierPipeline)
         this.computePass.setBindGroup(0, this.uniformBindGroup);
         this.computePass.setBindGroup(1, copierBindGroup);
-        this.workgroupCount = Math.ceil(this.GRID_SIZEX / this.WORKGROUP_SIZE);
-        this.computePass.dispatchWorkgroups(this.workgroupCount, this.workgroupCount);
+        this.workgroupCountx = Math.ceil(this.GRID_SIZEX / this.WORKGROUP_SIZE);
+        this.workgroupCounty = Math.ceil(this.GRID_SIZEY / this.WORKGROUP_SIZE);
+        this.computePass.dispatchWorkgroups(this.workgroupCountx, this.workgroupCounty);
         this.computePass.end();
         this.device.queue.submit([encoder.finish()]);
 

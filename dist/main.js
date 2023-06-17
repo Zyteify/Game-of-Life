@@ -10744,8 +10744,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _scene_scene__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../scene/scene */ "./src/scene/scene.ts");
 /* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! jquery */ "./node_modules/jquery/dist/jquery.js");
 /* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var _scene_cell__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../scene/cell */ "./src/scene/cell.ts");
-
 
 
 
@@ -10757,264 +10755,9 @@ class App {
         this.fps = 2;
         this.animationId = 0;
         this.animationRunning = false;
-        this.obj = {
-            "0": 1,
-            "1": 1,
-            "2": 0,
-            "3": 0,
-            "4": 0,
-            "5": 0,
-            "6": 0,
-            "7": 0,
-            "8": 0,
-            "9": 0,
-            "10": 0,
-            "11": 0,
-            "12": 0,
-            "13": 0,
-            "14": 0,
-            "15": 0,
-            "16": 1,
-            "17": 1,
-            "18": 0,
-            "19": 0,
-            "20": 0,
-            "21": 0,
-            "22": 0,
-            "23": 0,
-            "24": 0,
-            "25": 0,
-            "26": 0,
-            "27": 0,
-            "28": 0,
-            "29": 0,
-            "30": 0,
-            "31": 0,
-            "32": 0,
-            "33": 0,
-            "34": 0,
-            "35": 0,
-            "36": 0,
-            "37": 0,
-            "38": 0,
-            "39": 0,
-            "40": 0,
-            "41": 0,
-            "42": 0,
-            "43": 0,
-            "44": 0,
-            "45": 0,
-            "46": 0,
-            "47": 0,
-            "48": 0,
-            "49": 0,
-            "50": 0,
-            "51": 0,
-            "52": 0,
-            "53": 0,
-            "54": 0,
-            "55": 0,
-            "56": 0,
-            "57": 0,
-            "58": 0,
-            "59": 0,
-            "60": 0,
-            "61": 0,
-            "62": 0,
-            "63": 0,
-            "64": 0,
-            "65": 0,
-            "66": 0,
-            "67": 0,
-            "68": 0,
-            "69": 0,
-            "70": 0,
-            "71": 0,
-            "72": 0,
-            "73": 0,
-            "74": 0,
-            "75": 0,
-            "76": 0,
-            "77": 0,
-            "78": 0,
-            "79": 0,
-            "80": 0,
-            "81": 0,
-            "82": 0,
-            "83": 0,
-            "84": 0,
-            "85": 0,
-            "86": 0,
-            "87": 0,
-            "88": 0,
-            "89": 0,
-            "90": 0,
-            "91": 0,
-            "92": 0,
-            "93": 0,
-            "94": 0,
-            "95": 0,
-            "96": 0,
-            "97": 0,
-            "98": 0,
-            "99": 0,
-            "100": 0,
-            "101": 0,
-            "102": 0,
-            "103": 0,
-            "104": 0,
-            "105": 0,
-            "106": 0,
-            "107": 0,
-            "108": 0,
-            "109": 0,
-            "110": 0,
-            "111": 0,
-            "112": 0,
-            "113": 0,
-            "114": 0,
-            "115": 0,
-            "116": 0,
-            "117": 0,
-            "118": 0,
-            "119": 0,
-            "120": 0,
-            "121": 0,
-            "122": 0,
-            "123": 0,
-            "124": 0,
-            "125": 0,
-            "126": 0,
-            "127": 0,
-            "128": 0,
-            "129": 0,
-            "130": 0,
-            "131": 0,
-            "132": 0,
-            "133": 0,
-            "134": 0,
-            "135": 0,
-            "136": 0,
-            "137": 0,
-            "138": 0,
-            "139": 0,
-            "140": 0,
-            "141": 0,
-            "142": 0,
-            "143": 0,
-            "144": 0,
-            "145": 0,
-            "146": 0,
-            "147": 0,
-            "148": 0,
-            "149": 0,
-            "150": 0,
-            "151": 0,
-            "152": 0,
-            "153": 0,
-            "154": 0,
-            "155": 0,
-            "156": 0,
-            "157": 1,
-            "158": 1,
-            "159": 1,
-            "160": 0,
-            "161": 0,
-            "162": 0,
-            "163": 0,
-            "164": 0,
-            "165": 0,
-            "166": 0,
-            "167": 0,
-            "168": 0,
-            "169": 0,
-            "170": 0,
-            "171": 0,
-            "172": 0,
-            "173": 0,
-            "174": 0,
-            "175": 0,
-            "176": 0,
-            "177": 0,
-            "178": 0,
-            "179": 0,
-            "180": 0,
-            "181": 0,
-            "182": 0,
-            "183": 0,
-            "184": 0,
-            "185": 0,
-            "186": 0,
-            "187": 0,
-            "188": 0,
-            "189": 0,
-            "190": 0,
-            "191": 0,
-            "192": 0,
-            "193": 0,
-            "194": 0,
-            "195": 0,
-            "196": 0,
-            "197": 0,
-            "198": 0,
-            "199": 0,
-            "200": 0,
-            "201": 0,
-            "202": 0,
-            "203": 0,
-            "204": 0,
-            "205": 0,
-            "206": 0,
-            "207": 0,
-            "208": 0,
-            "209": 0,
-            "210": 0,
-            "211": 0,
-            "212": 0,
-            "213": 0,
-            "214": 0,
-            "215": 0,
-            "216": 0,
-            "217": 0,
-            "218": 0,
-            "219": 0,
-            "220": 0,
-            "221": 0,
-            "222": 0,
-            "223": 0,
-            "224": 0,
-            "225": 0,
-            "226": 0,
-            "227": 0,
-            "228": 0,
-            "229": 0,
-            "230": 0,
-            "231": 0,
-            "232": 0,
-            "233": 0,
-            "234": 0,
-            "235": 0,
-            "236": 0,
-            "237": 0,
-            "238": 0,
-            "239": 0,
-            "240": 0,
-            "241": 0,
-            "242": 0,
-            "243": 0,
-            "244": 0,
-            "245": 0,
-            "246": 0,
-            "247": 0,
-            "248": 0,
-            "249": 0,
-            "250": 0,
-            "251": 0,
-            "252": 0,
-            "253": 0,
-            "254": 0,
-            "255": 0
-        };
+        //todo use a dictionary or more appropriate data structure
+        this.mouseCellType = 0;
+        this.mouseCellTypeString = "G";
         //get the value inside an input html element
         this.GRID_SIZEX = GRID_SIZEX;
         this.GRID_SIZEY = GRID_SIZEY;
@@ -11025,7 +10768,7 @@ class App {
         this.mouseYLabel = document.getElementById("mouse-y-label");
         this.generationsLabel = document.getElementById("generations");
         //register clicking on buttons
-        jquery__WEBPACK_IMPORTED_MODULE_2___default()('#next, #start, #pause, #test-values, #data, #data-age, #test, #generate').on('click', (event) => {
+        jquery__WEBPACK_IMPORTED_MODULE_2___default()('#next, #start, #pause, #test-values, #data, #data2, #data-age, #test, #generate, #cell_type_green, #cell_type_blue, #clear').on('click', (event) => {
             this.handle_button(event);
         });
         //get when the input box fps changes
@@ -11058,23 +10801,41 @@ class App {
         if (event.target.id == "start") {
             this.startAnimating();
         }
-        //todo fix this for the grid size
-        //when test-values button is pressed
-        if (event.target.id == "test-values") {
-            this.renderer.setBuffer(this.obj);
-        }
         //when pause button is pressed
         if (event.target.id == "pause") {
             //stop the animation frames
             this.stopAnimating();
         }
+        //when button to change cell color is pressed
+        if (event.target.id == "cell_type_green") {
+            this.mouseCellType = 0;
+            this.mouseCellTypeString = "G";
+        }
+        //when button to change cell color is pressed
+        if (event.target.id == "cell_type_blue") {
+            this.mouseCellType = 1;
+            this.mouseCellTypeString = "B";
+        }
         //when data button is pressed
         if (event.target.id == "data") {
-            await this.getRendererData()
+            await this.getRendererData(0, 1)
                 .then(data => {
                 console.log(data);
                 this.data = data;
             });
+        }
+        //when data2 button is pressed
+        if (event.target.id == "data2") {
+            await this.getRendererData(1, 1)
+                .then(data => {
+                console.log(data);
+            });
+        }
+        if (event.target.id == "clear") {
+            //send empty data to all the buffers
+            var newdata = new Uint32Array(this.GRID_SIZEX * this.GRID_SIZEY);
+            this.renderer.setBuffer(newdata, "G");
+            this.renderer.setBuffer(newdata, "B");
         }
         //when data button is pressed
         if (event.target.id == "generate") {
@@ -11087,12 +10848,14 @@ class App {
             this.resizeCanvas();
         }
     }
-    async getRendererData() {
+    async getRendererData(cellType, index) {
         try {
-            const data = await this.renderer.getBuffer(1);
+            const data = await this.renderer.getBuffer(cellType, index);
             // create a object from the uint32array
-            const cellInterface = (0,_scene_cell__WEBPACK_IMPORTED_MODULE_3__.convertUint32ArrayToCellInterface)(data);
-            return cellInterface;
+            /* const cellInterface: cellInterface[] = convertUint32ArrayToCellInterface(data);
+            return cellInterface */
+            //return the raw uint32array    
+            return data;
         }
         catch (error) {
             console.error(error);
@@ -11159,15 +10922,15 @@ class App {
         const cellY = this.GRID_SIZEY - 1 - Math.floor(mouseY / cellsizey);
         if (this.renderer.initialized) {
             // get the data of the grid
-            await this.getRendererData()
+            await this.getRendererData(this.mouseCellType, 1)
                 .then(data => {
                 //change the value of the cell to the opposite
-                var newvalue = this.getCellValue(data, cellX + cellY * this.GRID_SIZEX) == 1 ? 0 : 1;
-                this.updateCellValue(data, cellX + cellY * this.GRID_SIZEX, newvalue);
+                var newvalue = data[cellX + cellY * this.GRID_SIZEX] == 1 ? 0 : 1;
+                data[cellX + cellY * this.GRID_SIZEX] = newvalue;
                 //convert the cell interface to a uint32array for the renderer
-                var newdata = (0,_scene_cell__WEBPACK_IMPORTED_MODULE_3__.convertCellInterfaceToUint32Array)(data);
+                var newdata = data;
                 //send it to the renderer
-                this.renderer.setBuffer(newdata);
+                this.renderer.setBuffer(newdata, this.mouseCellTypeString);
                 this.updateGenerations();
             })
                 .catch(error => {
@@ -11201,13 +10964,11 @@ class App {
         var headerHeight = 0;
         if (header) {
             headerHeight = header.offsetHeight;
-            console.log("Header Height:", headerHeight);
         }
         const column = document.getElementById("column");
         var columnwidth = 0;
         if (column) {
             columnwidth = column.offsetWidth;
-            console.log("Column Height:", columnwidth);
         }
         //set the canvas size to the window size minus the header and column and 2 pixels for the border
         var width = window.innerWidth - columnwidth - 2;
@@ -11218,7 +10979,6 @@ class App {
         const squareSize = Math.min(width / GRID_SIZEX, height / GRID_SIZEY);
         this.canvas.width = squareSize * GRID_SIZEX;
         this.canvas.height = squareSize * GRID_SIZEY;
-        console.log(squareSize, GRID_SIZEX, GRID_SIZEY, window.innerWidth, window.innerHeight, width, height);
     }
 }
 
@@ -11475,7 +11235,7 @@ class Renderer {
                 }],
         };
         // Create a uniform buffer that describes the grid.
-        this.uniformArray = new Float32Array([this.GRID_SIZEX, this.GRID_SIZEY]);
+        this.uniformArray = new Uint32Array([this.GRID_SIZEX, this.GRID_SIZEY]);
         this.uniformBuffer = this.device.createBuffer({
             label: "Grid Uniforms",
             size: this.uniformArray.byteLength,
@@ -11787,8 +11547,9 @@ class Renderer {
         this.computePass.setBindGroup(2, this.cellAgeBindGroups[this.step % 2]);
         //todo understand workgroupcount
         //fornow just use the grid size x
-        this.workgroupCount = Math.ceil(this.GRID_SIZEX / this.WORKGROUP_SIZE);
-        this.computePass.dispatchWorkgroups(this.workgroupCount, this.workgroupCount);
+        this.workgroupCountx = Math.ceil(this.GRID_SIZEX / this.WORKGROUP_SIZE);
+        this.workgroupCounty = Math.ceil(this.GRID_SIZEY / this.WORKGROUP_SIZE);
+        this.computePass.dispatchWorkgroups(this.workgroupCountx, this.workgroupCounty);
         this.computePass.end();
         // End the compute pass and submit the command buffer
         this.step++;
@@ -11865,14 +11626,23 @@ class Renderer {
             this.device.queue.submit([encoder.finish()]);
         }
     }
-    setBuffer(obj) {
+    setBuffer(obj, type) {
         this.setStep(0);
         const values = Object.values(obj);
         var testarray;
         testarray = new Uint32Array(values);
-        this.device.queue.writeBuffer(this.cellStateStorageA[0], 0, testarray);
-        //copy the buffers of the first step to the buffers of the second step to render properly
-        this.copyBufferUsingCompute(this.cellStateStorageA[0], this.cellStateStorageA[1]);
+        if (type == "G") {
+            this.device.queue.writeBuffer(this.cellStateStorageA[0], 0, testarray);
+            //copy the buffers of the first step to the buffers of the second step to render properly
+            this.copyBufferUsingCompute(this.cellStateStorageA[0], this.cellStateStorageA[0 + 1]);
+        }
+        else if (type == "B") {
+            this.device.queue.writeBuffer(this.cellStateStorageB[0], 0, testarray);
+            //copy the buffers of the first step to the buffers of the second step to render properly
+            this.copyBufferUsingCompute(this.cellStateStorageB[0], this.cellStateStorageB[0 + 1]);
+        }
+        //todo create function to ensure both buffers contain no overlapping cells
+        //this.verifyBuffers()
         this.renderGrid();
     }
     getGlobalStep() {
@@ -11883,12 +11653,26 @@ class Renderer {
         this.step = step;
     }
     //get the buffer and return as a uint32array in the promise
-    async getBuffer(index) {
+    async getBuffer(cellType, index) {
+        var bufferSRC;
         return new Promise((resolve, reject) => {
-            this.copyBufferUsingCompute(this.cellStateStorageA[0], this.cellStateStorageA[1]);
-            this.copyBufferUsingCompute(this.cellStateStorageA[2], this.cellStateStorageA[3]);
+            //if looking for green cells
+            if (cellType == 0) {
+                //copy the contents of green buffers to ensure correct step
+                this.copyBufferUsingCompute(this.cellStateStorageA[0], this.cellStateStorageA[1]);
+                this.copyBufferUsingCompute(this.cellStateStorageA[2], this.cellStateStorageA[3]);
+                //set the buffer to be sent to the staging buffer
+                bufferSRC = this.cellStateStorageA[index];
+            }
+            else if (cellType == 1) {
+                //copy the contents of blue buffers to ensure correct step
+                this.copyBufferUsingCompute(this.cellStateStorageB[0], this.cellStateStorageB[1]);
+                this.copyBufferUsingCompute(this.cellStateStorageB[2], this.cellStateStorageB[3]);
+                //set the buffer to be sent to the staging buffer
+                bufferSRC = this.cellStateStorageB[index];
+            }
             const encoder2 = this.device.createCommandEncoder();
-            encoder2.copyBufferToBuffer(this.cellStateStorageA[index], 0, // Source offset
+            encoder2.copyBufferToBuffer(bufferSRC, 0, // Source offset
             this.stagingBuffer, 0, // Destination offset
             this.BUFFER_SIZE);
             const commands2 = encoder2.finish();
@@ -11902,9 +11686,8 @@ class Renderer {
                 resolve(returnValue);
             })
                 .catch(error => {
+                console.log('error');
                 console.log(error);
-                console.log(this.stagingBuffer.mapState);
-                console.log(this.stagingBuffer.getMappedRange);
                 reject(new Uint32Array(0));
             });
             const commands = encoder.finish();
@@ -11979,8 +11762,9 @@ class Renderer {
         this.computePass.setPipeline(copierPipeline);
         this.computePass.setBindGroup(0, this.uniformBindGroup);
         this.computePass.setBindGroup(1, copierBindGroup);
-        this.workgroupCount = Math.ceil(this.GRID_SIZEX / this.WORKGROUP_SIZE);
-        this.computePass.dispatchWorkgroups(this.workgroupCount, this.workgroupCount);
+        this.workgroupCountx = Math.ceil(this.GRID_SIZEX / this.WORKGROUP_SIZE);
+        this.workgroupCounty = Math.ceil(this.GRID_SIZEY / this.WORKGROUP_SIZE);
+        this.computePass.dispatchWorkgroups(this.workgroupCountx, this.workgroupCounty);
         this.computePass.end();
         this.device.queue.submit([encoder.finish()]);
     }
@@ -12046,7 +11830,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("@group(0) @binding(0) var<uniform> grid: vec2f;\r\n\r\n@group(1) @binding(0) var<storage, read> cellStateIn: array<u32>;\r\n@group(1) @binding(1) var<storage, read_write> cellStateOut: array<u32>;\r\n\r\nfn cellIndex(cell: vec2u) -> u32 {\r\n  return (cell.y % u32(grid.y)) * u32(grid.x) +\r\n         (cell.x % u32(grid.x));\r\n}\r\n\r\n@compute @workgroup_size(8, 8) fn computeMain(@builtin(global_invocation_id) cell: vec3u){\r\n    let i = cellIndex(cell.xy);\r\n  cellStateOut[i] = cellStateIn[i];\r\n}");
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("@group(0) @binding(0) var<uniform> grid: vec2u;\r\n\r\n@group(1) @binding(0) var<storage, read> cellStateIn: array<u32>;\r\n@group(1) @binding(1) var<storage, read_write> cellStateOut: array<u32>;\r\n\r\nfn cellIndex(cell: vec2u) -> u32 {\r\n  return (cell.y % grid.y) * grid.x +\r\n         (cell.x % grid.x);\r\n}\r\n\r\n@compute @workgroup_size(8, 8) fn computeMain(@builtin(global_invocation_id) cell: vec3u){\r\n    let i = cellIndex(cell.xy);\r\n  cellStateOut[i] = cellStateIn[i];\r\n}");
 
 /***/ }),
 
@@ -12061,7 +11845,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("@group(0) @binding(0) var<uniform> grid: vec2f;\r\n@group(0) @binding(1) var<uniform> seed: f32;\r\n@group(1) @binding(0) var<storage, read> cellStateIn: array<u32>;\r\n@group(1) @binding(1) var<storage, read_write> cellStateOut: array<u32>;\r\n@group(1) @binding(2) var<storage, read> cellStateIn2: array<u32>;\r\n@group(1) @binding(3) var<storage, read_write> cellStateOut2: array<u32>;\r\n@group(2) @binding(0) var<storage, read> cellStateAgeIn: array<u32>;\r\n@group(2) @binding(1) var<storage, read_write> cellStateAgeOut: array<u32>;\r\n\r\nfn cellIndex(cell: vec2u) -> u32 {\r\n\treturn (cell.y % u32(grid.y)) * u32(grid.x) +\r\n\t\t(cell.x % u32(grid.x));\r\n}\r\n\r\nfn cellActive(cellType: u32, x: u32, y: u32) -> u32 {\r\n\tif(cellType == 0){\r\n\t\treturn cellStateIn[cellIndex(vec2(x, y))];\r\n\t}\r\n\telse if (cellType == 1){\r\n\t\treturn cellStateIn2[cellIndex(vec2(x, y))];\r\n\t}\r\n\telse{\r\n\t\treturn 0;\r\n\t}\r\n}\r\n\r\n//set to 1 if the cell should explode\r\nfn cellExplode(x: u32, y: u32) -> u32 {\r\n\tvar age = cellStateAgeIn[cellIndex(vec2(x, y))];\r\n\tif(age == 10){\r\n\t\treturn 1;\r\n\t}\r\n\telse {\r\n\t\treturn 0;\r\n\t}\r\n}\r\n\r\nfn random(p: vec2<f32>) -> f32 {\r\n    let K1: vec2<f32> = vec2<f32>(\r\n        23.14069263277926, // e^pi (Gelfond's constant)\r\n        2.665144142690225 // 2^sqrt(2) (Gelfond–Schneider constant)\r\n    );\r\n    return fract(cos(dot(p, K1)) * 12345.6789);\r\n}\r\n\r\n@compute @workgroup_size(8, 8)\r\n\r\nfn computeMain(@builtin(global_invocation_id) cell: vec3u){\r\n    let i = cellIndex(cell.xy);\r\n\tlet random = random(vec2<f32>(f32(cell.x)+seed, f32(cell.y)));\r\n\r\n\tlet activeNeighbors = \r\n\t\tcellActive(u32(0), cell.x+1, cell.y+1) +\r\n\t\tcellActive(u32(0), cell.x+1, cell.y) +\r\n\t\tcellActive(u32(0), cell.x+1, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y+1) +\r\n\t\tcellActive(u32(0), cell.x, cell.y+1);\r\n\r\n    let activeBNeighbors = \r\n\t\tcellActive(u32(1), cell.x+1, cell.y+1) +\r\n\t\tcellActive(u32(1), cell.x+1, cell.y) +\r\n\t\tcellActive(u32(1), cell.x+1, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y+1) +\r\n\t\tcellActive(u32(1), cell.x, cell.y+1);\r\n\r\n    let explodeNeighbors = \r\n\t\tcellExplode(cell.x+1, cell.y+1) +\r\n\t\tcellExplode(cell.x+1, cell.y) +\r\n\t\tcellExplode(cell.x+1, cell.y-1) +\r\n\t\tcellExplode(cell.x, cell.y-1) +\r\n\t\tcellExplode(cell.x-1, cell.y-1) +\r\n\t\tcellExplode(cell.x-1, cell.y) +\r\n\t\tcellExplode(cell.x-1, cell.y+1) +\r\n\t\tcellExplode(cell.x, cell.y+1)  + \r\n\t\tcellExplode(cell.x, cell.y);;\r\n\r\n\r\n\t// Conway's game of life rules:\r\n\tswitch activeNeighbors {\r\n\t\tcase 2: { \r\n\t\t\tcellStateOut[i] = cellStateIn[i];\r\n\t\t}\r\n        case 3: { \r\n\t\t\tcellStateOut[i] = 1;\r\n\t\t}\r\n\t\tdefault: { // Cells with < 2 or > 3 neighbors become inactive.\r\n            cellStateOut[i] = 0;\r\n\t\t}\r\n\t}\r\n\r\n\t// B Cells rules:\r\n\tswitch activeBNeighbors {\r\n\t\tcase 2: { \r\n\t\t\tcellStateOut2[i] = cellStateIn2[i];\r\n\t\t}\r\n        case 3: { \r\n\t\t\tcellStateOut2[i] = 1;\r\n\t\t}\r\n\t\tdefault: { // Cells with < 2 or > 3 neighbors become inactive.\r\n            cellStateOut2[i] = 0;\r\n\t\t}\r\n\t}\r\n\r\n\tlet upCell = cellStateIn2[cellIndex(vec2(cell.x, cell.y+1))];\r\n\t//move B cells right\r\n\tif(upCell == 1 && cell.y!=0){\r\n\t\tcellStateOut2[i] = 1;\r\n\t}\r\n\r\n\r\n    //if the cell should explode\r\n\t//if(explodeNeighbors == 1){\r\n\t//\tcellStateOut[i] = 1;\r\n\t//}\t\r\n\r\n\r\n    //ensure that each cell only exists in either the A or B state\r\n    if(cellStateOut2[i] == 1){\r\n        cellStateOut[i] = 0;\r\n    }\r\n    else if cellStateOut2[i] == 0{\r\n    }\r\n\r\n    //add the age if it is still alive\r\n\tif(cellStateOut[i] == 1){\r\n\t\tcellStateAgeOut[i] = cellStateAgeIn[i]+1;\r\n\t}\r\n\telse{\r\n\t\tcellStateAgeOut[i] = 0;\r\n\t}\r\n}");
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("@group(0) @binding(0) var<uniform> grid: vec2u;\r\n@group(0) @binding(1) var<uniform> seed: f32;\r\n@group(1) @binding(0) var<storage, read> cellStateIn: array<u32>;\r\n@group(1) @binding(1) var<storage, read_write> cellStateOut: array<u32>;\r\n@group(1) @binding(2) var<storage, read> cellStateIn2: array<u32>;\r\n@group(1) @binding(3) var<storage, read_write> cellStateOut2: array<u32>;\r\n@group(2) @binding(0) var<storage, read> cellStateAgeIn: array<u32>;\r\n@group(2) @binding(1) var<storage, read_write> cellStateAgeOut: array<u32>;\r\n\r\nfn isOnEdge(cell: vec2u) -> bool {\r\n\treturn cell.x == 0 || cell.x == grid.x - 1 || cell.y == 0 || cell.y == grid.y - 1;\r\n}\r\n\r\nfn cellIndex(cell: vec2u) -> u32 {\r\n\treturn (cell.y % grid.y) * grid.x +\r\n\t\t(cell.x % grid.x);\r\n}\r\n\r\nfn cellActive(cellType: u32, x: u32, y: u32) -> u32 {\r\n\t//if the cell is out of bounds, it is not active\r\n\tif(x >= grid.x || y >= grid.y){\r\n\t\treturn 0;\r\n\t}\r\n\t\r\n\r\n\tif(cellType == 0){\r\n\t\treturn cellStateIn[cellIndex(vec2(x, y))];\r\n\t}\r\n\telse if (cellType == 1){\r\n\t\treturn cellStateIn2[cellIndex(vec2(x, y))];\r\n\t}\r\n\telse{\r\n\t\treturn 0;\r\n\t}\r\n}\r\n\r\n//set to 1 if the cell should explode\r\nfn cellExplode(x: u32, y: u32) -> u32 {\r\n\tvar age = cellStateAgeIn[cellIndex(vec2(x, y))];\r\n\tif(age == 10){\r\n\t\treturn 1;\r\n\t}\r\n\telse {\r\n\t\treturn 0;\r\n\t}\r\n}\r\n\r\nfn random(p: vec2<f32>) -> f32 {\r\n    let K1: vec2<f32> = vec2<f32>(\r\n        23.14069263277926, // e^pi (Gelfond's constant)\r\n        2.665144142690225 // 2^sqrt(2) (Gelfond–Schneider constant)\r\n    );\r\n    return fract(cos(dot(p, K1)) * 12345.6789);\r\n}\r\n\r\n@compute @workgroup_size(8, 8)\r\n\r\nfn computeMain(@builtin(global_invocation_id) cell: vec3u){\r\n    let i = cellIndex(cell.xy);\r\n\tlet random = random(vec2<f32>(f32(cell.x)+seed, f32(cell.y)));\r\n\r\n\tlet activeNeighbors = \r\n\t\tcellActive(u32(0), cell.x+1, cell.y+1) +\r\n\t\tcellActive(u32(0), cell.x+1, cell.y) +\r\n\t\tcellActive(u32(0), cell.x+1, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y+1) +\r\n\t\tcellActive(u32(0), cell.x, cell.y+1);\r\n\r\n    let activeBNeighbors = \r\n\t\tcellActive(u32(1), cell.x+1, cell.y+1) +\r\n\t\tcellActive(u32(1), cell.x+1, cell.y) +\r\n\t\tcellActive(u32(1), cell.x+1, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y+1) +\r\n\t\tcellActive(u32(1), cell.x, cell.y+1);\r\n\r\n    let explodeNeighbors = \r\n\t\tcellExplode(cell.x+1, cell.y+1) +\r\n\t\tcellExplode(cell.x+1, cell.y) +\r\n\t\tcellExplode(cell.x+1, cell.y-1) +\r\n\t\tcellExplode(cell.x, cell.y-1) +\r\n\t\tcellExplode(cell.x-1, cell.y-1) +\r\n\t\tcellExplode(cell.x-1, cell.y) +\r\n\t\tcellExplode(cell.x-1, cell.y+1) +\r\n\t\tcellExplode(cell.x, cell.y+1)  + \r\n\t\tcellExplode(cell.x, cell.y);;\r\n\r\n\r\n\t// Conway's game of life rules:\r\n\tswitch activeNeighbors {\r\n\t\tcase 2: { \r\n\t\t\tcellStateOut[i] = cellStateIn[i];\r\n\t\t}\r\n        case 3: { \r\n\t\t\tcellStateOut[i] = 1;\r\n\t\t}\r\n\t\tdefault: { // Cells with < 2 or > 3 neighbors become inactive.\r\n            cellStateOut[i] = 0;\r\n\t\t}\r\n\t}\r\n\r\n\t// B Cells rules:\r\n\tswitch activeBNeighbors {\r\n\t\tcase 1: { \r\n\t\t\tcellStateOut[i] = 1;\r\n\t\t}\r\n\t\tdefault: { // Cells with < 2 or > 3 neighbors become inactive.\r\n            cellStateOut2[i] = cellStateOut2[i];\r\n\t\t}\r\n\t}\r\n\r\n\t//move B cells down\r\n\t//let upCell = cellStateIn2[cellIndex(vec2(cell.x, cell.y+1))];\r\n\t//if(upCell == 1 && cell.y!=0){\r\n\t//\tcellStateOut2[i] = 1;\r\n\t//}\r\n\r\n\r\n\r\n\r\n    //if the cell should explode\r\n\tif(explodeNeighbors == 1){\r\n\t\tcellStateOut[i] = 1;\r\n\t}\t\r\n\r\n\r\n    //ensure that each cell only exists in either the A or B state\r\n    if(cellStateOut2[i] == 1){\r\n        cellStateOut[i] = 0;\r\n    }\r\n    else if cellStateOut2[i] == 0{\r\n    }\r\n\r\n    //add the age if it is still alive\r\n\tif(cellStateOut[i] == 1){\r\n\t\tcellStateAgeOut[i] = cellStateAgeIn[i]+1;\r\n\t}\r\n\telse{\r\n\t\tcellStateAgeOut[i] = 0;\r\n\t}\r\n\r\n\t//if a cell is on the edge of the board, it should be dead\r\n\t//if(isOnEdge(vec2u(cell.x, cell.y))){\r\n\t//\tcellStateOut[i] = 0;\r\n\t//}\r\n}");
 
 /***/ }),
 
@@ -12076,7 +11860,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("struct VertexOutput {\r\n\t@builtin(position) position: vec4f,\r\n\t@location(0) cell: vec2f,\r\n\t@location(1) cellAge: f32,\r\n\t@location(2) cellType: f32,\r\n};\r\n\r\n@group(0) @binding(0) var<uniform> grid: vec2f;\r\n@group(1) @binding(0) var<storage> cellState: array<u32>;\r\n@group(2) @binding(0) var<storage> cellStateAge: array<u32>;\r\n@group(1) @binding(2) var<storage> cellState2: array<u32>;\r\n@group(2) @binding(2) var<storage> cellStateAge2: array<u32>;\r\n\r\n@vertex\r\nfn vertexMain(@location(0) position: vec2f,\r\n              @builtin(instance_index) instance: u32) -> VertexOutput {\r\n\tvar output: VertexOutput;\r\n\r\n\tlet i = f32(instance);\r\n\tlet cell = vec2f(i % grid.x, floor(i / grid.x));\r\n\r\n\t//get the state of the cell\r\n\tvar state = f32(cellState[instance]);\r\n\tvar cellType = f32(state);\r\n\r\n\t//if the set the cell type to \r\n\tif(state == 0){\r\n\t\tstate = f32(cellState2[instance]);\r\n\t\tcellType = 2.0;\r\n\t}\r\n\r\n\tlet cellOffset = cell / grid * 2;\r\n\tlet gridPos = (position*state+1) / grid - 1 + cellOffset;\r\n\r\n\t\r\n\r\n\toutput.position = vec4f(gridPos, 0, 1);\r\n\toutput.cell = cell / grid;\r\n\t//get the age of the current cell\r\n\toutput.cellAge = f32(cellStateAge[instance])/100.0;\r\n\toutput.cellType = cellType;\r\n\treturn output;\r\n}\r\n\r\n@fragment\r\nfn fragmentMain(input: VertexOutput) -> @location(0) vec4f {\r\n\t//return vec4f(input.cell, 1.0 - input.cell.x, 1);\r\n\tif(input.cellType == 0.0){\r\n\t\treturn vec4f(1.0, 0.0, 0.0, 1);\r\n\t}\r\n\telse if(input.cellType == 1.0){\r\n\t\treturn vec4f(0.0+10.0*input.cellAge, 1.0-10.0*input.cellAge, 0.0, 1);\r\n\t}\r\n\telse if(input.cellType == 2.0){\r\n\t\treturn vec4f(0.0, 0.0, 1.0, 1);\r\n\t}\r\n\telse\r\n\t{\r\n\t\treturn vec4f(1.0, 1.0, 1.0, 1);\r\n\t}\r\n\t//return vec4f(0.2+5.0*input.cellAge, input.cellAge, 0.4, 1);\r\n}\r\n//");
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("struct VertexOutput {\r\n\t@builtin(position) position: vec4f,\r\n\t@location(0) cell: vec2f,\r\n\t@location(1) cellAge: f32,\r\n\t@location(2) cellType: f32,\r\n};\r\n\r\n@group(0) @binding(0) var<uniform> grid: vec2u;\r\n@group(1) @binding(0) var<storage> cellState: array<u32>;\r\n@group(2) @binding(0) var<storage> cellStateAge: array<u32>;\r\n@group(1) @binding(2) var<storage> cellState2: array<u32>;\r\n@group(2) @binding(2) var<storage> cellStateAge2: array<u32>;\r\n\r\nfn cellIndex(cell: vec2u) -> u32 {\r\n\treturn (cell.y % grid.y) * grid.x +\r\n\t\t(cell.x % grid.x);\r\n}\r\n\r\nfn isOnEdge(cell: vec2u) -> bool {\r\n\treturn cell.x == 0 || cell.x == grid.x - 1 || cell.y == 0 || cell.y == grid.y - 1;\r\n}\r\n\r\n@vertex\r\nfn vertexMain(@location(0) position: vec2f,\r\n              @builtin(instance_index) instance: u32) -> VertexOutput {\r\n\tvar output: VertexOutput;\r\n\r\n\tlet i = f32(instance);\r\n\tlet cell = vec2f(i % f32(grid.x), floor(i / f32(grid.x)));\r\n\t\r\n\tvar cellType=f32();\r\n\tvar state = f32();\r\n\r\n\t//check the type of cell. first check the cellstate2, then cellstate, then default to 0\r\n\tif(1==cellState2[instance]){\r\n\t\tcellType = 2.0;\r\n\t\tstate = f32(cellState2[instance]);\r\n\t}\r\n\telse if (1==cellState[instance]){\r\n\t\tcellType = 1.0;\r\n\t\tstate = f32(cellState[instance]);\r\n\t}\r\n\telse{\r\n\t\tcellType = 0.0;\r\n\t\tstate = 0.0;\r\n\t}\r\n\t\r\n\t//if the cell is on the edge of the grid, then we need to set the cell type to 0\r\n\t//if(isOnEdge(vec2u(cell))){\r\n\t//\tcellType = 0.0;\r\n\t//\tstate=1.0;\r\n\t//}\r\n\r\n\r\n\tlet cellOffset = cell / vec2f(grid) * 2;\r\n\tlet gridPos = (position*state+1) / vec2f(grid) - 1 + cellOffset;\r\n\r\n\r\n\r\n\t\r\n\r\n\toutput.position = vec4f(gridPos, 0, 1);\r\n\toutput.cell = cell / vec2f(grid);\r\n\t//get the age of the current cell\r\n\toutput.cellAge = f32(cellStateAge[instance])/100.0;\r\n\toutput.cellType = cellType;\r\n\treturn output;\r\n}\r\n\r\n@fragment\r\nfn fragmentMain(input: VertexOutput) -> @location(0) vec4f {\r\n\tif(input.cellType == 0.0){\r\n\t\treturn vec4f(1.0, 0.0, 0.0, 1);\r\n\t}\r\n\telse if(input.cellType == 1.0){\r\n\t\treturn vec4f(0.0+input.cellAge*10.0, 1.0, 0.0, 1);\r\n\t}\r\n\telse if(input.cellType == 2.0){\r\n\t\treturn vec4f(0.0, 0.0, 1.0, 1);\r\n\t}\r\n\telse\r\n\t{\r\n\t\treturn vec4f(1.0, 1.0, 1.0, 1);\r\n\t}\r\n}");
 
 /***/ }),
 
@@ -12190,13 +11974,11 @@ function resizeCanvas() {
     var headerHeight = 0;
     if (header) {
         headerHeight = header.offsetHeight;
-        console.log("Header Height:", headerHeight);
     }
     const column = document.getElementById("column");
     var columnwidth = 0;
     if (column) {
         columnwidth = column.offsetWidth;
-        console.log("Column Height:", columnwidth);
     }
     //set the canvas size to the window size minus the header and column and 2 pixels for the border
     var width = window.innerWidth - columnwidth - 2;
@@ -12207,7 +11989,6 @@ function resizeCanvas() {
     const squareSize = Math.min(width / GRID_SIZEX, height / GRID_SIZEY);
     canvas.width = squareSize * GRID_SIZEX;
     canvas.height = squareSize * GRID_SIZEY;
-    console.log(squareSize, GRID_SIZEX, GRID_SIZEY, window.innerWidth, window.innerHeight, width, height);
 }
 
 })();

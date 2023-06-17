@@ -5,11 +5,20 @@ struct VertexOutput {
 	@location(2) cellType: f32,
 };
 
-@group(0) @binding(0) var<uniform> grid: vec2f;
+@group(0) @binding(0) var<uniform> grid: vec2u;
 @group(1) @binding(0) var<storage> cellState: array<u32>;
 @group(2) @binding(0) var<storage> cellStateAge: array<u32>;
 @group(1) @binding(2) var<storage> cellState2: array<u32>;
 @group(2) @binding(2) var<storage> cellStateAge2: array<u32>;
+
+fn cellIndex(cell: vec2u) -> u32 {
+	return (cell.y % grid.y) * grid.x +
+		(cell.x % grid.x);
+}
+
+fn isOnEdge(cell: vec2u) -> bool {
+	return cell.x == 0 || cell.x == grid.x - 1 || cell.y == 0 || cell.y == grid.y - 1;
+}
 
 @vertex
 fn vertexMain(@location(0) position: vec2f,
@@ -17,25 +26,41 @@ fn vertexMain(@location(0) position: vec2f,
 	var output: VertexOutput;
 
 	let i = f32(instance);
-	let cell = vec2f(i % grid.x, floor(i / grid.x));
+	let cell = vec2f(i % f32(grid.x), floor(i / f32(grid.x)));
+	
+	var cellType=f32();
+	var state = f32();
 
-	//get the state of the cell
-	var state = f32(cellState[instance]);
-	var cellType = f32(state);
-
-	//if the set the cell type to 
-	if(state == 0){
-		state = f32(cellState2[instance]);
+	//check the type of cell. first check the cellstate2, then cellstate, then default to 0
+	if(1==cellState2[instance]){
 		cellType = 2.0;
+		state = f32(cellState2[instance]);
 	}
+	else if (1==cellState[instance]){
+		cellType = 1.0;
+		state = f32(cellState[instance]);
+	}
+	else{
+		cellType = 0.0;
+		state = 0.0;
+	}
+	
+	//if the cell is on the edge of the grid, then we need to set the cell type to 0
+	//if(isOnEdge(vec2u(cell))){
+	//	cellType = 0.0;
+	//	state=1.0;
+	//}
 
-	let cellOffset = cell / grid * 2;
-	let gridPos = (position*state+1) / grid - 1 + cellOffset;
+
+	let cellOffset = cell / vec2f(grid) * 2;
+	let gridPos = (position*state+1) / vec2f(grid) - 1 + cellOffset;
+
+
 
 	
 
 	output.position = vec4f(gridPos, 0, 1);
-	output.cell = cell / grid;
+	output.cell = cell / vec2f(grid);
 	//get the age of the current cell
 	output.cellAge = f32(cellStateAge[instance])/100.0;
 	output.cellType = cellType;
@@ -44,12 +69,11 @@ fn vertexMain(@location(0) position: vec2f,
 
 @fragment
 fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
-	//return vec4f(input.cell, 1.0 - input.cell.x, 1);
 	if(input.cellType == 0.0){
 		return vec4f(1.0, 0.0, 0.0, 1);
 	}
 	else if(input.cellType == 1.0){
-		return vec4f(0.0+10.0*input.cellAge, 1.0-10.0*input.cellAge, 0.0, 1);
+		return vec4f(0.0+input.cellAge*10.0, 1.0, 0.0, 1);
 	}
 	else if(input.cellType == 2.0){
 		return vec4f(0.0, 0.0, 1.0, 1);
@@ -58,6 +82,4 @@ fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
 	{
 		return vec4f(1.0, 1.0, 1.0, 1);
 	}
-	//return vec4f(0.2+5.0*input.cellAge, input.cellAge, 0.4, 1);
 }
-//
