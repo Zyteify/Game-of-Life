@@ -142,6 +142,7 @@ export class App {
             var newdata: Uint32Array = new Uint32Array(this.GRID_SIZEX * this.GRID_SIZEY)
             this.renderer.setBuffer(newdata, "G");
             this.renderer.setBuffer(newdata, "B");
+            this.renderer.setStep(0)
         }
 
 
@@ -257,6 +258,7 @@ export class App {
                 data[cellX + cellY * this.GRID_SIZEX] =  newvalue
                 //convert the cell interface to a uint32array for the renderer
                 var newdata: Uint32Array = data
+
                 //send it to the renderer
                 this.renderer.setBuffer(newdata, this.mouseCellTypeString);
                 

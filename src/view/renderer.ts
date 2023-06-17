@@ -283,11 +283,8 @@ export class Renderer {
                 else{
                     cellStateArray[i] = 0;
                 }
-
-                //cellStateArray[i] = Math.random() > 0.9 ? 1 : 0;
                 
             }
-            console.log(cellStateArray)
             device.queue.writeBuffer(cellStateStorageA[0], 0, cellStateArray);
         }
 
@@ -593,6 +590,7 @@ export class Renderer {
         //copy the contents of all buffers to ensure correct step
         this.copyBufferUsingCompute(this.cellStateStorageA[0], this.cellStateStorageA[1]);
         this.copyBufferUsingCompute(this.cellStateStorageA[2], this.cellStateStorageA[3]);
+        this.copyBufferUsingCompute(this.cellStateStorageB[0], this.cellStateStorageB[1]);
 
         const encoder = this.device.createCommandEncoder();
 
@@ -670,12 +668,17 @@ export class Renderer {
         }
         //todo create function to ensure both buffers contain no overlapping cells
         //this.verifyBuffers()
+        
 
         this.renderGrid()
     }
 
     getGlobalStep() {
         return this.globalStep
+    }
+
+    getStep() {
+        return this.step
     }
 
     //set the step number. this is used to determine which bind group to use. 0 for A, 1 for B
@@ -685,29 +688,25 @@ export class Renderer {
 
     //get the buffer and return as a uint32array in the promise
     async getBuffer(cellType: number, index: number): Promise<Uint32Array> {
-        
         var bufferSRC: GPUBuffer;
         return new Promise<Uint32Array>((resolve, reject) => {
 
 
             //if looking for green cells
             if(cellType == 0){
-                //copy the contents of green buffers to ensure correct step
-                this.copyBufferUsingCompute(this.cellStateStorageA[0], this.cellStateStorageA[1]);
-                this.copyBufferUsingCompute(this.cellStateStorageA[2], this.cellStateStorageA[3]);
-
                 //set the buffer to be sent to the staging buffer
                 bufferSRC = this.cellStateStorageA[index];
             }
             else if (cellType == 1){
-                //copy the contents of blue buffers to ensure correct step
-                this.copyBufferUsingCompute(this.cellStateStorageB[0], this.cellStateStorageB[1]);
-                this.copyBufferUsingCompute(this.cellStateStorageB[2], this.cellStateStorageB[3]);
                 //set the buffer to be sent to the staging buffer
                 bufferSRC = this.cellStateStorageB[index];
             }
 
-            
+            this.copyBufferUsingCompute(this.cellStateStorageB[0], this.cellStateStorageB[1]);
+            this.copyBufferUsingCompute(this.cellStateStorageB[2], this.cellStateStorageB[3]);
+            this.copyBufferUsingCompute(this.cellStateStorageA[0], this.cellStateStorageA[1]);
+            this.copyBufferUsingCompute(this.cellStateStorageA[2], this.cellStateStorageA[3]);
+
             const encoder2 = this.device.createCommandEncoder();
             encoder2.copyBufferToBuffer(
                 bufferSRC,

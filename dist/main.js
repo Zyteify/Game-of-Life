@@ -10836,6 +10836,7 @@ class App {
             var newdata = new Uint32Array(this.GRID_SIZEX * this.GRID_SIZEY);
             this.renderer.setBuffer(newdata, "G");
             this.renderer.setBuffer(newdata, "B");
+            this.renderer.setStep(0);
         }
         //when data button is pressed
         if (event.target.id == "generate") {
@@ -11314,9 +11315,7 @@ class Renderer {
                 else {
                     cellStateArray[i] = 0;
                 }
-                //cellStateArray[i] = Math.random() > 0.9 ? 1 : 0;
             }
-            console.log(cellStateArray);
             device.queue.writeBuffer(cellStateStorageA[0], 0, cellStateArray);
         }
         initialiseGrid(this.device, this.cellStateStorageA, this.cellStateArray);
@@ -11580,6 +11579,7 @@ class Renderer {
         //copy the contents of all buffers to ensure correct step
         this.copyBufferUsingCompute(this.cellStateStorageA[0], this.cellStateStorageA[1]);
         this.copyBufferUsingCompute(this.cellStateStorageA[2], this.cellStateStorageA[3]);
+        this.copyBufferUsingCompute(this.cellStateStorageB[0], this.cellStateStorageB[1]);
         const encoder = this.device.createCommandEncoder();
         // Start a render pass
         this.pass = encoder.beginRenderPass({
@@ -11648,6 +11648,9 @@ class Renderer {
     getGlobalStep() {
         return this.globalStep;
     }
+    getStep() {
+        return this.step;
+    }
     //set the step number. this is used to determine which bind group to use. 0 for A, 1 for B
     setStep(step) {
         this.step = step;
@@ -11658,19 +11661,17 @@ class Renderer {
         return new Promise((resolve, reject) => {
             //if looking for green cells
             if (cellType == 0) {
-                //copy the contents of green buffers to ensure correct step
-                this.copyBufferUsingCompute(this.cellStateStorageA[0], this.cellStateStorageA[1]);
-                this.copyBufferUsingCompute(this.cellStateStorageA[2], this.cellStateStorageA[3]);
                 //set the buffer to be sent to the staging buffer
                 bufferSRC = this.cellStateStorageA[index];
             }
             else if (cellType == 1) {
-                //copy the contents of blue buffers to ensure correct step
-                this.copyBufferUsingCompute(this.cellStateStorageB[0], this.cellStateStorageB[1]);
-                this.copyBufferUsingCompute(this.cellStateStorageB[2], this.cellStateStorageB[3]);
                 //set the buffer to be sent to the staging buffer
                 bufferSRC = this.cellStateStorageB[index];
             }
+            this.copyBufferUsingCompute(this.cellStateStorageB[0], this.cellStateStorageB[1]);
+            this.copyBufferUsingCompute(this.cellStateStorageB[2], this.cellStateStorageB[3]);
+            this.copyBufferUsingCompute(this.cellStateStorageA[0], this.cellStateStorageA[1]);
+            this.copyBufferUsingCompute(this.cellStateStorageA[2], this.cellStateStorageA[3]);
             const encoder2 = this.device.createCommandEncoder();
             encoder2.copyBufferToBuffer(bufferSRC, 0, // Source offset
             this.stagingBuffer, 0, // Destination offset
