@@ -36,6 +36,9 @@ fn cellActive(cellType: u32, x: u32, y: u32) -> u32 {
 
 //set to 1 if the cell should explode
 fn cellExplode(x: u32, y: u32) -> u32 {
+	if(x >= grid.x || y >= grid.y){
+		return 0;
+	}
 	var age = cellStateAgeIn[cellIndex(vec2(x, y))];
 	if(age == 10){
 		return 1;
