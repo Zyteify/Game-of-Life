@@ -11162,10 +11162,12 @@ class Renderer {
         await this.makePipeline();
     }
     async setupDevice() {
-        var _a, _b;
         //adapter: wrapper around (physical) GPU.
         //Describes features and limits
+        var _a, _b;
         this.adapter = await ((_a = navigator.gpu) === null || _a === void 0 ? void 0 : _a.requestAdapter());
+        if (this.adapter === null)
+            throw new Error(`Could not find adapter`);
         //device: wrapper around GPU functionality
         //Function calls are made through the device
         this.device = await ((_b = this.adapter) === null || _b === void 0 ? void 0 : _b.requestDevice({ label: "device" }));

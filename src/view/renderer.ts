@@ -108,7 +108,9 @@ export class Renderer {
 
         //adapter: wrapper around (physical) GPU.
         //Describes features and limits
+        
         this.adapter = <GPUAdapter>await navigator.gpu?.requestAdapter();
+        if (this.adapter === null) throw new Error(`Could not find adapter`);
         //device: wrapper around GPU functionality
         //Function calls are made through the device
         this.device = <GPUDevice>await this.adapter?.requestDevice({label: "device"});
