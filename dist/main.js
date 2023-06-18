@@ -10749,16 +10749,12 @@ __webpack_require__.r(__webpack_exports__);
 
 class App {
     constructor(canvas, GRID_SIZEX, GRID_SIZEY) {
-        //make the grid size equal to a multiple of x^2
-        this.GRID_SIZEX = 16;
-        this.GRID_SIZEY = 16;
         this.fps = 2;
         this.animationId = 0;
         this.animationRunning = false;
         //todo use a dictionary or more appropriate data structure
         this.mouseCellType = 0;
         this.mouseCellTypeString = "G";
-        //get the value inside an input html element
         this.GRID_SIZEX = GRID_SIZEX;
         this.GRID_SIZEY = GRID_SIZEY;
         this.canvas = canvas;
@@ -10767,6 +10763,8 @@ class App {
         this.mouseXLabel = document.getElementById("mouse-x-label");
         this.mouseYLabel = document.getElementById("mouse-y-label");
         this.generationsLabel = document.getElementById("generations");
+        this.gridSizeLabel = document.getElementById("grid_size");
+        this.cellCountLabel = document.getElementById("cell_count");
         //register clicking on buttons
         jquery__WEBPACK_IMPORTED_MODULE_2___default()('#next, #start, #pause, #test-values, #data, #data2, #data-age, #test, #generate, #cell_type_green, #cell_type_blue, #clear').on('click', (event) => {
             this.handle_button(event);
@@ -10778,12 +10776,15 @@ class App {
         });
         // register clicking on the canvas and log the position
         this.canvas.addEventListener('click', this.handleClick.bind(this));
+        //when the window is resized trigger the resize canvas function
+        window.addEventListener('resize', this.resizeCanvas.bind(this), false);
         this.GenerateScene();
+        this.resizeCanvas();
+        this.displayText();
     }
     GenerateScene() {
         this.scene = new _scene_scene__WEBPACK_IMPORTED_MODULE_1__.Scene(this.GRID_SIZEX, this.GRID_SIZEY);
-        this.GRID_SIZEX = parseInt(document.getElementById("grid_sizex").value);
-        this.GRID_SIZEY = parseInt(document.getElementById("grid_sizey").value);
+        this.setGridDimensions();
         this.renderer.Unconfigure();
         this.InitializeRenderer();
     }
@@ -10795,7 +10796,7 @@ class App {
     async handle_button(event) {
         //when next button is pressed
         if (event.target.id == "next") {
-            this.stepRenderer();
+            this.next();
         }
         //when start button is pressed
         if (event.target.id == "start") {
@@ -10841,11 +10842,10 @@ class App {
         //when data button is pressed
         if (event.target.id == "generate") {
             this.stopAnimating();
-            this.GRID_SIZEX = parseInt(document.getElementById("grid_sizex").value);
-            this.GRID_SIZEY = parseInt(document.getElementById("grid_sizey").value);
+            //this.GRID_SIZEX = parseInt((<HTMLInputElement>document.getElementById("grid_sizex")).value);
+            //this.GRID_SIZEY = parseInt((<HTMLInputElement>document.getElementById("grid_sizey")).value);
             this.renderer.Unconfigure();
             this.InitializeRenderer();
-            this.updateGenerations();
             this.resizeCanvas();
         }
     }
@@ -10878,22 +10878,56 @@ class App {
         //request animation frame
         requestAnimationFrame(() => {
             //update the scene by one step
-            this.stepRenderer();
+            this.next();
             setTimeout(() => {
                 this.animate();
                 //limit to x fps
             }, 1000 / this.fps);
         });
     }
-    async stepRenderer() {
-        //get the renderer to update the grid by one step
-        this.renderer.updateGrid().then(data => {
-        })
-            .catch(error => {
-            console.error(error);
-        });
-        this.renderer.createHash();
-        this.updateGenerations();
+    async next() {
+        //check to see if you've won the game
+        //check to see if you have won the level
+        if (this.scene.isNextLevel()) {
+            //if you have won the level
+            //stop the animation
+            this.stopAnimating();
+            //create an alert
+            alert("You have won the level!");
+            //reset the scene with a new level
+            this.nextScene();
+            //update the generations label
+            this.displayText();
+        }
+        //else if you lose the game
+        else if (this.scene.isLoseGame()) {
+            //if you have lost the game
+            //stop the animation
+            this.stopAnimating();
+            //create an alert
+            alert("You have lost the game!");
+            //reset the scene with a new level
+            this.nextScene();
+            //update the generations label
+            this.displayText();
+        }
+        else {
+            //get the renderer to update the grid by one step
+            this.renderer.updateGrid().then(() => {
+                //get the data to send to the scene
+                this.renderer.getBuffer(0, 1).then(data => {
+                    //update the scene with the new data
+                    this.updateScene(data);
+                }).catch(error => {
+                    console.error(error);
+                });
+            })
+                .catch(error => {
+                console.error(error);
+            });
+            this.renderer.createHash();
+        }
+        this.displayText();
     }
     sendCellstoRenderer() {
     }
@@ -10901,15 +10935,30 @@ class App {
         //update which cells are alive
         this.scene.updateCells(data);
         //update the generations label
-        this.updateGenerations();
+        this.displayText();
     }
-    resetScene() {
-        this.scene.reset();
-        //update the generations label
-        this.updateGenerations();
-        //set the step to 0 to ensure the renderer is in sync
-        this.renderer.setStep(0);
-        //set the renderer buffer to the cells in the scene. this only updates one side of the bind layouts
+    nextScene() {
+        //stop the animation
+        this.stopAnimating();
+        //check to see if the level is won or lost
+        //if it is then reset the game
+        if (this.scene.isLoseGame()) {
+            this.scene.resetGame();
+        }
+        else {
+            this.scene.nextLevel();
+        }
+        this.setGridDimensions();
+        this.renderer.Unconfigure();
+        this.InitializeRenderer();
+        var newdata = new Uint32Array(this.GRID_SIZEX * this.GRID_SIZEY);
+        //send it to the renderer
+        this.renderer.setBuffer(newdata, "G");
+        this.renderer.setBuffer(newdata, "B");
+    }
+    setGridDimensions() {
+        this.GRID_SIZEX = this.scene.GRID_SIZEX;
+        this.GRID_SIZEY = this.scene.GRID_SIZEY;
     }
     async handleClick(event) {
         const canvasRect = this.canvas.getBoundingClientRect();
@@ -10932,32 +10981,24 @@ class App {
                 var newdata = data;
                 //send it to the renderer
                 this.renderer.setBuffer(newdata, this.mouseCellTypeString);
-                this.updateGenerations();
             })
                 .catch(error => {
                 console.error(error);
             });
         }
     }
-    //todo fix this to use the stored value inside scene
-    updateGenerations() {
-        this.generationsLabel.innerText = "Generations: " + this.renderer.getGlobalStep().toString();
-    }
-    updateCellValue(cellArray, xy, newValue) {
-        for (let i = 0; i < cellArray.length; i++) {
-            if (cellArray[i].xy === xy) {
-                cellArray[i].value = newValue;
-                break; // Once the value is updated, exit the loop
-            }
-        }
-    }
-    getCellValue(cellArray, xy) {
-        for (const cell of cellArray) {
-            if (cell.xy === xy) {
-                return cell.value;
-            }
-        }
-        return undefined;
+    //update the text on the screen
+    displayText() {
+        //update the generations label
+        var generations = this.scene.getGenerations();
+        var generationsRequired = this.scene.getGenerationsRequired();
+        this.generationsLabel.innerText = "Generations: " + (generations) + "/" + generationsRequired;
+        //update the cell count label
+        var cellCount = this.scene.cellCount;
+        var cellsRequired = this.scene.cellsRequired;
+        this.cellCountLabel.innerText = "Cells: " + cellCount + "/" + cellsRequired;
+        //update the grid size label
+        this.gridSizeLabel.innerText = "Grid Size: " + this.GRID_SIZEX + "x" + this.GRID_SIZEY;
     }
     //calculate the size of the canvas based on the grid size
     resizeCanvas() {
@@ -10974,57 +11015,12 @@ class App {
         //set the canvas size to the window size minus the header and column and 2 pixels for the border
         var width = window.innerWidth - columnwidth - 2;
         var height = window.innerHeight - headerHeight - 2;
-        var GRID_SIZEX = parseInt(document.getElementById("grid_sizex").value);
-        var GRID_SIZEY = parseInt(document.getElementById("grid_sizey").value);
+        this.setGridDimensions();
         // Calculate the size of each square in pixels based on the grid size
-        const squareSize = Math.min(width / GRID_SIZEX, height / GRID_SIZEY);
-        this.canvas.width = squareSize * GRID_SIZEX;
-        this.canvas.height = squareSize * GRID_SIZEY;
+        const squareSize = Math.min(width / this.GRID_SIZEX, height / this.GRID_SIZEY);
+        this.canvas.width = squareSize * this.GRID_SIZEX;
+        this.canvas.height = squareSize * this.GRID_SIZEY;
     }
-}
-
-
-/***/ }),
-
-/***/ "./src/scene/cell.ts":
-/*!***************************!*\
-  !*** ./src/scene/cell.ts ***!
-  \***************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   Cell: () => (/* binding */ Cell),
-/* harmony export */   convertCellInterfaceToUint32Array: () => (/* binding */ convertCellInterfaceToUint32Array),
-/* harmony export */   convertUint32ArrayToCellInterface: () => (/* binding */ convertUint32ArrayToCellInterface)
-/* harmony export */ });
-class Cell {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-        this.age = 0;
-        //initial state of the cell
-        this.alive = 0;
-        //this.alive = Math.random() > 0.5 ? 1 : 0;
-    }
-}
-;
-function convertUint32ArrayToCellInterface(uint32Array) {
-    const result = [];
-    for (let i = 0; i < uint32Array.length; i += 1) {
-        const xy = i;
-        const value = uint32Array[i];
-        result.push({ xy, value });
-    }
-    return result;
-}
-function convertCellInterfaceToUint32Array(cellArray) {
-    const uint32Array = new Uint32Array(cellArray.length);
-    for (let i = 0; i < cellArray.length; i++) {
-        uint32Array[i] = cellArray[i].value;
-    }
-    return uint32Array;
 }
 
 
@@ -11041,82 +11037,84 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   Scene: () => (/* binding */ Scene)
 /* harmony export */ });
-/* harmony import */ var _cell__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./cell */ "./src/scene/cell.ts");
-/* harmony import */ var _view_definitions__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../view/definitions */ "./src/view/definitions.ts");
-
-
 class Scene {
     constructor(GRID_SIZEX, GRID_SIZEY) {
         this.generations = 0;
+        this.cellsRequired = 0;
+        this.cellCount = 0;
         console.log("Initializing scene");
         this.GRID_SIZEX = GRID_SIZEX;
         this.GRID_SIZEY = GRID_SIZEY;
-        this.createCells();
+        this.level = 1;
+        this.generationsRequired = 10;
+        this.cellsRequired = GRID_SIZEX * GRID_SIZEY / 10;
     }
-    createCells() {
-        console.log("creating cells" + this.GRID_SIZEX + " by " + this.GRID_SIZEY);
-        this.generations = 0;
-        //create a array to populate this.cells
-        this.cells = new Array(this.GRID_SIZEX * this.GRID_SIZEY);
-        //loop though the array and create a new cell for each element
-        for (let i = 0; i < this.GRID_SIZEX * this.GRID_SIZEY; i++) {
-            const { x, y } = (0,_view_definitions__WEBPACK_IMPORTED_MODULE_1__.getCoordinates)(i, this.GRID_SIZEX);
-            this.cells[i] = new _cell__WEBPACK_IMPORTED_MODULE_0__.Cell(x, y);
+    updateCells(data) {
+        //sum all the data from the cells
+        var sum = 0;
+        for (var i = 0; i < data.length; i++) {
+            sum += data[i];
         }
+        this.cellCount = sum;
+        this.updateGenerations();
+    }
+    resetCells(data) {
+        //sum all the data from the cells
+        var sum = 0;
+        for (var i = 0; i < data.length; i++) {
+            sum += data[i];
+        }
+        this.cellCount = sum;
+        this.setGenerations(0);
+    }
+    //return a winning condition
+    isNextLevel() {
+        //check to see if the level is complete
+        if ((this.cellCount >= this.cellsRequired) && (this.generations == this.generationsRequired)) {
+            return true;
+        }
+        return false;
+    }
+    //lose game condition
+    isLoseGame() {
+        //check to see if the level is complete
+        if ((this.generations > this.generationsRequired)) {
+            return true;
+        }
+        return false;
     }
     getGenerations() {
         return this.generations;
     }
+    getGenerationsRequired() {
+        return this.generationsRequired;
+    }
+    setGenerations(generations) {
+        this.generations = generations;
+    }
     updateGenerations() {
-        this.generations++;
+        this.generations = this.generations + 1;
     }
-    //todo update generations properly. this isnt called every generation now
-    updateCells(data) {
-        for (let i = 0; i < data.length; i++) {
-            const cellData = data[i];
-            const { xy, value } = cellData;
-            const { x, y } = (0,_view_definitions__WEBPACK_IMPORTED_MODULE_1__.getCoordinates)(xy, this.GRID_SIZEX);
-            const cellToUpdate = this.cells.find(cell => cell.x === x && cell.y === y);
-            if (cellToUpdate) {
-                cellToUpdate.alive = value;
-            }
-        }
-        this.generations++;
+    //reset the scene and increase the level and the grid size and the number of cells required to win
+    nextLevel() {
+        this.level++;
+        this.generationsRequired = Math.floor(this.generationsRequired * 1.2 + 10);
+        this.setGenerations(0);
+        this.GRID_SIZEX = Math.floor(this.GRID_SIZEX * 1.1 + 5);
+        this.GRID_SIZEY = Math.floor(this.GRID_SIZEY * 1.1 + 5);
+        this.cellsRequired = Math.floor(this.GRID_SIZEX * this.GRID_SIZEY / 10);
+        this.resetCells(new Uint32Array(this.GRID_SIZEX * this.GRID_SIZEY));
     }
-    reset() {
-        this.createCells();
+    resetGame() {
+        this.level = 1;
+        this.generationsRequired = 10;
+        this.GRID_SIZEX = 10;
+        this.GRID_SIZEY = 10;
+        this.cellsRequired = this.GRID_SIZEX * this.GRID_SIZEY / 10;
+        this.setGenerations(0);
+        this.resetCells(new Uint32Array(this.GRID_SIZEX * this.GRID_SIZEY));
     }
 }
-
-
-/***/ }),
-
-/***/ "./src/view/definitions.ts":
-/*!*********************************!*\
-  !*** ./src/view/definitions.ts ***!
-  \*********************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   getCoordinates: () => (/* binding */ getCoordinates)
-/* harmony export */ });
-function getCoordinates(index, gridSize) {
-    const y = Math.floor(index / gridSize); // Calculate the row (x)
-    const x = index % gridSize; // Calculate the column (y)
-    return { x, y };
-}
-const computeBufferLayout = {
-    arrayStride: 8,
-    attributes: [
-        {
-            format: "float32",
-            offset: 0,
-            shaderLocation: 0,
-        },
-    ],
-};
 
 
 /***/ }),
@@ -11143,6 +11141,7 @@ __webpack_require__.r(__webpack_exports__);
 class Renderer {
     constructor(canvas) {
         this.initialized = false;
+        this.backgroundColor = { r: 0.0, g: 0.1, b: 0.1, a: 1.0 };
         this.step = 0;
         this.globalStep = 0;
         this.seed = 'hi';
@@ -11153,7 +11152,7 @@ class Renderer {
         this.initialized = true;
         this.GRID_SIZEX = GRID_SIZEX;
         this.GRID_SIZEY = GRID_SIZEY;
-        this.seed = 'hieqweqweqeqeqeqeqe';
+        this.seed = 'hi';
         await this.setupDevice();
         await this.makeBindGroupsLayouts();
         await this.createAssets();
@@ -11574,7 +11573,6 @@ class Renderer {
         // End the render pass and submit the command buffer
         this.pass.end();
         this.device.queue.submit([encoder.finish()]);
-        this.renderGridTest();
     }
     //does a render pass without computing anything
     async renderGrid() {
@@ -11963,36 +11961,9 @@ __webpack_require__.r(__webpack_exports__);
 
 
 const canvas = document.getElementById("gfx-main");
-var GRID_SIZEX = parseInt(document.getElementById("grid_sizex").value);
-var GRID_SIZEY = parseInt(document.getElementById("grid_sizey").value);
+var GRID_SIZEX = 10;
+var GRID_SIZEY = 10;
 const app = new _control_app__WEBPACK_IMPORTED_MODULE_0__.App(canvas, GRID_SIZEX, GRID_SIZEY);
-resizeCanvas();
-//when the window is resized
-window.addEventListener('resize', function () {
-    resizeCanvas();
-});
-//calculate the size of the canvas based on the grid size
-function resizeCanvas() {
-    const header = document.getElementById("header");
-    var headerHeight = 0;
-    if (header) {
-        headerHeight = header.offsetHeight;
-    }
-    const column = document.getElementById("column");
-    var columnwidth = 0;
-    if (column) {
-        columnwidth = column.offsetWidth;
-    }
-    //set the canvas size to the window size minus the header and column and 2 pixels for the border
-    var width = window.innerWidth - columnwidth - 2;
-    var height = window.innerHeight - headerHeight - 2;
-    var GRID_SIZEX = parseInt(document.getElementById("grid_sizex").value);
-    var GRID_SIZEY = parseInt(document.getElementById("grid_sizey").value);
-    // Calculate the size of each square in pixels based on the grid size
-    const squareSize = Math.min(width / GRID_SIZEX, height / GRID_SIZEY);
-    canvas.width = squareSize * GRID_SIZEX;
-    canvas.height = squareSize * GRID_SIZEY;
-}
 
 })();
 

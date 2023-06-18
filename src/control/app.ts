@@ -1,7 +1,6 @@
 import { Renderer } from "../view/renderer";
 import { Scene } from "../scene/scene";
 import $ from "jquery";
-import { cellInterface, convertUint32ArrayToCellInterface, convertCellInterfaceToUint32Array } from "../scene/cell";
 
 export class App {
 
@@ -9,8 +8,8 @@ export class App {
 
     renderingCanvas: CanvasRenderingContext2D
     //make the grid size equal to a multiple of x^2
-    GRID_SIZEX: number = 16;
-    GRID_SIZEY: number = 16;
+    GRID_SIZEX: number;
+    GRID_SIZEY: number;
 
     renderer: Renderer;
     scene: Scene;
@@ -20,6 +19,8 @@ export class App {
     mouseXLabel: HTMLElement;
     mouseYLabel: HTMLElement;
     generationsLabel: HTMLElement;
+    gridSizeLabel: HTMLElement;
+    cellCountLabel: HTMLElement;
 
     cells: Float32Array;
 
@@ -39,7 +40,7 @@ export class App {
 
     constructor(canvas: HTMLCanvasElement, GRID_SIZEX: number, GRID_SIZEY: number) {
 
-        //get the value inside an input html element
+
         this.GRID_SIZEX = GRID_SIZEX;
         this.GRID_SIZEY = GRID_SIZEY;
 
@@ -52,6 +53,8 @@ export class App {
         this.mouseXLabel = <HTMLElement>document.getElementById("mouse-x-label");
         this.mouseYLabel = <HTMLElement>document.getElementById("mouse-y-label");
         this.generationsLabel = <HTMLElement>document.getElementById("generations");
+        this.gridSizeLabel = <HTMLElement>document.getElementById("grid_size");
+        this.cellCountLabel = <HTMLElement>document.getElementById("cell_count");
 
         //register clicking on buttons
         $('#next, #start, #pause, #test-values, #data, #data2, #data-age, #test, #generate, #cell_type_green, #cell_type_blue, #clear').on('click',
@@ -69,13 +72,20 @@ export class App {
         // register clicking on the canvas and log the position
         this.canvas.addEventListener('click', this.handleClick.bind(this));
 
+        //when the window is resized trigger the resize canvas function
+        window.addEventListener('resize', this.resizeCanvas.bind(this), false);
+        
+
         this.GenerateScene()
+        this.resizeCanvas()
+        this.displayText();
     }
 
     GenerateScene() {
         this.scene = new Scene(this.GRID_SIZEX, this.GRID_SIZEY);
-        this.GRID_SIZEX = parseInt((<HTMLInputElement>document.getElementById("grid_sizex")).value);
-        this.GRID_SIZEY = parseInt((<HTMLInputElement>document.getElementById("grid_sizey")).value);
+
+        this.setGridDimensions()
+
         this.renderer.Unconfigure();
         this.InitializeRenderer()
     }
@@ -89,7 +99,7 @@ export class App {
     async handle_button(event: JQuery.ClickEvent) {
         //when next button is pressed
         if (event.target.id == "next") {
-            this.stepRenderer()
+            this.next()
         }
 
         //when start button is pressed
@@ -149,11 +159,10 @@ export class App {
         //when data button is pressed
         if (event.target.id == "generate") {
             this.stopAnimating()
-            this.GRID_SIZEX = parseInt((<HTMLInputElement>document.getElementById("grid_sizex")).value);
-            this.GRID_SIZEY = parseInt((<HTMLInputElement>document.getElementById("grid_sizey")).value);
+            //this.GRID_SIZEX = parseInt((<HTMLInputElement>document.getElementById("grid_sizex")).value);
+            //this.GRID_SIZEY = parseInt((<HTMLInputElement>document.getElementById("grid_sizey")).value);
             this.renderer.Unconfigure();
             this.InitializeRenderer()
-            this.updateGenerations();
             this.resizeCanvas()
         }
         
@@ -193,7 +202,7 @@ export class App {
         //request animation frame
         requestAnimationFrame(() => {
             //update the scene by one step
-            this.stepRenderer()
+            this.next()
             setTimeout(() => {
                 this.animate();
                 //limit to x fps
@@ -201,37 +210,108 @@ export class App {
         });
     }
 
-    async stepRenderer() {
-        //get the renderer to update the grid by one step
-        this.renderer.updateGrid().then(data => {
-        })
-            .catch(error => {
-                console.error(error);
-            });
-        this.renderer.createHash()
-        this.updateGenerations();
+    async next() {
+
+        //check to see if you've won the game
+        //check to see if you have won the level
+        if(this.scene.isNextLevel()){
+            //if you have won the level
+            //stop the animation
+            this.stopAnimating()
+
+            //create an alert
+            alert("You have won the level!")
+
+            //reset the scene with a new level
+            this.nextScene()
+
+            //update the generations label
+            this.displayText()
+
+            
+        }
+        //else if you lose the game
+        else if (this.scene.isLoseGame()){
+            //if you have lost the game
+            //stop the animation
+            this.stopAnimating()
+
+            //create an alert
+            alert("You have lost the game!")
+
+            //reset the scene with a new level
+            this.nextScene()
+
+            //update the generations label
+            this.displayText()
+        }
+        else{
+            //get the renderer to update the grid by one step
+            this.renderer.updateGrid().then(() => {
+                //get the data to send to the scene
+                this.renderer.getBuffer(0, 1).then(data => {
+                    //update the scene with the new data
+                    this.updateScene(data)
+                    }
+                ).catch(error => {
+                    console.error(error);
+                });
+            })
+                .catch(error => {
+                    console.error(error);
+                });
+            this.renderer.createHash()
+        }
+        this.displayText()
+
+        
+
+
+       
 
     }
 
     sendCellstoRenderer() {
     }
 
-    updateScene(data: cellInterface[]) {
+    updateScene(data: Uint32Array) {
         //update which cells are alive
         this.scene.updateCells(data)
 
         //update the generations label
-        this.updateGenerations()
+        this.displayText()
+        
     }
 
-    resetScene() {
-        this.scene.reset()
-        //update the generations label
-        this.updateGenerations()
-        //set the step to 0 to ensure the renderer is in sync
-        this.renderer.setStep(0)
-        //set the renderer buffer to the cells in the scene. this only updates one side of the bind layouts
+    nextScene() {
+        //stop the animation
+        this.stopAnimating()
+        //check to see if the level is won or lost
+        //if it is then reset the game
+        if(this.scene.isLoseGame()){
+            this.scene.resetGame()
+        }
+        else{
+            this.scene.nextLevel()
+        }
+
+        this.setGridDimensions()
+
+        this.renderer.Unconfigure();
+        this.InitializeRenderer()
+
+        
+        var newdata: Uint32Array = new Uint32Array(this.GRID_SIZEX * this.GRID_SIZEY)
+        //send it to the renderer
+        this.renderer.setBuffer(newdata, "G");
+        this.renderer.setBuffer(newdata, "B");
     }
+
+    setGridDimensions() {
+        this.GRID_SIZEX = this.scene.GRID_SIZEX
+        this.GRID_SIZEY = this.scene.GRID_SIZEY
+    }
+
 
     async handleClick(event: MouseEvent) {
         const canvasRect = this.canvas.getBoundingClientRect();
@@ -262,7 +342,6 @@ export class App {
                 //send it to the renderer
                 this.renderer.setBuffer(newdata, this.mouseCellTypeString);
                 
-                this.updateGenerations()
             })
             .catch(error => {
                 console.error(error);
@@ -271,28 +350,24 @@ export class App {
         
     }
 
-    //todo fix this to use the stored value inside scene
-    updateGenerations() {
-        this.generationsLabel.innerText = "Generations: " + this.renderer.getGlobalStep().toString();
-    }
 
-    
 
-    updateCellValue(cellArray: cellInterface[], xy: number, newValue: number): void {
-        for (let i = 0; i < cellArray.length; i++) {
-            if (cellArray[i].xy === xy) {
-                cellArray[i].value = newValue;
-                break; // Once the value is updated, exit the loop
-            }
-        }
-    }
-    getCellValue(cellArray: cellInterface[], xy: number): number | undefined {
-        for (const cell of cellArray) {
-            if (cell.xy === xy) {
-                return cell.value;
-            }
-        }
-        return undefined;
+    //update the text on the screen
+    displayText() {
+        //update the generations label
+        var generations = this.scene.getGenerations()
+        var generationsRequired = this.scene.getGenerationsRequired()
+        this.generationsLabel.innerText = "Generations: " + (generations) + "/" + generationsRequired
+
+        //update the cell count label
+        var cellCount = this.scene.cellCount
+        var cellsRequired = this.scene.cellsRequired
+        this.cellCountLabel.innerText = "Cells: " + cellCount + "/" + cellsRequired
+
+        //update the grid size label
+        this.gridSizeLabel.innerText = "Grid Size: " + this.GRID_SIZEX + "x" + this.GRID_SIZEY
+
+        
     }
     
 //calculate the size of the canvas based on the grid size
@@ -311,13 +386,12 @@ export class App {
     //set the canvas size to the window size minus the header and column and 2 pixels for the border
     var width = window.innerWidth - columnwidth -2; 
     var height = window.innerHeight - headerHeight -2;
-    var GRID_SIZEX: number = parseInt((<HTMLInputElement>document.getElementById("grid_sizex")).value);
-    var GRID_SIZEY: number = parseInt((<HTMLInputElement>document.getElementById("grid_sizey")).value);
+    this.setGridDimensions();
 
     // Calculate the size of each square in pixels based on the grid size
-    const squareSize = Math.min(width / GRID_SIZEX, height / GRID_SIZEY);
-    this.canvas.width = squareSize * GRID_SIZEX;
-    this.canvas.height = squareSize * GRID_SIZEY;
+    const squareSize = Math.min(width / this.GRID_SIZEX, height / this.GRID_SIZEY);
+    this.canvas.width = squareSize * this.GRID_SIZEX;
+    this.canvas.height = squareSize * this.GRID_SIZEY;
 
 }
     

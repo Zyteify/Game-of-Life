@@ -27,7 +27,7 @@ export class Renderer {
     cellPipelineTest: GPURenderPipeline;
     cellRenderPipeline: GPURenderPipeline;
 
-    backgroundColor: {r: 0.0, g: 0.0, b: 0.0, a: 1.0 };
+    backgroundColor: GPUColor = {r: 0.0, g: 0.1, b: 0.1, a: 1.0 };
 
 
     //rendering 
@@ -87,7 +87,7 @@ export class Renderer {
         this.GRID_SIZEX = GRID_SIZEX;
         this.GRID_SIZEY = GRID_SIZEY;
 
-        this.seed = 'hieqweqweqeqeqeqeqe';
+        this.seed = 'hi';
 
         await this.setupDevice();
 
@@ -583,7 +583,8 @@ export class Renderer {
         // End the render pass and submit the command buffer
         this.pass.end();
         this.device.queue.submit([encoder.finish()]);
-        this.renderGridTest();
+
+
     }
 
     //does a render pass without computing anything
@@ -706,6 +707,7 @@ export class Renderer {
 
             this.copyBufferUsingCompute(this.cellStateStorageB[0], this.cellStateStorageB[1]);
             this.copyBufferUsingCompute(this.cellStateStorageB[2], this.cellStateStorageB[3]);
+
             this.copyBufferUsingCompute(this.cellStateStorageA[0], this.cellStateStorageA[1]);
             this.copyBufferUsingCompute(this.cellStateStorageA[2], this.cellStateStorageA[3]);
 
