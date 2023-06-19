@@ -20,6 +20,9 @@ export class App {
     gridSizeLabel: HTMLElement;
     cellCountLabel: HTMLElement;
 
+    placeableCellCountLabel: HTMLElement[] = [];
+    livesLabel: HTMLElement;
+
     fps: number = 20;
     animationRunning: boolean = false;
 
@@ -37,11 +40,16 @@ export class App {
 
         this.renderer = new Renderer(canvas);
 
+        //default the clickable cell color
+        $('#cell_type_green').css("background-color", "#4CAF50");
+        $('#cell_type_blue').css("background-color", "#555555");
+
         //register clicking on buttons
         $('#next, #start, #pause, #test-values, #data, #data2, #data-age, #test, #restart, #cell_type_green, #cell_type_blue, #clear, #win_level').on('click',
             (event) => {
                 this.handle_button(event);
             })
+        
 
         //get when the input box fps changes
         $('#fps').on('input',
@@ -97,31 +105,22 @@ export class App {
 
 
     async next() {
-        //check to see if you've won the game
+        //check to see if you've lost the game
         //check to see if you have won the level
-        if (this.scene.isNextLevel()) {
-            //if you have won the level
+        if ( this.scene.isLoseGame()) {
             //stop the animation
             this.stopAnimating()
 
-            //create an alert
-            alert("You have won the level!")
-
             //reset the scene with a new level
-            this.nextScene()
+            this.firstScene()
 
             //update the generations label
             this.displayText()
         }
-
-        //else if you lose the game
-        else if (this.scene.isLoseGame()) {
-            //if you have lost the game
+        else if(this.scene.isNextLevel()){
+            //if you have won the level
             //stop the animation
             this.stopAnimating()
-
-            //create an alert
-            alert("You have lost the game!")
 
             //reset the scene with a new level
             this.nextScene()
@@ -160,17 +159,27 @@ export class App {
         this.displayText()
     }
 
+    firstScene() {
+        //stop the animation
+        this.stopAnimating()
+
+        alert("You have lost the game!")
+        this.scene.resetGame()
+
+        this.setGridDimensions()
+
+        this.renderer.Unconfigure();
+        this.InitializeRenderer()
+        
+    }
+
     nextScene() {
         //stop the animation
         this.stopAnimating()
-        //check to see if the level is won or lost
-        //if it is then reset the game
-        if (this.scene.isLoseGame()) {
-            this.scene.resetGame()
-        }
-        else {
-            this.scene.nextLevel()
-        }
+        
+        alert("You have won the level!")
+        this.scene.nextLevel()
+        
 
         this.setGridDimensions()
 
@@ -196,27 +205,37 @@ export class App {
         //grid coordinates are flipped for the y axis
         const cellY = this.GRID_SIZEY - 1 - Math.floor(mouseY / cellsizey);
 
-        if (this.renderer.initialized) {
+        if (this.scene.getNumCells(this.mouseCellType) > 0) {
 
 
             // get the data of the grid
             await this.getRendererData(this.mouseCellType, 1)
-                .then(data => {
-
+                .then(async data => {
+                    
                     //change the value of the cell to the opposite
                     var newvalue: number = data[cellX + cellY * this.GRID_SIZEX] == 1 ? 0 : 1
                     data[cellX + cellY * this.GRID_SIZEX] = newvalue
                     //convert the cell interface to a uint32array for the renderer
                     var newdata: Uint32Array = data
 
+                    
                     //send it to the renderer
-                    this.renderer.setBuffer(newdata, this.mouseCellTypeString);
+                    await this.renderer.setBuffer(newdata, this.mouseCellTypeString).then(
+                        () => {
+                            //remove a cell from the player
+                            this.scene.removeCell(this.mouseCellType)
+                        }
+                    );
 
                 })
                 .catch(error => {
                     console.error(error);
                 });
         }
+        else{
+            alert("You have no cells left!")
+        }
+        this.displayText()
 
     }
 
@@ -225,6 +244,31 @@ export class App {
         this.generationsLabel = <HTMLElement>document.getElementById("generations");
         this.gridSizeLabel = <HTMLElement>document.getElementById("grid_size");
         this.cellCountLabel = <HTMLElement>document.getElementById("cell_count");
+
+        //get all the placeable cell count labels with id pleaceable-cells-available
+        this.createCellLabels();
+        this.livesLabel = <HTMLElement>document.getElementById("lives");
+    }
+
+    createCellLabels() {
+        //find the html element with id container to create the labels
+        const container = document.getElementById("cell container") as HTMLElement;
+
+        //loop through each type of cell and create a paragraph element
+        for (var i = 0; i < this.scene.numCells.length; i++) {
+            // Create a <p> element
+            const paragraph = document.createElement("p");
+            //set the id to the index of the cell type
+            paragraph.id = i.toString();
+            paragraph.textContent = i.toString();
+            container.appendChild(paragraph);
+            //push the paragraph to the array
+            this.placeableCellCountLabel.push(paragraph as HTMLElement)
+        }
+
+
+        
+        
     }
 
     //update the text on the screen
@@ -241,6 +285,24 @@ export class App {
 
         //update the grid size label
         this.gridSizeLabel.innerText = "Grid Size: " + this.GRID_SIZEX + "x" + this.GRID_SIZEY
+
+        //loop through each type of cell and update the label
+        //update the placeable cell count label
+        for (var i = 0; i < this.scene.numCells.length; i++) {
+            var cellNames = this.scene.cellNames[i]
+            var numCells = this.scene.getNumCells(i)
+            var numCellsMax = this.scene.getNumCellsMax(i)
+            this.placeableCellCountLabel[i].innerText = cellNames + " Cells Avaliable: " + numCells + "/" + numCellsMax
+        }
+
+        
+
+        
+
+        //updat the lives label
+        var numLives = this.scene.numLives
+        var numLivesMax = this.scene.numLivesMax
+        this.livesLabel.innerText = "Lives: " + numLives + "/" + numLivesMax 
 
 
     }
@@ -318,12 +380,18 @@ export class App {
         if (event.target.id == "cell_type_green") {
             this.mouseCellType = 0
             this.mouseCellTypeString = "G"
+            //change the color of the button to green
+            $('#cell_type_green').css("background-color", "#4CAF50");
+            $('#cell_type_blue').css("background-color", "#555555");
         }
 
         //when button to change cell color is pressed
         if (event.target.id == "cell_type_blue") {
             this.mouseCellType = 1
             this.mouseCellTypeString = "B"
+            //change the color of the blue button to blue and the green button to grey
+            $('#cell_type_blue').css("background-color", "#2196F3");
+            $('#cell_type_green').css("background-color", "#555555");
         }
 
 

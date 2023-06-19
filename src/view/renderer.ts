@@ -627,7 +627,7 @@ export class Renderer {
     }
 
 
-    setBuffer(array: Uint32Array, type: String) {
+    async setBuffer(array: Uint32Array, type: String) {
         this.setStep(0)
         if(type == "G"){
             this.device.queue.writeBuffer(this.cellStateStorageA[0], 0, array);

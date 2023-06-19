@@ -15,6 +15,14 @@ export class Scene {
     cells: Uint32Array;
     lose: boolean = false;
 
+    
+    numLives: number = 10;
+    numLivesMax: number = 10;
+
+    numCells: number[] = [10, 1];
+    numCellsMax: number[] = [10, 1];
+    cellNames: string[] = ["Green", "Blue"];
+
 
     constructor(GRID_SIZEX: number,GRID_SIZEY: number) {
         console.log("Initializing scene");
@@ -24,6 +32,29 @@ export class Scene {
 
         this.resetGame()
     }
+
+    //lose a life and return true if the player is dead
+    loseLife() {
+        this.numLives--;
+        if(this.numLives <= 0){
+            return true;
+        }
+        return false;
+    }
+
+    //remove a cell 
+    removeCell(index: number) {
+        this.numCells[index]--;
+    }
+
+    getNumCells(index: number) {
+        return this.numCells[index];
+    }
+
+    getNumCellsMax(index: number) {
+        return this.numCellsMax[index];
+    }
+
 
     countCells(data: Uint32Array){
         //sum all the data from the cells
@@ -44,21 +75,21 @@ export class Scene {
     //return a winning condition
     isNextLevel() {
         //check to see if the level is complete
-        if ((this.cellCount >= this.cellsRequired) && (this.generations == this.generationsRequired)) {
+        if ((this.cellCount >= this.cellsRequired) && (this.generations >= this.generationsRequired)) {
             return true;
         }
         return false;
 
     }
-
     //lose game condition
     isLoseGame() {
+        //lose flag is tripped
         if(this.lose){
-            return true;
+            return this.loseLife();
         }
         //check to see if the level is complete
         if ((this.generations > this.generationsRequired)) {
-            return true;
+            return this.loseLife();
         }
         return false;
 
@@ -119,11 +150,17 @@ export class Scene {
         
         this.newGrid();
 
+        this.numCells = [10, 1];;
+        this.numLivesMax = 10;
+        this.numCellsMax = [10, 1];;
+
+
 
         this.lose = false;
 
         //update the game state
-        this.updateCells(this.generateCells())
+        this.cells = this.generateCells();
+        this.countCells(this.cells);
         this.setGenerations(0)
         this.updateCellsRequired()
 
@@ -138,11 +175,18 @@ export class Scene {
         this.GRID_SIZEY = 10;
         this.lose = false;
 
+        this.numLives = 10;
+        this.numCells = [10, 1];
+        this.numLivesMax = 10;
+        this.numCellsMax = [10, 1];
+
+
 
         //update the game state
         this.updateCellsRequired()
         this.setGenerations(0)
-        this.updateCells(this.generateCells())
+        this.cells = this.generateCells();
+        this.countCells(this.cells);
 
     }
 }
