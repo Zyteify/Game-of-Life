@@ -202,8 +202,6 @@ export class Renderer {
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
         this.device.queue.writeBuffer(this.uniformBuffer, 0, this.uniformArray);
-        console.log('uniform array');
-        console.log(this.uniformArray)
 
         //create a uniform buffer that describes the seed and global step for random number generation
         this.seedBuffer = this.device.createBuffer({

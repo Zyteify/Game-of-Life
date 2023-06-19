@@ -13,6 +13,7 @@ export class Scene {
     cellCount: number = 0;
 
     cells: Uint32Array;
+    lose: boolean = false;
 
 
     constructor(GRID_SIZEX: number,GRID_SIZEY: number) {
@@ -52,6 +53,9 @@ export class Scene {
 
     //lose game condition
     isLoseGame() {
+        if(this.lose){
+            return true;
+        }
         //check to see if the level is complete
         if ((this.generations > this.generationsRequired)) {
             return true;
@@ -67,6 +71,11 @@ export class Scene {
     getCells() {
         return this.cells;
     }
+
+    loseGame() {
+        this.lose = true;
+    }
+
 
 
     getGenerations() {
@@ -94,17 +103,24 @@ export class Scene {
                 cells[i] = 1
             }
         }
-        console.log(cells)
         return cells;
+    }
+
+    newGrid() {
+
+        this.GRID_SIZEX = Math.floor(this.GRID_SIZEX * 1.05 + 5);
+        this.GRID_SIZEY = Math.floor(this.GRID_SIZEY * 1.05 + 5);
     }
 
     //reset the scene and increase the level and the grid size and the number of cells required to win
     nextLevel() {
         this.level++;
-        this.generationsRequired = Math.floor(this.generationsRequired * 1.2 + 10);
+        this.generationsRequired = Math.floor(this.generationsRequired * 1.05 + 10);
         
-        this.GRID_SIZEX = Math.floor(this.GRID_SIZEX * 1.1 + 5);
-        this.GRID_SIZEY = Math.floor(this.GRID_SIZEY * 1.1 + 5);
+        this.newGrid();
+
+
+        this.lose = false;
 
         //update the game state
         this.updateCells(this.generateCells())
@@ -120,6 +136,9 @@ export class Scene {
         this.generationsRequired = 10;
         this.GRID_SIZEX = 10;
         this.GRID_SIZEY = 10;
+        this.lose = false;
+
+
         //update the game state
         this.updateCellsRequired()
         this.setGenerations(0)

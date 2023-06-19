@@ -10749,8 +10749,7 @@ __webpack_require__.r(__webpack_exports__);
 
 class App {
     constructor(canvas, GRID_SIZEX, GRID_SIZEY) {
-        this.fps = 2;
-        this.animationId = 0;
+        this.fps = 20;
         this.animationRunning = false;
         //todo use a dictionary or more appropriate data structure
         this.mouseCellType = 0;
@@ -10759,14 +10758,8 @@ class App {
         this.GRID_SIZEY = GRID_SIZEY;
         this.canvas = canvas;
         this.renderer = new _view_renderer__WEBPACK_IMPORTED_MODULE_0__.Renderer(canvas);
-        this.keyLabel = document.getElementById("key-label");
-        this.mouseXLabel = document.getElementById("mouse-x-label");
-        this.mouseYLabel = document.getElementById("mouse-y-label");
-        this.generationsLabel = document.getElementById("generations");
-        this.gridSizeLabel = document.getElementById("grid_size");
-        this.cellCountLabel = document.getElementById("cell_count");
         //register clicking on buttons
-        jquery__WEBPACK_IMPORTED_MODULE_2___default()('#next, #start, #pause, #test-values, #data, #data2, #data-age, #test, #generate, #cell_type_green, #cell_type_blue, #clear').on('click', (event) => {
+        jquery__WEBPACK_IMPORTED_MODULE_2___default()('#next, #start, #pause, #test-values, #data, #data2, #data-age, #test, #restart, #cell_type_green, #cell_type_blue, #clear, #win_level').on('click', (event) => {
             this.handle_button(event);
         });
         //get when the input box fps changes
@@ -10780,11 +10773,13 @@ class App {
         window.addEventListener('resize', this.resizeCanvas.bind(this), false);
         this.GenerateScene();
         this.resizeCanvas();
+        this.getLabels();
         this.displayText();
     }
     GenerateScene() {
         this.scene = new _scene_scene__WEBPACK_IMPORTED_MODULE_1__.Scene(this.GRID_SIZEX, this.GRID_SIZEY);
         this.setGridDimensions();
+        //get the renderer ready
         this.renderer.Unconfigure();
         this.InitializeRenderer();
     }
@@ -10795,97 +10790,15 @@ class App {
         //send it to the renderer
         this.renderer.setBuffer(newdata, "G");
     }
-    async handle_button(event) {
-        //when next button is pressed
-        if (event.target.id == "next") {
-            this.next();
-        }
-        //when start button is pressed
-        if (event.target.id == "start") {
-            this.startAnimating();
-        }
-        //when pause button is pressed
-        if (event.target.id == "pause") {
-            //stop the animation frames
-            this.stopAnimating();
-        }
-        //when button to change cell color is pressed
-        if (event.target.id == "cell_type_green") {
-            this.mouseCellType = 0;
-            this.mouseCellTypeString = "G";
-        }
-        //when button to change cell color is pressed
-        if (event.target.id == "cell_type_blue") {
-            this.mouseCellType = 1;
-            this.mouseCellTypeString = "B";
-        }
-        //when data button is pressed
-        if (event.target.id == "data") {
-            await this.getRendererData(0, 1)
-                .then(data => {
-                console.log(data);
-                this.data = data;
-            });
-        }
-        //when data2 button is pressed
-        if (event.target.id == "data2") {
-            await this.getRendererData(1, 1)
-                .then(data => {
-                console.log(data);
-            });
-        }
-        if (event.target.id == "clear") {
-            //send empty data to all the buffers
-            var newdata = new Uint32Array(this.GRID_SIZEX * this.GRID_SIZEY);
-            this.renderer.setBuffer(newdata, "G");
-            this.renderer.setBuffer(newdata, "B");
-            this.renderer.setStep(0);
-        }
-        //when data button is pressed
-        if (event.target.id == "generate") {
-            this.stopAnimating();
-            //this.GRID_SIZEX = parseInt((<HTMLInputElement>document.getElementById("grid_sizex")).value);
-            //this.GRID_SIZEY = parseInt((<HTMLInputElement>document.getElementById("grid_sizey")).value);
-            this.renderer.Unconfigure();
-            this.InitializeRenderer();
-            this.resizeCanvas();
-        }
-    }
     async getRendererData(cellType, index) {
         try {
             const data = await this.renderer.getBuffer(cellType, index);
-            // create a object from the uint32array
-            /* const cellInterface: cellInterface[] = convertUint32ArrayToCellInterface(data);
-            return cellInterface */
-            //return the raw uint32array    
             return data;
         }
         catch (error) {
             console.error(error);
             throw error;
         }
-    }
-    startAnimating() {
-        if (!this.animationRunning) {
-            this.animationRunning = true; // Flag to control the animation loop
-            this.animate();
-        }
-    }
-    stopAnimating() {
-        this.animationRunning = false;
-    }
-    animate() {
-        if (!this.animationRunning)
-            return; // Check if animation is stopped
-        //request animation frame
-        requestAnimationFrame(() => {
-            //update the scene by one step
-            this.next();
-            setTimeout(() => {
-                this.animate();
-                //limit to x fps
-            }, 1000 / this.fps);
-        });
     }
     async next() {
         //check to see if you've won the game
@@ -10985,6 +10898,12 @@ class App {
             });
         }
     }
+    //get the labels from the HTML
+    getLabels() {
+        this.generationsLabel = document.getElementById("generations");
+        this.gridSizeLabel = document.getElementById("grid_size");
+        this.cellCountLabel = document.getElementById("cell_count");
+    }
     //update the text on the screen
     displayText() {
         //update the generations label
@@ -11019,6 +10938,91 @@ class App {
         this.canvas.width = squareSize * this.GRID_SIZEX;
         this.canvas.height = squareSize * this.GRID_SIZEY;
     }
+    startAnimating() {
+        if (!this.animationRunning) {
+            this.animationRunning = true; // Flag to control the animation loop
+            this.animate();
+        }
+    }
+    stopAnimating() {
+        this.animationRunning = false;
+    }
+    animate() {
+        if (!this.animationRunning)
+            return; // Check if animation is stopped
+        //request animation frame
+        requestAnimationFrame(() => {
+            //update the scene by one step
+            this.next();
+            setTimeout(() => {
+                this.animate();
+                //limit to x fps
+            }, 1000 / this.fps);
+        });
+    }
+    async handle_button(event) {
+        //when next button is pressed
+        if (event.target.id == "next") {
+            this.next();
+        }
+        //when start button is pressed
+        if (event.target.id == "start") {
+            this.startAnimating();
+        }
+        //when pause button is pressed
+        if (event.target.id == "pause") {
+            //stop the animation frames
+            this.stopAnimating();
+        }
+        //when button to change cell color is pressed
+        if (event.target.id == "cell_type_green") {
+            this.mouseCellType = 0;
+            this.mouseCellTypeString = "G";
+        }
+        //when button to change cell color is pressed
+        if (event.target.id == "cell_type_blue") {
+            this.mouseCellType = 1;
+            this.mouseCellTypeString = "B";
+        }
+        //when data button is pressed
+        if (event.target.id == "data") {
+            await this.getRendererData(0, 1)
+                .then(data => {
+                console.log(data);
+            });
+        }
+        //when data2 button is pressed
+        if (event.target.id == "data2") {
+            await this.getRendererData(1, 1)
+                .then(data => {
+                console.log(data);
+            });
+        }
+        if (event.target.id == "clear") {
+            //send empty data to all the buffers
+            var newdata = new Uint32Array(this.GRID_SIZEX * this.GRID_SIZEY);
+            this.renderer.setBuffer(newdata, "G");
+            this.renderer.setBuffer(newdata, "B");
+            this.renderer.setStep(0);
+        }
+        //when data button is pressed
+        if (event.target.id == "restart") {
+            this.scene.loseGame();
+            this.stopAnimating();
+            //reset the scene with a new level
+            this.nextScene();
+            //update the generations label
+            this.displayText();
+        }
+        //when data button is pressed
+        if (event.target.id == "win_level") {
+            this.stopAnimating();
+            //reset the scene with a new level
+            this.nextScene();
+            //update the generations label
+            this.displayText();
+        }
+    }
 }
 
 
@@ -11040,6 +11044,7 @@ class Scene {
         this.generations = 0;
         this.cellsRequired = 0;
         this.cellCount = 0;
+        this.lose = false;
         console.log("Initializing scene");
         this.GRID_SIZEX = GRID_SIZEX;
         this.GRID_SIZEY = GRID_SIZEY;
@@ -11068,6 +11073,9 @@ class Scene {
     }
     //lose game condition
     isLoseGame() {
+        if (this.lose) {
+            return true;
+        }
         //check to see if the level is complete
         if ((this.generations > this.generationsRequired)) {
             return true;
@@ -11079,6 +11087,9 @@ class Scene {
     }
     getCells() {
         return this.cells;
+    }
+    loseGame() {
+        this.lose = true;
     }
     getGenerations() {
         return this.generations;
@@ -11101,15 +11112,18 @@ class Scene {
                 cells[i] = 1;
             }
         }
-        console.log(cells);
         return cells;
+    }
+    newGrid() {
+        this.GRID_SIZEX = Math.floor(this.GRID_SIZEX * 1.05 + 5);
+        this.GRID_SIZEY = Math.floor(this.GRID_SIZEY * 1.05 + 5);
     }
     //reset the scene and increase the level and the grid size and the number of cells required to win
     nextLevel() {
         this.level++;
-        this.generationsRequired = Math.floor(this.generationsRequired * 1.2 + 10);
-        this.GRID_SIZEX = Math.floor(this.GRID_SIZEX * 1.1 + 5);
-        this.GRID_SIZEY = Math.floor(this.GRID_SIZEY * 1.1 + 5);
+        this.generationsRequired = Math.floor(this.generationsRequired * 1.05 + 10);
+        this.newGrid();
+        this.lose = false;
         //update the game state
         this.updateCells(this.generateCells());
         this.setGenerations(0);
@@ -11121,6 +11135,7 @@ class Scene {
         this.generationsRequired = 10;
         this.GRID_SIZEX = 10;
         this.GRID_SIZEY = 10;
+        this.lose = false;
         //update the game state
         this.updateCellsRequired();
         this.setGenerations(0);
@@ -11256,8 +11271,6 @@ class Renderer {
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
         this.device.queue.writeBuffer(this.uniformBuffer, 0, this.uniformArray);
-        console.log('uniform array');
-        console.log(this.uniformArray);
         //create a uniform buffer that describes the seed and global step for random number generation
         this.seedBuffer = this.device.createBuffer({
             label: "Seed+GlobalStep",
@@ -11320,33 +11333,6 @@ class Renderer {
             size: this.BUFFER_SIZE,
             usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
         });
-        /* function initialiseGrid(device: GPUDevice, cellStateStorageA: GPUBuffer[], cellStateArray: Uint32Array) {
-            // Set each cell to a random state, then copy the JavaScript array into
-            // the storage buffer.
-            for (let i = 0; i < cellStateArray.length; ++i) {
-                if(Math.random() > 0.8){
-                    cellStateArray[i] = 1;
-                }
-                else{
-                    cellStateArray[i] = 0;
-                }
-                
-            }
-            device.queue.writeBuffer(cellStateStorageA[0], 0, cellStateArray);
-        }
-
-
-
-        initialiseGrid(this.device, this.cellStateStorageA, this.cellStateArray);
-        //initialiseGrid(this.device, this.cellStateStorageB, this.cellStateArray);
-
-        function initialiseGridAge(device: GPUDevice, cellStateStorageA: GPUBuffer[], cellStateArray: Uint32Array) {
-            const emptyArray = new Uint32Array(cellStateArray.length);
-            device.queue.writeBuffer(cellStateStorageA[2], 0, emptyArray);
-
-        }
-        initialiseGridAge(this.device, this.cellStateStorageA, this.cellStateArray);
-        initialiseGridAge(this.device, this.cellStateStorageB, this.cellStateArray); */
     }
     async makeBindGroupsLayouts() {
         // Create the bind group layout and pipeline layout.
