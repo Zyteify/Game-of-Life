@@ -1,5 +1,6 @@
 import shader from "./shaders/compute/shaders.wgsl";
 import defaultGOL from "./shaders/compute/defaultGOL.wgsl";
+import test from "./shaders/compute/test.wgsl";
 import copier_shader from "./shaders/compute/copier_shader.wgsl";
 import vertexshader from "./shaders/vertexshaders.wgsl";
 import vertexshaderTest from "./shaders/vertexshaders_test.wgsl";
@@ -201,6 +202,8 @@ export class Renderer {
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
         this.device.queue.writeBuffer(this.uniformBuffer, 0, this.uniformArray);
+        console.log('uniform array');
+        console.log(this.uniformArray)
 
         //create a uniform buffer that describes the seed and global step for random number generation
         this.seedBuffer = this.device.createBuffer({
@@ -274,35 +277,6 @@ export class Renderer {
             size: this.BUFFER_SIZE,
             usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
         });
-
-        function initialiseGrid(device: GPUDevice, cellStateStorageA: GPUBuffer[], cellStateArray: Uint32Array) {
-            // Set each cell to a random state, then copy the JavaScript array into
-            // the storage buffer.
-            for (let i = 0; i < cellStateArray.length; ++i) {
-                if(Math.random() > 0.8){
-                    cellStateArray[i] = 1;
-                }
-                else{
-                    cellStateArray[i] = 0;
-                }
-                
-            }
-            device.queue.writeBuffer(cellStateStorageA[0], 0, cellStateArray);
-        }
-
-
-
-        initialiseGrid(this.device, this.cellStateStorageA, this.cellStateArray);
-        //initialiseGrid(this.device, this.cellStateStorageB, this.cellStateArray);
-
-        function initialiseGridAge(device: GPUDevice, cellStateStorageA: GPUBuffer[], cellStateArray: Uint32Array) {
-            const emptyArray = new Uint32Array(cellStateArray.length);
-            device.queue.writeBuffer(cellStateStorageA[2], 0, emptyArray);
-
-        }
-        initialiseGridAge(this.device, this.cellStateStorageA, this.cellStateArray);
-        initialiseGridAge(this.device, this.cellStateStorageB, this.cellStateArray);
-
 
     }
 
@@ -522,6 +496,7 @@ export class Renderer {
             label: "Simulation shader1",
             code:
             defaultGOL
+            //test
         })
             ;
 
@@ -654,18 +629,15 @@ export class Renderer {
     }
 
 
-    setBuffer(obj: object, type: String) {
+    setBuffer(array: Uint32Array, type: String) {
         this.setStep(0)
-        const values = Object.values(obj);
-        var testarray: Uint32Array;
-        testarray = new Uint32Array(values);
         if(type == "G"){
-            this.device.queue.writeBuffer(this.cellStateStorageA[0], 0, testarray);
+            this.device.queue.writeBuffer(this.cellStateStorageA[0], 0, array);
             //copy the buffers of the first step to the buffers of the second step to render properly
             this.copyBufferUsingCompute(this.cellStateStorageA[0], this.cellStateStorageA[0+1])
         }
         else if(type == "B"){
-            this.device.queue.writeBuffer(this.cellStateStorageB[0], 0, testarray);
+            this.device.queue.writeBuffer(this.cellStateStorageB[0], 0, array);
             //copy the buffers of the first step to the buffers of the second step to render properly
             this.copyBufferUsingCompute(this.cellStateStorageB[0], this.cellStateStorageB[0+1])
         }
@@ -884,6 +856,9 @@ export class Renderer {
         //remove references to the state
         this.globalStep = 0;
         this.step = 0;
+
+        this.GRID_SIZEX = 0;
+        this.GRID_SIZEY = 0;
 
         this.initialized = false;
 

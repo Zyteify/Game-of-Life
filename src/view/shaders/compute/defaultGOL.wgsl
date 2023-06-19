@@ -7,6 +7,14 @@
 @group(2) @binding(0) var<storage, read> cellStateAgeIn: array<u32>;
 @group(2) @binding(1) var<storage, read_write> cellStateAgeOut: array<u32>;
 
+fn random(p: vec2<f32>) -> f32 {
+    let K1: vec2<f32> = vec2<f32>(
+        23.14069263277926, // e^pi (Gelfond's constant)
+        2.665144142690225 // 2^sqrt(2) (Gelfond–Schneider constant)
+    );
+    return fract(cos(dot(p, K1)) * 12345.6789);
+}
+
 fn isOnEdge(cell: vec2u) -> bool {
 	return cell.x == 0 || cell.x == grid.x - 1 || cell.y == 0 || cell.y == grid.y - 1;
 }
@@ -19,7 +27,7 @@ fn cellIndex(cell: vec2u) -> u32 {
 fn cellActive(cellType: u32, x: u32, y: u32) -> u32 {
 	//if the cell is out of bounds, it is not active
 	if(x >= grid.x || y >= grid.y){
-		return 0;
+		return 0;		
 	}
 	
 
@@ -48,17 +56,15 @@ fn cellExplode(x: u32, y: u32) -> u32 {
 	}
 }
 
-fn random(p: vec2<f32>) -> f32 {
-    let K1: vec2<f32> = vec2<f32>(
-        23.14069263277926, // e^pi (Gelfond's constant)
-        2.665144142690225 // 2^sqrt(2) (Gelfond–Schneider constant)
-    );
-    return fract(cos(dot(p, K1)) * 12345.6789);
-}
+
 
 @compute @workgroup_size(8, 8)
 
 fn computeMain(@builtin(global_invocation_id) cell: vec3u){
+	//dont perform extra work if you are outside of the range
+	if (cell.x >= grid.x || cell.y >= grid.y) {
+		return;
+	}
     let i = cellIndex(cell.xy);
 	let random = random(vec2<f32>(f32(cell.x)+seed, f32(cell.y)));
 
@@ -109,7 +115,7 @@ fn computeMain(@builtin(global_invocation_id) cell: vec3u){
 
 	// B Cells rules:
 	switch activeBNeighbors {
-		case 1: { 
+		case 1, 2, 3, 4, 5, 6, 7, 8: { 
 			cellStateOut[i] = 1;
 		}
 		default: { // Cells with < 2 or > 3 neighbors become inactive.
@@ -127,9 +133,9 @@ fn computeMain(@builtin(global_invocation_id) cell: vec3u){
 
 
     //if the cell should explode
-	if(explodeNeighbors == 1){
-		cellStateOut[i] = 1;
-	}	
+	//if(explodeNeighbors == 1){
+	//	cellStateOut[i] = 1;
+	//}	
 
 
     //ensure that each cell only exists in either the A or B state
@@ -140,12 +146,12 @@ fn computeMain(@builtin(global_invocation_id) cell: vec3u){
     }
 
     //add the age if it is still alive
-	if(cellStateOut[i] == 1){
-		cellStateAgeOut[i] = cellStateAgeIn[i]+1;
-	}
-	else{
-		cellStateAgeOut[i] = 0;
-	}
+	//if(cellStateOut[i] == 1){
+	//	cellStateAgeOut[i] = cellStateAgeIn[i]+1;
+	//}
+	//else{
+	//	cellStateAgeOut[i] = 0;
+	//}
 
 	//if a cell is on the edge of the board, it should be dead
 	//if(isOnEdge(vec2u(cell.x, cell.y))){

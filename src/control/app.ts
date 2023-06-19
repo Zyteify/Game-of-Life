@@ -93,7 +93,10 @@ export class App {
     async InitializeRenderer() {
         await this.renderer.Initialize(this.GRID_SIZEX, this.GRID_SIZEY);
         this.renderer.renderGrid()
-        //this.renderer.updateGrid()
+        
+        var newdata: Uint32Array = this.scene.getCells()
+        //send it to the renderer
+        this.renderer.setBuffer(newdata, "G");
     }
 
     async handle_button(event: JQuery.ClickEvent) {
@@ -301,10 +304,6 @@ export class App {
         this.InitializeRenderer()
 
         
-        var newdata: Uint32Array = new Uint32Array(this.GRID_SIZEX * this.GRID_SIZEY)
-        //send it to the renderer
-        this.renderer.setBuffer(newdata, "G");
-        this.renderer.setBuffer(newdata, "B");
     }
 
     setGridDimensions() {
