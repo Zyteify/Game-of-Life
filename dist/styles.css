@@ -22,6 +22,7 @@ body {
 html{
   background-color: black; /* Set the background color to black */
 }
+
 button,
 label,
 input,
@@ -53,7 +54,6 @@ p {
   background-color: #9a9a9a; /* Optional background color */
   display: flex; /* Add flexbox layout */
   flex-direction: column; /* Arrange elements vertically */
-  align-items: center; /* Center items horizontally */
 }
 
 body {
@@ -62,7 +62,9 @@ body {
 }
 
 #canvasmain {
-  margin-left: 200px; /* Adjust the margin as needed */
+  /* move the main center bit 200px to the right */
+  position: relative;
+      left: 200px;
 }
 
 #gfx-main {
@@ -73,3 +75,40 @@ body {
   transform: translate(-50%, -50%);
 }
 
+#upgrade-container{
+  /* make the child items flex */
+  display: flex;
+  background-color: green;
+  height: 100%
+}
+
+#upgrade-buttons {
+  /* make the button 33.33% of the width of the parent element */
+  width: 33.33%;
+}
+
+#upgrade-screen {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: red;
+  display: none;
+}
+
+#upgrade-container, p{
+  text-align: center;
+}
+
+#dev-controls,
+#grid_size
+ {
+  margin-top: auto;
+  display: flex;
+}
+
+p {
+  margin-block-start: 10px;
+  margin-block-end: 0px;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+}

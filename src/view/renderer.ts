@@ -11,7 +11,7 @@ export class Renderer {
     GRID_SIZEX: number;
     GRID_SIZEY: number;
 
-    canvas: HTMLCanvasElement;
+    canvas: HTMLCanvasElement;  
 
     // Device/Context objects
     adapter: GPUAdapter;

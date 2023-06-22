@@ -23,6 +23,9 @@ export class Scene {
     numCellsMax: number[] = [10, 1];
     cellNames: string[] = ["Green", "Blue"];
 
+    upgrades: string[] = [];
+    upgradeList: string[] = [];
+
 
     constructor(GRID_SIZEX: number,GRID_SIZEY: number) {
         console.log("Initializing scene");
@@ -31,6 +34,7 @@ export class Scene {
         this.GRID_SIZEY = GRID_SIZEY;
 
         this.resetGame()
+        this.upgradeList =  ["more green", "more blue", "more lives", "explode", "less generations", "less grid size"];
     }
 
     //lose a life and return true if the player is dead
@@ -40,6 +44,21 @@ export class Scene {
             return true;
         }
         return false;
+    }
+
+    //add an upgrade
+    addUpgrade(upgrade: string) {
+        this.upgrades.push(upgrade);
+    }
+
+    chooseUpgrade() {
+        var upgrades = []
+        //choose a random upgrade 
+        for (var i = 0; i < 3; i++) {
+            var index: number = Math.floor(Math.random() * this.upgradeList.length)
+            upgrades.push(this.upgradeList[index])
+        }
+        return upgrades;
     }
 
     //remove a cell 

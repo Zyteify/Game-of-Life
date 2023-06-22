@@ -85,8 +85,10 @@ export class App {
         this.renderer.renderGrid()
 
         var newdata: Uint32Array = this.scene.getCells()
+        this.resizeCanvas()
         //send it to the renderer
         this.renderer.setBuffer(newdata, "G");
+        
     }
 
 
@@ -123,7 +125,7 @@ export class App {
             this.stopAnimating()
 
             //reset the scene with a new level
-            this.nextScene()
+            this.endScene()
 
             //update the generations label
             this.displayText()
@@ -173,18 +175,80 @@ export class App {
         
     }
 
-    nextScene() {
+    endScene() {
         //stop the animation
         this.stopAnimating()
         
-        alert("You have won the level!")
-        this.scene.nextLevel()
-        
+        this.addUpgrade()
+        //create a div to hold the upgrades and div to cover the scene
+        const container = document.getElementById("upgrade container") as HTMLElement;
+        container.style.display = "block"
+        this.displayText()
 
+    }
+
+    nextScene(){
+        this.scene.nextLevel()
         this.setGridDimensions()
 
         this.renderer.Unconfigure();
         this.InitializeRenderer()
+        this.displayText()
+    }
+
+    addUpgrade(){
+        //stop the animation
+        this.stopAnimating()
+
+        //show the upgrade-screen div
+        const upgradeScreen = <HTMLElement> document.getElementById("upgrade-screen") as HTMLElement;
+        upgradeScreen.style.display = "block"
+
+        //get the upgrade from the scene
+        var upgrade: string[] = this.scene.chooseUpgrade()
+
+        // Append the new element in front of the canvas
+        const canvasMain = <HTMLElement> document.getElementById('canvasmain');
+
+        //make the canvasmain the width of the window - 200px for each column
+        canvasMain.style.width = window.innerWidth-200-200 + "px"
+        canvasMain.style.height = window.innerHeight + "px"
+        
+        canvasMain?.appendChild(upgradeScreen);
+
+
+        //create a div to hold the buttons
+        const container = document.createElement('div');
+        container.setAttribute('id', 'upgrade-container');
+        upgradeScreen.appendChild(container);
+
+
+        for (var i = 0; i < upgrade.length; i++) {
+            // Create a button
+            const button = document.createElement("button");
+
+            button.setAttribute('id', 'upgrade-buttons');
+            button.textContent = upgrade[i];
+            button.onclick = () => {
+                this.scene.addUpgrade(button.id)
+                container.removeChild(button)
+                //remove the upgrade container that holds the buttons
+                this.removeUpgradeScreen();
+                //go to the next scene
+                this.nextScene()
+            }
+            container.appendChild(button);
+        }
+    }
+
+    removeUpgradeScreen(){
+        //remove the upgrade container that holds the buttons
+        const container = document.getElementById("upgrade-container") as HTMLElement;
+        container.remove()
+
+        const upgradeScreen = <HTMLElement> document.getElementById("upgrade-screen") as HTMLElement;
+        upgradeScreen.style.display = "none"
+
     }
 
     setGridDimensions() {
@@ -233,7 +297,8 @@ export class App {
                 });
         }
         else{
-            alert("You have no cells left!")
+            var text: string = this.scene.cellNames[this.mouseCellType]
+            alert("You have no " + text + " cells left!")
         }
         this.displayText()
 
@@ -281,7 +346,7 @@ export class App {
         //update the cell count label
         var cellCount = this.scene.cellCount
         var cellsRequired = this.scene.cellsRequired
-        this.cellCountLabel.innerText = "Cells: " + cellCount + "/" + cellsRequired
+        this.cellCountLabel.innerText = "Cells Required: " + cellCount + "/" + cellsRequired
 
         //update the grid size label
         this.gridSizeLabel.innerText = "Grid Size: " + this.GRID_SIZEX + "x" + this.GRID_SIZEY
@@ -309,6 +374,7 @@ export class App {
 
     //calculate the size of the canvas based on the grid size
     resizeCanvas() {
+        console.log('resizing canvas');
         const header = document.getElementById("header");
         var headerHeight = 0
         if (header) {
@@ -325,10 +391,27 @@ export class App {
         var height = window.innerHeight - headerHeight - 2;
         this.setGridDimensions();
 
+        //get the with and height of the parent element
+        var parentWidth: number = <number> this.canvas.parentElement?.offsetWidth
+        var parentHeight: number = <number> this.canvas.parentElement?.offsetHeight
+
         // Calculate the size of each square in pixels based on the grid size
-        const squareSize = Math.min(width / this.GRID_SIZEX, height / this.GRID_SIZEY);
+        var squareSize = Math.min(parentWidth / this.GRID_SIZEX, parentHeight / this.GRID_SIZEY);
+
+        //add a fallback for if the square size is 0
+        if (squareSize == 0) {
+            squareSize = 20
+        }
+
         this.canvas.width = squareSize * this.GRID_SIZEX;
         this.canvas.height = squareSize * this.GRID_SIZEY;
+
+        // Append the new element in front of the canvas
+        const canvasMain = <HTMLElement> document.getElementById('canvasmain');
+
+        //make the canvasmain the width of the window - 200px for each column
+        canvasMain.style.width = window.innerWidth-200-200 + "px"
+        canvasMain.style.height = window.innerHeight + "px"
 
     }
 
@@ -435,8 +518,10 @@ export class App {
         //when data button is pressed
         if (event.target.id == "win_level") {
             this.stopAnimating()
+            //add an upgrade
+            this.addUpgrade()
             //reset the scene with a new level
-            this.nextScene()
+            //this.nextScene()
 
             //update the generations label
             this.displayText()
