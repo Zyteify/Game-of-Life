@@ -4,7 +4,7 @@ export class Scene {
 
     GRID_SIZEX: number
     GRID_SIZEY: number
-    
+
 
     generations: number = 0;
 
@@ -16,7 +16,7 @@ export class Scene {
     cells: Uint32Array;
     lose: boolean = false;
 
-    
+
     numLives: number = 10;
     numLivesMax: number = 10;
 
@@ -25,25 +25,74 @@ export class Scene {
     cellNames: string[] = ["Green", "Blue"];
 
     upgrades: string[] = [];
+    unHandledUpgrades: string[] = [];
     upgradeList: string[] = [];
+    upgradeFlags: string[] = [];
 
 
-    constructor(GRID_SIZEX: number,GRID_SIZEY: number) {
+    constructor(GRID_SIZEX: number, GRID_SIZEY: number) {
         console.log("Initializing scene");
-        
+
         this.GRID_SIZEX = GRID_SIZEX;
         this.GRID_SIZEY = GRID_SIZEY;
 
         this.resetGame()
-        this.upgradeList =  ["more green", "more blue", "more lives", "explode", "less generations", "less grid size"];
+        this.handleUpgrade()
+        this.upgradeList = ["more green", "more blue", "more lives", "explode", "less generations", "less grid size"];
+
     }
+
+    handleUpgrade() {
+        //loop through the unhandled upgrades and handle them
+        for (var i = 0; i < this.unHandledUpgrades.length; i++) {
+            var upgrade = this.unHandledUpgrades[i];
+            switch (upgrade) {
+                case "more green":
+                    this.numCells[0] += 10;
+                    this.numCellsMax[0] += 10;
+                    break;
+                case "more blue":
+                    this.numCells[1] += 1;
+                    this.numCellsMax[1] += 1;
+                    break;
+                case "more lives":
+                    this.numLivesMax += 10;
+                    this.numLives += 10;
+                    break;
+                case "explode":
+                    //check to see if the flag is already set
+                    if (this.upgradeFlags.indexOf("explode") == -1) {
+                        this.upgradeFlags.push("explode");
+                    }
+                    else {
+                        alert("You already have this upgrade");
+                    }
+                    break;
+                case "less generations":
+                    this.generationsRequired = Math.floor(this.generationsRequired*0.8);
+                    break;
+                case "less grid size":
+                    this.GRID_SIZEX = Math.floor(this.GRID_SIZEX*0.7);
+                    this.GRID_SIZEY = Math.floor(this.GRID_SIZEY*0.7);
+                    break;
+                default:
+                    console.log("upgrade not found");
+                    break;
+            }
+        }
+        this.unHandledUpgrades = [];
+
+        return this.upgradeFlags
+        
+    }
+
 
     //lose a life and return true if the player is dead
     loseLife() {
         this.numLives--;
         //flash the lives
         flash("lives");
-        if(this.numLives <= 0){
+        if (this.numLives <= 0) {
             return true;
         }
         return false;
@@ -52,6 +101,7 @@ export class Scene {
     //add an upgrade
     addUpgrade(upgrade: string) {
         this.upgrades.push(upgrade);
+        this.unHandledUpgrades.push(upgrade);
     }
 
     chooseUpgrade() {
@@ -78,7 +128,7 @@ export class Scene {
     }
 
 
-    countCells(data: Uint32Array){
+    countCells(data: Uint32Array) {
         //sum all the data from the cells
         var sum = 0;
         for (var i = 0; i < data.length; i++) {
@@ -87,7 +137,7 @@ export class Scene {
         this.cellCount = sum
     }
 
-    updateCells(data: Uint32Array){
+    updateCells(data: Uint32Array) {
         this.cells = data;
         this.countCells(data);
         this.updateGenerations();
@@ -106,7 +156,7 @@ export class Scene {
     //lose game condition
     isLoseGame() {
         //lose flag is tripped
-        if(this.lose){
+        if (this.lose) {
             return this.loseLife();
         }
         //check to see if the level is complete
@@ -118,7 +168,7 @@ export class Scene {
     }
 
     updateCellsRequired() {
-        this.cellsRequired = Math.floor(this.GRID_SIZEX*this.GRID_SIZEY / 10);
+        this.cellsRequired = Math.floor(this.GRID_SIZEX * this.GRID_SIZEY / 10);
     }
 
     getCells() {
@@ -137,26 +187,26 @@ export class Scene {
 
     getGenerationsRequired() {
         return this.generationsRequired;
-        
+
     }
 
     setGenerations(generations: number) {
         this.generations = generations;
     }
     updateGenerations() {
-        this.generations = this.generations+1;
+        this.generations = this.generations + 1;
     }
 
     generateCells() {
         var chance = 0.05;
         //create a new array of cells with a size of the grid
-        var firstWaveCells = new Uint32Array(this.GRID_SIZEX*this.GRID_SIZEY);
+        var firstWaveCells = new Uint32Array(this.GRID_SIZEX * this.GRID_SIZEY);
         for (var i = 0; i < firstWaveCells.length; i++) {
-            if(Math.random() < chance){
+            if (Math.random() < chance) {
                 firstWaveCells[i] = 1
             }
         }
-        var cells = new Uint32Array(this.GRID_SIZEX*this.GRID_SIZEY);
+        var cells = new Uint32Array(this.GRID_SIZEX * this.GRID_SIZEY);
         //do a second pass to and increase the chance if there are neighbours
         for (var i = 0; i < cells.length; i++) {
             //check the eight neighbours
@@ -172,10 +222,10 @@ export class Scene {
                 }
             }
             //if there are neighbours increase the chance
-            if(neighbours > 0){
+            if (neighbours > 0) {
                 chance = 0.2;
             }
-            if(Math.random() < chance){
+            if (Math.random() < chance) {
                 cells[i] = 1
             }
         }
@@ -194,7 +244,7 @@ export class Scene {
     nextLevel() {
         this.level++;
         this.generationsRequired = Math.floor(this.generationsRequired * 1.05 + 10);
-        
+
         this.newGrid();
 
         this.numCells = [10, 1];;
@@ -234,6 +284,10 @@ export class Scene {
         this.setGenerations(0)
         this.cells = this.generateCells();
         this.countCells(this.cells);
+
+        this.upgrades = []
+        this.addUpgrade("more green");
+        this.addUpgrade("more blue");
 
     }
 }

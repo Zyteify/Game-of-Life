@@ -77,11 +77,13 @@ export class Renderer {
     canvasFormat: GPUTextureFormat;
     canvasFormatTest: GPUTextureFormat;
 
+    flags: string[] = [];
+
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
     }
 
-    async Initialize(GRID_SIZEX: number,GRID_SIZEY: number) {
+    async Initialize(GRID_SIZEX: number,GRID_SIZEY: number, flags: string[]) {
 
         this.initialized = true;
 
@@ -89,6 +91,8 @@ export class Renderer {
         this.GRID_SIZEY = GRID_SIZEY;
 
         this.seed = 'hi';
+
+        this.flags = flags;
 
         await this.setupDevice();
 

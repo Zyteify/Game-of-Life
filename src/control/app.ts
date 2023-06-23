@@ -15,6 +15,8 @@ export class App {
     renderer: Renderer;
     scene: Scene;
 
+    sceneFlags: string[] = [];
+
     //Labels for displaying state
     generationsLabel: HTMLElement;
     gridSizeLabel: HTMLElement;
@@ -38,7 +40,7 @@ export class App {
 
         this.canvas = canvas;
 
-        this.renderer = new Renderer(canvas);
+        
 
         //default the clickable cell color
         $('#cell_type_green').css("background-color", "#4CAF50");
@@ -79,10 +81,12 @@ export class App {
 
         //when the window is resized trigger the resize canvas function
         window.addEventListener('resize', this.resizeCanvas.bind(this), false);
-
+        this.renderer = new Renderer(canvas);
         this.GenerateScene()
+        
         this.resizeCanvas()
         this.getLabels()
+        this.displayUpgrades();
         this.displayText();
     }
 
@@ -97,7 +101,7 @@ export class App {
     }
 
     async InitializeRenderer() {
-        await this.renderer.Initialize(this.GRID_SIZEX, this.GRID_SIZEY);
+        await this.renderer.Initialize(this.GRID_SIZEX, this.GRID_SIZEY, this.sceneFlags);
         this.renderer.renderGrid()
 
         var newdata: Uint32Array = this.scene.getCells()
@@ -186,10 +190,13 @@ export class App {
         alert("You have lost the game!")
         this.scene.resetGame()
 
+        this.sceneFlags = this.scene.handleUpgrade()
         this.setGridDimensions()
 
         this.renderer.Unconfigure();
         this.InitializeRenderer()
+        this.displayUpgrades();
+        
         
     }
 
@@ -205,11 +212,13 @@ export class App {
 
     nextScene(){
         this.scene.nextLevel()
+        this.sceneFlags = this.scene.handleUpgrade()
         this.setGridDimensions()
 
         this.renderer.Unconfigure();
         this.InitializeRenderer()
         this.displayText()
+        this.displayUpgrades();
     }
 
     addUpgrade(){
@@ -252,12 +261,14 @@ export class App {
 
             button.setAttribute('id', 'upgrade-buttons');
             button.setAttribute('class', 'invisible-button');
+            button.setAttribute('data-upgrade', upgrade[i])
 
             var text = this.scene.level + ": " + " " + i + " " + upgrade[i]
 
             button.textContent = text;
             button.onclick = () => {
-                this.scene.addUpgrade(button.id)
+                var upgrade:string = <string> button.getAttribute('data-upgrade')
+                this.scene.addUpgrade(upgrade)
                 container.removeChild(button)
                 //remove the upgrade container that holds the buttons
                 this.removeUpgradeScreen();
@@ -291,6 +302,32 @@ export class App {
         const upgradeScreen = <HTMLElement> document.getElementById("upgrade-screen") as HTMLElement;
         upgradeScreen.style.display = "none"
 
+        
+
+
+        
+
+    }
+
+    displayUpgrades(){
+
+        const container = <HTMLElement> document.getElementById('scene-upgrade-container'); // Container element
+
+        // Clear the container by setting its innerHTML to an empty string
+        container.innerHTML = '';
+
+        //update the scene upgrade container
+        var upgrades = this.scene.upgrades
+        //loop through each upgrade and create a paragraph element if it doesn't exist
+        for (var i = 0; i < upgrades.length; i++) {
+            // Create a <p> element
+            const paragraph = document.createElement("p");
+            paragraph.textContent = upgrades[i];
+            paragraph.id = upgrades[i]
+            //append the paragraph to the upgrade container
+            container.appendChild(paragraph);
+            
+        }
     }
 
     setGridDimensions() {
@@ -405,6 +442,9 @@ export class App {
             this.placeableCellCountLabel[i].innerText = cellNames + " Cells Avaliable: " + numCells + "/" + numCellsMax
         }
 
+        
+
+        
         
 
         
@@ -576,6 +616,7 @@ export class App {
             this.stopAnimating()
             //add an upgrade
             this.addUpgrade()
+
             //reset the scene with a new level
             //this.nextScene()
 

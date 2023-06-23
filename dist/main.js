@@ -10758,7 +10758,6 @@ class App {
         this.GRID_SIZEX = GRID_SIZEX;
         this.GRID_SIZEY = GRID_SIZEY;
         this.canvas = canvas;
-        this.renderer = new _view_renderer__WEBPACK_IMPORTED_MODULE_0__.Renderer(canvas);
         //default the clickable cell color
         jquery__WEBPACK_IMPORTED_MODULE_2___default()('#cell_type_green').css("background-color", "#4CAF50");
         jquery__WEBPACK_IMPORTED_MODULE_2___default()('#cell_type_blue').css("background-color", "#555555");
@@ -10790,9 +10789,11 @@ class App {
         });
         //when the window is resized trigger the resize canvas function
         window.addEventListener('resize', this.resizeCanvas.bind(this), false);
+        this.renderer = new _view_renderer__WEBPACK_IMPORTED_MODULE_0__.Renderer(canvas);
         this.GenerateScene();
         this.resizeCanvas();
         this.getLabels();
+        this.displayUpgrades();
         this.displayText();
     }
     GenerateScene() {
@@ -10872,9 +10873,11 @@ class App {
         this.displayText();
         alert("You have lost the game!");
         this.scene.resetGame();
+        this.scene.handleUpgrade();
         this.setGridDimensions();
         this.renderer.Unconfigure();
         this.InitializeRenderer();
+        this.displayUpgrades();
     }
     endScene() {
         //stop the animation
@@ -10884,10 +10887,12 @@ class App {
     }
     nextScene() {
         this.scene.nextLevel();
+        this.scene.handleUpgrade();
         this.setGridDimensions();
         this.renderer.Unconfigure();
         this.InitializeRenderer();
         this.displayText();
+        this.displayUpgrades();
     }
     addUpgrade() {
         //stop the animation
@@ -10917,10 +10922,12 @@ class App {
             const button = document.createElement("button");
             button.setAttribute('id', 'upgrade-buttons');
             button.setAttribute('class', 'invisible-button');
+            button.setAttribute('data-upgrade', upgrade[i]);
             var text = this.scene.level + ": " + " " + i + " " + upgrade[i];
             button.textContent = text;
             button.onclick = () => {
-                this.scene.addUpgrade(button.id);
+                var upgrade = button.getAttribute('data-upgrade');
+                this.scene.addUpgrade(upgrade);
                 container.removeChild(button);
                 //remove the upgrade container that holds the buttons
                 this.removeUpgradeScreen();
@@ -10947,6 +10954,22 @@ class App {
         container.remove();
         const upgradeScreen = document.getElementById("upgrade-screen");
         upgradeScreen.style.display = "none";
+    }
+    displayUpgrades() {
+        const container = document.getElementById('scene-upgrade-container'); // Container element
+        // Clear the container by setting its innerHTML to an empty string
+        container.innerHTML = '';
+        //update the scene upgrade container
+        var upgrades = this.scene.upgrades;
+        //loop through each upgrade and create a paragraph element if it doesn't exist
+        for (var i = 0; i < upgrades.length; i++) {
+            // Create a <p> element
+            const paragraph = document.createElement("p");
+            paragraph.textContent = upgrades[i];
+            paragraph.id = upgrades[i];
+            //append the paragraph to the upgrade container
+            container.appendChild(paragraph);
+        }
     }
     setGridDimensions() {
         this.GRID_SIZEX = this.scene.GRID_SIZEX;
@@ -11216,12 +11239,48 @@ class Scene {
         this.numCellsMax = [10, 1];
         this.cellNames = ["Green", "Blue"];
         this.upgrades = [];
+        this.unHandledUpgrades = [];
         this.upgradeList = [];
         console.log("Initializing scene");
         this.GRID_SIZEX = GRID_SIZEX;
         this.GRID_SIZEY = GRID_SIZEY;
         this.resetGame();
+        this.handleUpgrade();
         this.upgradeList = ["more green", "more blue", "more lives", "explode", "less generations", "less grid size"];
+    }
+    handleUpgrade() {
+        //loop through the unhandled upgrades and handle them
+        for (var i = 0; i < this.unHandledUpgrades.length; i++) {
+            var upgrade = this.unHandledUpgrades[i];
+            switch (upgrade) {
+                case "more green":
+                    this.numCells[0] += 10;
+                    this.numCellsMax[0] += 10;
+                    break;
+                case "more blue":
+                    this.numCells[1] += 1;
+                    this.numCellsMax[1] += 1;
+                    break;
+                case "more lives":
+                    this.numLivesMax += 10;
+                    this.numLives += 10;
+                    break;
+                case "explode":
+                    alert("explode not finished");
+                    break;
+                case "less generations":
+                    this.generationsRequired = Math.floor(this.generationsRequired * 0.8);
+                    break;
+                case "less grid size":
+                    this.GRID_SIZEX = Math.floor(this.GRID_SIZEX * 0.7);
+                    this.GRID_SIZEY = Math.floor(this.GRID_SIZEY * 0.7);
+                    break;
+                default:
+                    console.log("upgrade not found");
+                    break;
+            }
+        }
+        this.unHandledUpgrades = [];
     }
     //lose a life and return true if the player is dead
     loseLife() {
@@ -11236,6 +11295,7 @@ class Scene {
     //add an upgrade
     addUpgrade(upgrade) {
         this.upgrades.push(upgrade);
+        this.unHandledUpgrades.push(upgrade);
     }
     chooseUpgrade() {
         var upgrades = [];
@@ -11381,6 +11441,9 @@ class Scene {
         this.setGenerations(0);
         this.cells = this.generateCells();
         this.countCells(this.cells);
+        this.upgrades = [];
+        this.addUpgrade("more green");
+        this.addUpgrade("more blue");
     }
 }
 
