@@ -1,3 +1,4 @@
+import { flash } from "../view/definitions";
 export class Scene {
 
 
@@ -40,6 +41,8 @@ export class Scene {
     //lose a life and return true if the player is dead
     loseLife() {
         this.numLives--;
+        //flash the lives
+        flash("lives");
         if(this.numLives <= 0){
             return true;
         }
@@ -107,7 +110,7 @@ export class Scene {
             return this.loseLife();
         }
         //check to see if the level is complete
-        if ((this.generations > this.generationsRequired)) {
+        if ((this.generations >= this.generationsRequired)) {
             return this.loseLife();
         }
         return false;
@@ -145,14 +148,39 @@ export class Scene {
     }
 
     generateCells() {
-        var chance = 0.1;
+        var chance = 0.05;
         //create a new array of cells with a size of the grid
+        var firstWaveCells = new Uint32Array(this.GRID_SIZEX*this.GRID_SIZEY);
+        for (var i = 0; i < firstWaveCells.length; i++) {
+            if(Math.random() < chance){
+                firstWaveCells[i] = 1
+            }
+        }
         var cells = new Uint32Array(this.GRID_SIZEX*this.GRID_SIZEY);
+        //do a second pass to and increase the chance if there are neighbours
         for (var i = 0; i < cells.length; i++) {
+            //check the eight neighbours
+            var neighbours = 0;
+            var x = i % this.GRID_SIZEX;
+            var y = Math.floor(i / this.GRID_SIZEX);
+            for (var j = -1; j < 2; j++) {
+                for (var k = -1; k < 2; k++) {
+                    var index = (x + j) + (y + k) * this.GRID_SIZEX;
+                    if (index >= 0 && index < cells.length) {
+                        neighbours += firstWaveCells[index];
+                    }
+                }
+            }
+            //if there are neighbours increase the chance
+            if(neighbours > 0){
+                chance = 0.2;
+            }
             if(Math.random() < chance){
                 cells[i] = 1
             }
         }
+
+
         return cells;
     }
 

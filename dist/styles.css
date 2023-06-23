@@ -42,6 +42,7 @@ p {
   display: flex; /* Add flexbox layout */
   flex-direction: column; /* Arrange elements vertically */
   align-items: center; /* Center items horizontally */
+  overflow-x: hidden; /* Hide horizontal scrollbar */
 }
 
 #column-right {
@@ -51,6 +52,7 @@ p {
   width: 200px; /* Adjust the width as needed */
   height: 100vh; /* Adjust the height as needed */
   overflow-y: auto; /* Display scroll bar only if necessary */
+  overflow-x: hidden; /* Hide horizontal scrollbar */
   background-color: #9a9a9a; /* Optional background color */
   display: flex; /* Add flexbox layout */
   flex-direction: column; /* Arrange elements vertically */
@@ -104,6 +106,7 @@ body {
  {
   margin-top: auto;
   display: flex;
+  flex-direction: column;
 }
 
 p {
@@ -111,4 +114,37 @@ p {
   margin-block-end: 0px;
   margin-inline-start: 0px;
   margin-inline-end: 0px;
+}
+
+@keyframes flashAnimation {
+  0% { background-color: red; }
+  50% { background-color: white; }
+  100% { background-color: red; }
+}
+
+.flash {
+  animation: flashAnimation 2s linear;
+}
+
+hr {
+  width: 100%
+}
+
+#next {
+  height: 50px; 
+  width: 100%;
+}
+
+.italic-text {
+  font-style: italic;
+}
+
+.invisible-button {
+  display: none
+}
+
+.bottom-justify{
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
 }

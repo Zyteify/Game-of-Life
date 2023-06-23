@@ -26,4 +26,21 @@ const computeBufferLayout: ComputeBufferLayout = {
   ],
 };
 
+//make the element flash
+export function flash(id: string) {
+  var element: HTMLElement = <HTMLElement> document.getElementById(id);
+
+  //check to see if it already has the flash class
+  if (element.classList.contains("flash")) {
+      //remove the flash class
+      element.classList.remove("flash");
+  }
+  // Add the "flash" class to the element
+  element.classList.add("flash");
+  
+  // Remove the "flash" class after the animation completes
+  setTimeout(function() {
+    element.classList.remove("flash");
+  }, 2000); // Adjust the timeout value to match the animation duration
+}
 

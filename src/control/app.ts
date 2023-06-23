@@ -61,6 +61,22 @@ export class App {
         // register clicking on the canvas and log the position
         this.canvas.addEventListener('click', this.handleClick.bind(this));
 
+        //register when a keyboard key is pressed
+        document.addEventListener('keydown', (event) => {
+            //if the spacebar is pressed
+            if (event.code == "Space") {
+                //if the animation is running
+                if (this.animationRunning) {
+                    //stop the animation
+                    this.stopAnimating()
+                }
+                else {
+                    //use the next button to go to the next step
+                    this.next()
+                }
+            }
+        });
+
         //when the window is resized trigger the resize canvas function
         window.addEventListener('resize', this.resizeCanvas.bind(this), false);
 
@@ -107,25 +123,26 @@ export class App {
 
 
     async next() {
+        //check to see if you have won the level first then
         //check to see if you've lost the game
-        //check to see if you have won the level
-        if ( this.scene.isLoseGame()) {
-            //stop the animation
-            this.stopAnimating()
-
-            //reset the scene with a new level
-            this.firstScene()
-
-            //update the generations label
-            this.displayText()
-        }
-        else if(this.scene.isNextLevel()){
+        
+        if ( this.scene.isNextLevel()) {
             //if you have won the level
             //stop the animation
             this.stopAnimating()
 
             //reset the scene with a new level
             this.endScene()
+
+            //update the generations label
+            this.displayText()
+        }
+        else if(this.scene.isLoseGame()){
+            //stop the animation
+            this.stopAnimating()
+
+            //reset the scene with a new level
+            this.firstScene()
 
             //update the generations label
             this.displayText()
@@ -165,6 +182,7 @@ export class App {
         //stop the animation
         this.stopAnimating()
 
+        this.displayText()
         alert("You have lost the game!")
         this.scene.resetGame()
 
@@ -180,9 +198,7 @@ export class App {
         this.stopAnimating()
         
         this.addUpgrade()
-        //create a div to hold the upgrades and div to cover the scene
-        const container = document.getElementById("upgrade container") as HTMLElement;
-        container.style.display = "block"
+
         this.displayText()
 
     }
@@ -199,6 +215,9 @@ export class App {
     addUpgrade(){
         //stop the animation
         this.stopAnimating()
+
+        //stop any events being triggered by clicking on the canvas
+        this.canvas.removeEventListener('click', this.handleClick.bind(this));
 
         //show the upgrade-screen div
         const upgradeScreen = <HTMLElement> document.getElementById("upgrade-screen") as HTMLElement;
@@ -222,13 +241,21 @@ export class App {
         container.setAttribute('id', 'upgrade-container');
         upgradeScreen.appendChild(container);
 
+        //wait 1 second then add the each button to the canvas
+        setTimeout(() => {
+        }, 1000);
+
 
         for (var i = 0; i < upgrade.length; i++) {
             // Create a button
             const button = document.createElement("button");
 
             button.setAttribute('id', 'upgrade-buttons');
-            button.textContent = upgrade[i];
+            button.setAttribute('class', 'invisible-button');
+
+            var text = this.scene.level + ": " + " " + i + " " + upgrade[i]
+
+            button.textContent = text;
             button.onclick = () => {
                 this.scene.addUpgrade(button.id)
                 container.removeChild(button)
@@ -238,10 +265,25 @@ export class App {
                 this.nextScene()
             }
             container.appendChild(button);
+            setTimeout(() => {
+                button.style.display = "block";
+            }, 1000*(i+1));
         }
+
+        //wait 1 second then add the event listener to the canvas again
+        setTimeout(() => {
+            //register clicking on the canvas and log the position
+            this.canvas.addEventListener('click', this.handleClick.bind(this));
+        }, 1000);
+        
+
+        
     }
 
     removeUpgradeScreen(){
+        //remove the buttons with id upgrade-buttons
+        var buttons = document.getElementById("upgrade-buttons") as HTMLElement;
+        buttons.remove()
         //remove the upgrade container that holds the buttons
         const container = document.getElementById("upgrade-container") as HTMLElement;
         container.remove()
@@ -298,7 +340,10 @@ export class App {
         }
         else{
             var text: string = this.scene.cellNames[this.mouseCellType]
-            alert("You have no " + text + " cells left!")
+            //alert("You have no " + text + " cells left!")
+            //flash the label
+            this.flash(this.mouseCellType.toString())
+
         }
         this.displayText()
 
@@ -369,12 +414,28 @@ export class App {
         var numLivesMax = this.scene.numLivesMax
         this.livesLabel.innerText = "Lives: " + numLives + "/" + numLivesMax 
 
+        //update the level
+        var level = this.scene.level
+        
+        //get the level span
+        var levelLabel = <HTMLElement> document.getElementById("level");
+        levelLabel.innerText = "Level: " + level    
+
+
 
     }
 
     //calculate the size of the canvas based on the grid size
     resizeCanvas() {
         console.log('resizing canvas');
+                // Append the new element in front of the canvas
+                const canvasMain = <HTMLElement> document.getElementById('canvasmain');
+
+                //make the canvasmain the width of the window - 200px for each column
+                canvasMain.style.width = window.innerWidth-200-200 + "px"
+                canvasMain.style.height = window.innerHeight + "px"
+
+                
         const header = document.getElementById("header");
         var headerHeight = 0
         if (header) {
@@ -406,12 +467,7 @@ export class App {
         this.canvas.width = squareSize * this.GRID_SIZEX;
         this.canvas.height = squareSize * this.GRID_SIZEY;
 
-        // Append the new element in front of the canvas
-        const canvasMain = <HTMLElement> document.getElementById('canvasmain');
 
-        //make the canvasmain the width of the window - 200px for each column
-        canvasMain.style.width = window.innerWidth-200-200 + "px"
-        canvasMain.style.height = window.innerHeight + "px"
 
     }
 
@@ -509,7 +565,7 @@ export class App {
             this.scene.loseGame()
             this.stopAnimating()
             //reset the scene with a new level
-            this.nextScene()
+            this.firstScene()
 
             //update the generations label
             this.displayText()
@@ -529,5 +585,23 @@ export class App {
 
 
     }
+
+    //make the element flash
+    flash(id: string) {
+        var element: HTMLElement = <HTMLElement> document.getElementById(id);
+
+        //check to see if it already has the flash class
+        if (element.classList.contains("flash")) {
+            //remove the flash class
+            element.classList.remove("flash");
+        }
+        // Add the "flash" class to the element
+        element.classList.add("flash");
+        
+        // Remove the "flash" class after the animation completes
+        setTimeout(function() {
+          element.classList.remove("flash");
+        }, 2000); // Adjust the timeout value to match the animation duration
+      }
 
 }

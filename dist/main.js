@@ -10773,6 +10773,21 @@ class App {
         });
         // register clicking on the canvas and log the position
         this.canvas.addEventListener('click', this.handleClick.bind(this));
+        //register when a keyboard key is pressed
+        document.addEventListener('keydown', (event) => {
+            //if the spacebar is pressed
+            if (event.code == "Space") {
+                //if the animation is running
+                if (this.animationRunning) {
+                    //stop the animation
+                    this.stopAnimating();
+                }
+                else {
+                    //use the next button to go to the next step
+                    this.next();
+                }
+            }
+        });
         //when the window is resized trigger the resize canvas function
         window.addEventListener('resize', this.resizeCanvas.bind(this), false);
         this.GenerateScene();
@@ -10806,22 +10821,22 @@ class App {
         }
     }
     async next() {
+        //check to see if you have won the level first then
         //check to see if you've lost the game
-        //check to see if you have won the level
-        if (this.scene.isLoseGame()) {
-            //stop the animation
-            this.stopAnimating();
-            //reset the scene with a new level
-            this.firstScene();
-            //update the generations label
-            this.displayText();
-        }
-        else if (this.scene.isNextLevel()) {
+        if (this.scene.isNextLevel()) {
             //if you have won the level
             //stop the animation
             this.stopAnimating();
             //reset the scene with a new level
             this.endScene();
+            //update the generations label
+            this.displayText();
+        }
+        else if (this.scene.isLoseGame()) {
+            //stop the animation
+            this.stopAnimating();
+            //reset the scene with a new level
+            this.firstScene();
             //update the generations label
             this.displayText();
         }
@@ -10854,6 +10869,7 @@ class App {
     firstScene() {
         //stop the animation
         this.stopAnimating();
+        this.displayText();
         alert("You have lost the game!");
         this.scene.resetGame();
         this.setGridDimensions();
@@ -10864,9 +10880,6 @@ class App {
         //stop the animation
         this.stopAnimating();
         this.addUpgrade();
-        //create a div to hold the upgrades and div to cover the scene
-        const container = document.getElementById("upgrade container");
-        container.style.display = "block";
         this.displayText();
     }
     nextScene() {
@@ -10879,6 +10892,8 @@ class App {
     addUpgrade() {
         //stop the animation
         this.stopAnimating();
+        //stop any events being triggered by clicking on the canvas
+        this.canvas.removeEventListener('click', this.handleClick.bind(this));
         //show the upgrade-screen div
         const upgradeScreen = document.getElementById("upgrade-screen");
         upgradeScreen.style.display = "block";
@@ -10894,11 +10909,16 @@ class App {
         const container = document.createElement('div');
         container.setAttribute('id', 'upgrade-container');
         upgradeScreen.appendChild(container);
+        //wait 1 second then add the each button to the canvas
+        setTimeout(() => {
+        }, 1000);
         for (var i = 0; i < upgrade.length; i++) {
             // Create a button
             const button = document.createElement("button");
             button.setAttribute('id', 'upgrade-buttons');
-            button.textContent = upgrade[i];
+            button.setAttribute('class', 'invisible-button');
+            var text = this.scene.level + ": " + " " + i + " " + upgrade[i];
+            button.textContent = text;
             button.onclick = () => {
                 this.scene.addUpgrade(button.id);
                 container.removeChild(button);
@@ -10908,9 +10928,20 @@ class App {
                 this.nextScene();
             };
             container.appendChild(button);
+            setTimeout(() => {
+                button.style.display = "block";
+            }, 1000 * (i + 1));
         }
+        //wait 1 second then add the event listener to the canvas again
+        setTimeout(() => {
+            //register clicking on the canvas and log the position
+            this.canvas.addEventListener('click', this.handleClick.bind(this));
+        }, 1000);
     }
     removeUpgradeScreen() {
+        //remove the buttons with id upgrade-buttons
+        var buttons = document.getElementById("upgrade-buttons");
+        buttons.remove();
         //remove the upgrade container that holds the buttons
         const container = document.getElementById("upgrade-container");
         container.remove();
@@ -10952,7 +10983,9 @@ class App {
         }
         else {
             var text = this.scene.cellNames[this.mouseCellType];
-            alert("You have no " + text + " cells left!");
+            //alert("You have no " + text + " cells left!")
+            //flash the label
+            this.flash(this.mouseCellType.toString());
         }
         this.displayText();
     }
@@ -11004,11 +11037,21 @@ class App {
         var numLives = this.scene.numLives;
         var numLivesMax = this.scene.numLivesMax;
         this.livesLabel.innerText = "Lives: " + numLives + "/" + numLivesMax;
+        //update the level
+        var level = this.scene.level;
+        //get the level span
+        var levelLabel = document.getElementById("level");
+        levelLabel.innerText = "Level: " + level;
     }
     //calculate the size of the canvas based on the grid size
     resizeCanvas() {
         var _a, _b;
         console.log('resizing canvas');
+        // Append the new element in front of the canvas
+        const canvasMain = document.getElementById('canvasmain');
+        //make the canvasmain the width of the window - 200px for each column
+        canvasMain.style.width = window.innerWidth - 200 - 200 + "px";
+        canvasMain.style.height = window.innerHeight + "px";
         const header = document.getElementById("header");
         var headerHeight = 0;
         if (header) {
@@ -11034,11 +11077,6 @@ class App {
         }
         this.canvas.width = squareSize * this.GRID_SIZEX;
         this.canvas.height = squareSize * this.GRID_SIZEY;
-        // Append the new element in front of the canvas
-        const canvasMain = document.getElementById('canvasmain');
-        //make the canvasmain the width of the window - 200px for each column
-        canvasMain.style.width = window.innerWidth - 200 - 200 + "px";
-        canvasMain.style.height = window.innerHeight + "px";
     }
     startAnimating() {
         if (!this.animationRunning) {
@@ -11118,7 +11156,7 @@ class App {
             this.scene.loseGame();
             this.stopAnimating();
             //reset the scene with a new level
-            this.nextScene();
+            this.firstScene();
             //update the generations label
             this.displayText();
         }
@@ -11132,6 +11170,21 @@ class App {
             //update the generations label
             this.displayText();
         }
+    }
+    //make the element flash
+    flash(id) {
+        var element = document.getElementById(id);
+        //check to see if it already has the flash class
+        if (element.classList.contains("flash")) {
+            //remove the flash class
+            element.classList.remove("flash");
+        }
+        // Add the "flash" class to the element
+        element.classList.add("flash");
+        // Remove the "flash" class after the animation completes
+        setTimeout(function () {
+            element.classList.remove("flash");
+        }, 2000); // Adjust the timeout value to match the animation duration
     }
 }
 
@@ -11149,6 +11202,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   Scene: () => (/* binding */ Scene)
 /* harmony export */ });
+/* harmony import */ var _view_definitions__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../view/definitions */ "./src/view/definitions.ts");
+
 class Scene {
     constructor(GRID_SIZEX, GRID_SIZEY) {
         this.generations = 0;
@@ -11171,6 +11226,8 @@ class Scene {
     //lose a life and return true if the player is dead
     loseLife() {
         this.numLives--;
+        //flash the lives
+        (0,_view_definitions__WEBPACK_IMPORTED_MODULE_0__.flash)("lives");
         if (this.numLives <= 0) {
             return true;
         }
@@ -11227,7 +11284,7 @@ class Scene {
             return this.loseLife();
         }
         //check to see if the level is complete
-        if ((this.generations > this.generationsRequired)) {
+        if ((this.generations >= this.generationsRequired)) {
             return this.loseLife();
         }
         return false;
@@ -11254,10 +11311,33 @@ class Scene {
         this.generations = this.generations + 1;
     }
     generateCells() {
-        var chance = 0.1;
+        var chance = 0.05;
         //create a new array of cells with a size of the grid
+        var firstWaveCells = new Uint32Array(this.GRID_SIZEX * this.GRID_SIZEY);
+        for (var i = 0; i < firstWaveCells.length; i++) {
+            if (Math.random() < chance) {
+                firstWaveCells[i] = 1;
+            }
+        }
         var cells = new Uint32Array(this.GRID_SIZEX * this.GRID_SIZEY);
+        //do a second pass to and increase the chance if there are neighbours
         for (var i = 0; i < cells.length; i++) {
+            //check the eight neighbours
+            var neighbours = 0;
+            var x = i % this.GRID_SIZEX;
+            var y = Math.floor(i / this.GRID_SIZEX);
+            for (var j = -1; j < 2; j++) {
+                for (var k = -1; k < 2; k++) {
+                    var index = (x + j) + (y + k) * this.GRID_SIZEX;
+                    if (index >= 0 && index < cells.length) {
+                        neighbours += firstWaveCells[index];
+                    }
+                }
+            }
+            //if there are neighbours increase the chance
+            if (neighbours > 0) {
+                chance = 0.2;
+            }
             if (Math.random() < chance) {
                 cells[i] = 1;
             }
@@ -11302,6 +11382,52 @@ class Scene {
         this.cells = this.generateCells();
         this.countCells(this.cells);
     }
+}
+
+
+/***/ }),
+
+/***/ "./src/view/definitions.ts":
+/*!*********************************!*\
+  !*** ./src/view/definitions.ts ***!
+  \*********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   flash: () => (/* binding */ flash),
+/* harmony export */   getCoordinates: () => (/* binding */ getCoordinates)
+/* harmony export */ });
+function getCoordinates(index, gridSize) {
+    const y = Math.floor(index / gridSize); // Calculate the row (x)
+    const x = index % gridSize; // Calculate the column (y)
+    return { x, y };
+}
+const computeBufferLayout = {
+    arrayStride: 8,
+    attributes: [
+        {
+            format: "float32",
+            offset: 0,
+            shaderLocation: 0,
+        },
+    ],
+};
+//make the element flash
+function flash(id) {
+    var element = document.getElementById(id);
+    //check to see if it already has the flash class
+    if (element.classList.contains("flash")) {
+        //remove the flash class
+        element.classList.remove("flash");
+    }
+    // Add the "flash" class to the element
+    element.classList.add("flash");
+    // Remove the "flash" class after the animation completes
+    setTimeout(function () {
+        element.classList.remove("flash");
+    }, 2000); // Adjust the timeout value to match the animation duration
 }
 
 
