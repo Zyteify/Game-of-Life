@@ -10742,31 +10742,36 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _view_renderer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../view/renderer */ "./src/view/renderer.ts");
 /* harmony import */ var _scene_scene__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../scene/scene */ "./src/scene/scene.ts");
-/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! jquery */ "./node_modules/jquery/dist/jquery.js");
-/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _view_definitions__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../view/definitions */ "./src/view/definitions.ts");
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! jquery */ "./node_modules/jquery/dist/jquery.js");
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_3__);
+
 
 
 
 class App {
     constructor(canvas, GRID_SIZEX, GRID_SIZEY) {
+        this.sceneFlags = [];
         this.placeableCellCountLabel = [];
         this.fps = 20;
         this.animationRunning = false;
         //todo use a dictionary or more appropriate data structure
         this.mouseCellType = 0;
         this.mouseCellTypeString = "G";
+        //temporary augments to choose
+        this.tempAugments = [];
         this.GRID_SIZEX = GRID_SIZEX;
         this.GRID_SIZEY = GRID_SIZEY;
         this.canvas = canvas;
         //default the clickable cell color
-        jquery__WEBPACK_IMPORTED_MODULE_2___default()('#cell_type_green').css("background-color", "#4CAF50");
-        jquery__WEBPACK_IMPORTED_MODULE_2___default()('#cell_type_blue').css("background-color", "#555555");
+        jquery__WEBPACK_IMPORTED_MODULE_3___default()('#cell_type_green').css("background-color", "#4CAF50");
+        jquery__WEBPACK_IMPORTED_MODULE_3___default()('#cell_type_blue').css("background-color", "#555555");
         //register clicking on buttons
-        jquery__WEBPACK_IMPORTED_MODULE_2___default()('#next, #start, #pause, #test-values, #data, #data2, #data-age, #test, #restart, #cell_type_green, #cell_type_blue, #clear, #win_level').on('click', (event) => {
+        jquery__WEBPACK_IMPORTED_MODULE_3___default()('#next, #start, #pause, #test-values, #data, #data2, #data-age, #test, #restart, #cell_type_green, #cell_type_blue, #clear, #win_level').on('click', (event) => {
             this.handle_button(event);
         });
         //get when the input box fps changes
-        jquery__WEBPACK_IMPORTED_MODULE_2___default()('#fps').on('input', (event) => {
+        jquery__WEBPACK_IMPORTED_MODULE_3___default()('#fps').on('input', (event) => {
             this.fps = parseInt(event.target.value);
             console.log(this.fps);
         });
@@ -10804,7 +10809,7 @@ class App {
         this.InitializeRenderer();
     }
     async InitializeRenderer() {
-        await this.renderer.Initialize(this.GRID_SIZEX, this.GRID_SIZEY);
+        await this.renderer.Initialize(this.GRID_SIZEX, this.GRID_SIZEY, this.sceneFlags);
         this.renderer.renderGrid();
         var newdata = this.scene.getCells();
         this.resizeCanvas();
@@ -10873,7 +10878,6 @@ class App {
         this.displayText();
         alert("You have lost the game!");
         this.scene.resetGame();
-        this.scene.handleUpgrade();
         this.setGridDimensions();
         this.renderer.Unconfigure();
         this.InitializeRenderer();
@@ -10887,7 +10891,6 @@ class App {
     }
     nextScene() {
         this.scene.nextLevel();
-        this.scene.handleUpgrade();
         this.setGridDimensions();
         this.renderer.Unconfigure();
         this.InitializeRenderer();
@@ -10903,7 +10906,7 @@ class App {
         const upgradeScreen = document.getElementById("upgrade-screen");
         upgradeScreen.style.display = "block";
         //get the upgrade from the scene
-        var upgrade = this.scene.chooseUpgrade();
+        this.tempAugments = this.scene.chooseAugment();
         // Append the new element in front of the canvas
         const canvasMain = document.getElementById('canvasmain');
         //make the canvasmain the width of the window - 200px for each column
@@ -10917,17 +10920,20 @@ class App {
         //wait 1 second then add the each button to the canvas
         setTimeout(() => {
         }, 1000);
-        for (var i = 0; i < upgrade.length; i++) {
+        for (var i = 0; i < this.tempAugments.length; i++) {
             // Create a button
             const button = document.createElement("button");
             button.setAttribute('id', 'upgrade-buttons');
             button.setAttribute('class', 'invisible-button');
-            button.setAttribute('data-upgrade', upgrade[i]);
-            var text = this.scene.level + ": " + " " + i + " " + upgrade[i];
-            button.textContent = text;
+            button.setAttribute('data-upgrade', this.tempAugments[i].ID.toString());
+            //set the text to the name + the description + the modifier of the augment in new lines
+            var text = this.tempAugments[i].name + "<br><br> " + this.tempAugments[i].description + "<br><br> Modifier: " + this.tempAugments[i].modifier.toString();
+            button.innerHTML = text;
             button.onclick = () => {
                 var upgrade = button.getAttribute('data-upgrade');
-                this.scene.addUpgrade(upgrade);
+                //get the augment from the temporary augments
+                var augment = (0,_view_definitions__WEBPACK_IMPORTED_MODULE_2__.findAugmentByID)(parseInt(upgrade), this.tempAugments, this.tempAugments[0]);
+                this.scene.addAugment(augment);
                 container.removeChild(button);
                 //remove the upgrade container that holds the buttons
                 this.removeUpgradeScreen();
@@ -10960,13 +10966,13 @@ class App {
         // Clear the container by setting its innerHTML to an empty string
         container.innerHTML = '';
         //update the scene upgrade container
-        var upgrades = this.scene.upgrades;
+        var sceneAugments = this.scene.augments;
         //loop through each upgrade and create a paragraph element if it doesn't exist
-        for (var i = 0; i < upgrades.length; i++) {
+        for (var i = 0; i < sceneAugments.length; i++) {
             // Create a <p> element
             const paragraph = document.createElement("p");
-            paragraph.textContent = upgrades[i];
-            paragraph.id = upgrades[i];
+            paragraph.textContent = sceneAugments[i].name;
+            paragraph.id = sceneAugments[i].ID.toString();
             //append the paragraph to the upgrade container
             container.appendChild(paragraph);
         }
@@ -11142,16 +11148,16 @@ class App {
             this.mouseCellType = 0;
             this.mouseCellTypeString = "G";
             //change the color of the button to green
-            jquery__WEBPACK_IMPORTED_MODULE_2___default()('#cell_type_green').css("background-color", "#4CAF50");
-            jquery__WEBPACK_IMPORTED_MODULE_2___default()('#cell_type_blue').css("background-color", "#555555");
+            jquery__WEBPACK_IMPORTED_MODULE_3___default()('#cell_type_green').css("background-color", "#4CAF50");
+            jquery__WEBPACK_IMPORTED_MODULE_3___default()('#cell_type_blue').css("background-color", "#555555");
         }
         //when button to change cell color is pressed
         if (event.target.id == "cell_type_blue") {
             this.mouseCellType = 1;
             this.mouseCellTypeString = "B";
             //change the color of the blue button to blue and the green button to grey
-            jquery__WEBPACK_IMPORTED_MODULE_2___default()('#cell_type_blue').css("background-color", "#2196F3");
-            jquery__WEBPACK_IMPORTED_MODULE_2___default()('#cell_type_green').css("background-color", "#555555");
+            jquery__WEBPACK_IMPORTED_MODULE_3___default()('#cell_type_blue').css("background-color", "#2196F3");
+            jquery__WEBPACK_IMPORTED_MODULE_3___default()('#cell_type_green').css("background-color", "#555555");
         }
         //when data button is pressed
         if (event.target.id == "data") {
@@ -11227,6 +11233,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _view_definitions__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../view/definitions */ "./src/view/definitions.ts");
 
+
 class Scene {
     constructor(GRID_SIZEX, GRID_SIZEY) {
         this.generations = 0;
@@ -11238,17 +11245,73 @@ class Scene {
         this.numCells = [10, 1];
         this.numCellsMax = [10, 1];
         this.cellNames = ["Green", "Blue"];
-        this.upgrades = [];
-        this.unHandledUpgrades = [];
-        this.upgradeList = [];
+        this.defaultAugment = {
+            ID: -1,
+            count: 0,
+            name: "Default Augment",
+            modifier: 0,
+            description: "This is a default augment",
+            duplicatesAllowed: true,
+        };
         console.log("Initializing scene");
         this.GRID_SIZEX = GRID_SIZEX;
         this.GRID_SIZEY = GRID_SIZEY;
+        this.createAugments();
         this.resetGame();
-        this.handleUpgrade();
-        this.upgradeList = ["more green", "more blue", "more lives", "explode", "less generations", "less grid size"];
     }
-    handleUpgrade() {
+    createAugments() {
+        this.augmentList = [
+            {
+                ID: 0,
+                count: 0,
+                name: "more green",
+                modifier: 10,
+                description: "Increase the number of green cells you can place",
+                duplicatesAllowed: true
+            },
+            {
+                ID: 1,
+                count: 0,
+                name: "more blue",
+                modifier: 1,
+                description: "Increase the number of blue cells you can place",
+                duplicatesAllowed: true
+            },
+            {
+                ID: 2,
+                count: 0,
+                name: "more lives",
+                modifier: 10,
+                description: "Increase the number of lives you have to lose",
+                duplicatesAllowed: true
+            },
+            {
+                ID: 3,
+                count: 0,
+                name: "explode",
+                modifier: 1,
+                description: "Explode the cells on the grid",
+                duplicatesAllowed: false
+            },
+            {
+                ID: 4,
+                count: 0,
+                name: "less generations",
+                modifier: 0.8,
+                description: "Reduce the number of generations required to win",
+                duplicatesAllowed: true
+            },
+            {
+                ID: 5,
+                count: 0,
+                name: "less grid size",
+                modifier: 0.7,
+                description: "Reduce the size of the grid",
+                duplicatesAllowed: true
+            }
+        ];
+    }
+    /* handleUpgrade() {
         //loop through the unhandled upgrades and handle them
         for (var i = 0; i < this.unHandledUpgrades.length; i++) {
             var upgrade = this.unHandledUpgrades[i];
@@ -11258,22 +11321,28 @@ class Scene {
                     this.numCellsMax[0] += 10;
                     break;
                 case "more blue":
-                    this.numCells[1] += 1;
-                    this.numCellsMax[1] += 1;
+                    this.numCells[1] = this.numCells[1]+1;
+                    this.numCellsMax[1] = this.numCellsMax[1]+1;
                     break;
                 case "more lives":
                     this.numLivesMax += 10;
                     this.numLives += 10;
                     break;
                 case "explode":
-                    alert("explode not finished");
+                    //check to see if the flag is already set
+                    if (this.upgradeFlags.indexOf("explode") == -1) {
+                        this.upgradeFlags.push("explode");
+                    }
+                    else {
+                        alert("You already have this upgrade");
+                    }
                     break;
                 case "less generations":
-                    this.generationsRequired = Math.floor(this.generationsRequired * 0.8);
+                    this.generationsRequired = Math.floor(this.generationsRequired*0.8);
                     break;
                 case "less grid size":
-                    this.GRID_SIZEX = Math.floor(this.GRID_SIZEX * 0.7);
-                    this.GRID_SIZEY = Math.floor(this.GRID_SIZEY * 0.7);
+                    this.GRID_SIZEX = Math.floor(this.GRID_SIZEX*0.7);
+                    this.GRID_SIZEY = Math.floor(this.GRID_SIZEY*0.7);
                     break;
                 default:
                     console.log("upgrade not found");
@@ -11281,7 +11350,10 @@ class Scene {
             }
         }
         this.unHandledUpgrades = [];
-    }
+
+        return this.upgradeFlags
+        
+    } */
     //lose a life and return true if the player is dead
     loseLife() {
         this.numLives--;
@@ -11293,18 +11365,47 @@ class Scene {
         return false;
     }
     //add an upgrade
-    addUpgrade(upgrade) {
-        this.upgrades.push(upgrade);
-        this.unHandledUpgrades.push(upgrade);
-    }
-    chooseUpgrade() {
-        var upgrades = [];
-        //choose a random upgrade 
-        for (var i = 0; i < 3; i++) {
-            var index = Math.floor(Math.random() * this.upgradeList.length);
-            upgrades.push(this.upgradeList[index]);
+    addAugment(augment) {
+        //check to see if the augment is already in the list
+        const foundAugment = (0,_view_definitions__WEBPACK_IMPORTED_MODULE_0__.findAugmentByID)(augment.ID, this.augments, this.defaultAugment);
+        if (foundAugment.ID == augment.ID) {
+            //if the augment is already in the list then increase the count
+            foundAugment.count++;
+            console.log('the augment is already found');
+            console.log(foundAugment);
+            console.log(augment);
         }
-        return upgrades;
+        else {
+            //otherwise add the augment to the list
+            this.augments.push(augment);
+            console.log('new augment added');
+        }
+    }
+    //return 3 augments from the list of augments that are not already in the return array
+    chooseAugment() {
+        //choose 3 augments from the list of augments that are not already in the return array
+        var chosenAugments = [];
+        var iterations = 0;
+        for (var i = 0; i < 3; i++) {
+            //choose a random augment
+            var augment = this.augmentList[Math.floor(Math.random() * this.augmentList.length)];
+            //check to see if the augment is already in the list
+            var foundAugment = (0,_view_definitions__WEBPACK_IMPORTED_MODULE_0__.findAugmentByID)(augment.ID, chosenAugments, this.defaultAugment);
+            if (foundAugment.ID == augment.ID) {
+                //if the augment is already in the list then choose a new augment
+                i--;
+            }
+            else {
+                //otherwise add the augment to the list
+                chosenAugments.push(augment);
+            }
+            iterations++;
+            if (iterations > 100) {
+                console.log("too many iterations");
+                break;
+            }
+        }
+        return chosenAugments;
     }
     //remove a cell 
     removeCell(index) {
@@ -11411,13 +11512,28 @@ class Scene {
     //reset the scene and increase the level and the grid size and the number of cells required to win
     nextLevel() {
         this.level++;
-        this.generationsRequired = Math.floor(this.generationsRequired * 1.05 + 10);
+        this.setSceneState();
+    }
+    setSceneState() {
+        const generationsAugment = (0,_view_definitions__WEBPACK_IMPORTED_MODULE_0__.findAugmentByID)(4, this.augments, this.defaultAugment);
+        //set the generations required to win
+        var generationModifier = generationsAugment.modifier * generationsAugment.count;
+        if (generationModifier < 0.1) {
+            generationModifier = 1;
+        }
+        var levelModifier = (this.level - 1 * 1.05 + this.level - 1 * 10);
+        if (levelModifier < 1) {
+            levelModifier = 1;
+        }
+        this.generationsRequired = Math.floor(this.generationsRequired * levelModifier * generationModifier);
         this.newGrid();
-        this.numCells = [10, 1];
-        ;
-        this.numLivesMax = 10;
-        this.numCellsMax = [10, 1];
-        ;
+        //set the number of cells to be equal to the augments
+        const greenCellAugment = (0,_view_definitions__WEBPACK_IMPORTED_MODULE_0__.findAugmentByID)(0, this.augments, this.defaultAugment);
+        const blueCellAugment = (0,_view_definitions__WEBPACK_IMPORTED_MODULE_0__.findAugmentByID)(1, this.augments, this.defaultAugment);
+        this.numCells = [greenCellAugment.count * greenCellAugment.modifier, blueCellAugment.count * blueCellAugment.modifier];
+        this.numCellsMax = this.numCells;
+        const livesMaxAugment = (0,_view_definitions__WEBPACK_IMPORTED_MODULE_0__.findAugmentByID)(2, this.augments, this.defaultAugment);
+        this.numLivesMax = 10 + livesMaxAugment.count * livesMaxAugment.modifier;
         this.lose = false;
         //update the game state
         this.cells = this.generateCells();
@@ -11428,22 +11544,15 @@ class Scene {
     resetGame() {
         //reset the scene and increase the level and the grid size and the number of cells required to win
         this.level = 1;
+        //remove all augments
+        this.augments = [];
         this.generationsRequired = 10;
-        this.GRID_SIZEX = 10;
-        this.GRID_SIZEY = 10;
-        this.lose = false;
-        this.numLives = 10;
-        this.numCells = [10, 1];
-        this.numLivesMax = 10;
-        this.numCellsMax = [10, 1];
-        //update the game state
-        this.updateCellsRequired();
-        this.setGenerations(0);
-        this.cells = this.generateCells();
-        this.countCells(this.cells);
-        this.upgrades = [];
-        this.addUpgrade("more green");
-        this.addUpgrade("more blue");
+        //add green and blue cells
+        this.addAugment((0,_view_definitions__WEBPACK_IMPORTED_MODULE_0__.findAugmentByID)(0, this.augmentList, this.defaultAugment));
+        this.addAugment((0,_view_definitions__WEBPACK_IMPORTED_MODULE_0__.findAugmentByID)(1, this.augmentList, this.defaultAugment));
+        this.setSceneState();
+        //set the generations required to win
+        this.generationsRequired = 10;
     }
 }
 
@@ -11459,6 +11568,7 @@ class Scene {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   findAugmentByID: () => (/* binding */ findAugmentByID),
 /* harmony export */   flash: () => (/* binding */ flash),
 /* harmony export */   getCoordinates: () => (/* binding */ getCoordinates)
 /* harmony export */ });
@@ -11492,6 +11602,18 @@ function flash(id) {
         element.classList.remove("flash");
     }, 2000); // Adjust the timeout value to match the animation duration
 }
+function findAugmentByID(ID, augmentArray, defaultValue) {
+    const foundAugment = augmentArray.find(augment => augment.ID === ID);
+    return foundAugment ? foundAugment : defaultValue;
+}
+const defaultValue = {
+    ID: -1,
+    count: 0,
+    name: "Default Augment",
+    modifier: 0,
+    description: "This is a default augment",
+    duplicatesAllowed: true,
+};
 
 
 /***/ }),
@@ -11523,13 +11645,15 @@ class Renderer {
         this.globalStep = 0;
         this.seed = 'hi';
         this.WORKGROUP_SIZE = 8;
+        this.flags = [];
         this.canvas = canvas;
     }
-    async Initialize(GRID_SIZEX, GRID_SIZEY) {
+    async Initialize(GRID_SIZEX, GRID_SIZEY, flags) {
         this.initialized = true;
         this.GRID_SIZEX = GRID_SIZEX;
         this.GRID_SIZEY = GRID_SIZEY;
         this.seed = 'hi';
+        this.flags = flags;
         await this.setupDevice();
         await this.makeBindGroupsLayouts();
         await this.createAssets();
@@ -12319,7 +12443,8 @@ __webpack_require__.r(__webpack_exports__);
 const canvas = document.getElementById("gfx-main");
 var GRID_SIZEX = 10;
 var GRID_SIZEY = 10;
-const app = new _control_app__WEBPACK_IMPORTED_MODULE_0__.App(canvas, GRID_SIZEX, GRID_SIZEY);
+window.app = new _control_app__WEBPACK_IMPORTED_MODULE_0__.App(canvas, GRID_SIZEX, GRID_SIZEY);
+//const app = new App(canvas, GRID_SIZEX, GRID_SIZEY);
 
 })();
 

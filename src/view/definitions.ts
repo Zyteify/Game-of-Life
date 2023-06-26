@@ -44,3 +44,25 @@ export function flash(id: string) {
   }, 2000); // Adjust the timeout value to match the animation duration
 }
 
+export type Augment = {
+  ID: number;
+  count: number;
+  name: string;
+  modifier: number;
+  description: string;
+  duplicatesAllowed: boolean;
+};
+
+export function findAugmentByID(ID: number, augmentArray: Augment[], defaultValue: Augment): Augment {
+  const foundAugment = augmentArray.find(augment => augment.ID === ID);
+  return foundAugment ? foundAugment : defaultValue;
+}
+
+const defaultValue: Augment = {
+  ID: -1,
+  count: 0,
+  name: "Default Augment",
+  modifier: 0,
+  description: "This is a default augment",
+  duplicatesAllowed: true,
+};

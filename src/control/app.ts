@@ -1,6 +1,9 @@
 import { Renderer } from "../view/renderer";
 import { Scene } from "../scene/scene";
 import { Player } from "../scene/player";
+import { Augment } from "../view/definitions";
+import {findAugmentByID} from "../view/definitions";
+
 import $ from "jquery";
 
 export class App {
@@ -31,6 +34,9 @@ export class App {
     //todo use a dictionary or more appropriate data structure
     mouseCellType: number = 0;
     mouseCellTypeString: string = "G";
+
+    //temporary augments to choose
+    tempAugments: Augment[] = [];
 
 
     constructor(canvas: HTMLCanvasElement, GRID_SIZEX: number, GRID_SIZEY: number) {
@@ -190,7 +196,6 @@ export class App {
         alert("You have lost the game!")
         this.scene.resetGame()
 
-        this.sceneFlags = this.scene.handleUpgrade()
         this.setGridDimensions()
 
         this.renderer.Unconfigure();
@@ -212,7 +217,7 @@ export class App {
 
     nextScene(){
         this.scene.nextLevel()
-        this.sceneFlags = this.scene.handleUpgrade()
+
         this.setGridDimensions()
 
         this.renderer.Unconfigure();
@@ -233,7 +238,8 @@ export class App {
         upgradeScreen.style.display = "block"
 
         //get the upgrade from the scene
-        var upgrade: string[] = this.scene.chooseUpgrade()
+        this.tempAugments = this.scene.chooseAugment()
+
 
         // Append the new element in front of the canvas
         const canvasMain = <HTMLElement> document.getElementById('canvasmain');
@@ -255,20 +261,23 @@ export class App {
         }, 1000);
 
 
-        for (var i = 0; i < upgrade.length; i++) {
+        for (var i = 0; i < this.tempAugments.length; i++) {
             // Create a button
             const button = document.createElement("button");
 
             button.setAttribute('id', 'upgrade-buttons');
             button.setAttribute('class', 'invisible-button');
-            button.setAttribute('data-upgrade', upgrade[i])
+            button.setAttribute('data-upgrade', this.tempAugments[i].ID.toString());
 
-            var text = this.scene.level + ": " + " " + i + " " + upgrade[i]
+            //set the text to the name + the description + the modifier of the augment in new lines
+            var text = this.tempAugments[i].name + "<br><br> " + this.tempAugments[i].description + "<br><br> Modifier: " + this.tempAugments[i].modifier.toString()
 
-            button.textContent = text;
+            button.innerHTML  = text;
             button.onclick = () => {
                 var upgrade:string = <string> button.getAttribute('data-upgrade')
-                this.scene.addUpgrade(upgrade)
+                //get the augment from the temporary augments
+                var augment: Augment = findAugmentByID(parseInt(upgrade), this.tempAugments, this.tempAugments[0])
+                this.scene.addAugment(augment)
                 container.removeChild(button)
                 //remove the upgrade container that holds the buttons
                 this.removeUpgradeScreen();
@@ -302,11 +311,6 @@ export class App {
         const upgradeScreen = <HTMLElement> document.getElementById("upgrade-screen") as HTMLElement;
         upgradeScreen.style.display = "none"
 
-        
-
-
-        
-
     }
 
     displayUpgrades(){
@@ -317,13 +321,13 @@ export class App {
         container.innerHTML = '';
 
         //update the scene upgrade container
-        var upgrades = this.scene.upgrades
+        var sceneAugments: Augment[] = this.scene.augments
         //loop through each upgrade and create a paragraph element if it doesn't exist
-        for (var i = 0; i < upgrades.length; i++) {
+        for (var i = 0; i < sceneAugments.length; i++) {
             // Create a <p> element
             const paragraph = document.createElement("p");
-            paragraph.textContent = upgrades[i];
-            paragraph.id = upgrades[i]
+            paragraph.textContent = sceneAugments[i].name;
+            paragraph.id = sceneAugments[i].ID.toString()
             //append the paragraph to the upgrade container
             container.appendChild(paragraph);
             
