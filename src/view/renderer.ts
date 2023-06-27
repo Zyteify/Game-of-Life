@@ -231,13 +231,13 @@ export class Renderer {
             switch
                 (this.flags[i].name) {
                 case "explode":
-                    this.flagList[i] = this.flags[i].count;
+                    this.flagList[0] = this.flags[i].count;
                     break;
-                case "old":
-                    this.flagList[i] = 1;
+                case "Extra neighbour allowed":
+                    this.flagList[1] = this.flags[i].count;
+                    console.log("Extra neighbour allowed")
                     break;
                 default:
-                    this.flagList[i] = 0;
                     console.log("flag not found")
                     break;
                 }

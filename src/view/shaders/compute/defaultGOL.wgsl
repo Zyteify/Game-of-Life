@@ -104,16 +104,26 @@ fn computeMain(@builtin(global_invocation_id) cell: vec3u){
 
 
 	// Conway's game of life rules:
-	switch activeNeighbors {
-		case 2: { 
-			cellStateOut[i] = cellStateIn[i];
-		}
-        case 3: { 
-			cellStateOut[i] = 1;
-		}
-		default: { // Cells with < 2 or > 3 neighbors become inactive.
-            cellStateOut[i] = 0;
-		}
+//	switch activeNeighbors {
+//		case 2: { 
+//			cellStateOut[i] = cellStateIn[i];
+//		}
+//        case 3: { 
+//			cellStateOut[i] = 1;
+//		}
+//		default: { // Cells with < 2 or > 3 neighbors become inactive.
+//            cellStateOut[i] = 0;
+//		}
+//	}
+
+	if(activeNeighbors == 2){
+		cellStateOut[i] = cellStateIn[i];
+	}
+	else if (activeNeighbors == 3){
+		cellStateOut[i] = 1;
+	}
+	else if(activeNeighbors < 2 || activeNeighbors > 3+flagTest){
+		cellStateOut[i] = 0;
 	}
 
 	// B Cells rules:
@@ -138,7 +148,7 @@ fn computeMain(@builtin(global_invocation_id) cell: vec3u){
     //if the cell should explode
 	if(flagExplode >= 1){
 		//cellStateOut[i] = 1;
-		if(explodeNeighbors == 1){
+		if(explodeNeighbors >= 1){
 			cellStateOut[i] = 1;
 		}
 	}

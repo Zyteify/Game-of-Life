@@ -79,10 +79,9 @@ body {
   height: 100%
 }
 
-#upgrade-buttons {
-  /* make the button 33.33% of the width of the parent element */
+/* #upgrade-buttons {
   width: 33.33%;
-}
+} */
 
 #canvas-cover {
   position: absolute;

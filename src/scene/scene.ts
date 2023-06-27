@@ -102,12 +102,22 @@ export class Scene {
                 modifier: 0.7,
                 description: "Reduce the size of the grid",
                 duplicatesAllowed: true
+            },
+            {
+                ID: 6,
+                count: 0,
+                name: "Extra neighbour allowed",
+                modifier: 1,
+                description: "Increases the amount of neighbours before the cell dies due to overpopulation",
+                duplicatesAllowed: false,
+                sceneFlag: true
             }
         ]
     }
 
+    //get all augments with a flag for the renderer to use
     getSceneFlags() {
-        //get all augments with a flag
+        
         var sceneFlags: Augment[] = [];
         for (var i = 0; i < this.augments.length; i++) {
             if (this.augments[i].sceneFlag == true) {
@@ -149,16 +159,20 @@ export class Scene {
     }
 
     //return 3 augments from the list of augments that are not already in the return array
-    chooseAugment() {
+    chooseAugment(numAugments: number) {
         //choose 3 augments from the list of augments that are not already in the return array
         var chosenAugments: Augment[] = [];
         var iterations = 0;
-        for (var i = 0; i < 3; i++) {
+        for (var i = 0; i < numAugments; i++) {
             //choose a random augment
             var augment = this.augmentList[Math.floor(Math.random() * this.augmentList.length)];
             //check to see if the augment is already in the list
             var foundAugment = findAugmentByID(augment.ID, chosenAugments, this.defaultAugment);
-            if (foundAugment.ID == augment.ID) {
+            var myAugment = findAugmentByID(augment.ID, this.augments, this.defaultAugment);
+            //if the augment is already in the list then choose a new augment
+            if (foundAugment.ID == augment.ID 
+                //or the augment does not allow duplicates and the augment is already in the player's list
+                || augment.duplicatesAllowed == false && myAugment.count > 0) {
                 //if the augment is already in the list then choose a new augment
                 i--;
             }
@@ -357,7 +371,7 @@ export class Scene {
         const blueCellAugment: Augment = <Augment>findAugmentByID(1, this.augments, this.defaultAugment);
 
         this.numCells = [greenCellAugment.count * greenCellAugment.modifier, blueCellAugment.count * blueCellAugment.modifier];
-        this.numCellsMax = this.numCells;
+        this.numCellsMax = [greenCellAugment.count * greenCellAugment.modifier, blueCellAugment.count * blueCellAugment.modifier];
 
         const livesMaxAugment: Augment = <Augment>findAugmentByID(2, this.augments, this.defaultAugment);
         this.numLives = 10 + livesMaxAugment.count * livesMaxAugment.modifier;

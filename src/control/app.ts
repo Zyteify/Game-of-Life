@@ -54,7 +54,7 @@ export class App {
         $('#cell_type_blue').css("background-color", "#555555");
 
         //register clicking on buttons
-        $('#next, #start, #pause, #test-values, #data, #data2, #data-age, #test, #restart, #cell_type_green, #cell_type_blue, #clear, #win_level').on('click',
+        $('#next, #start, #pause, #test-values, #choose_augment, #data, #data2, #data-age, #test, #restart, #cell_type_green, #cell_type_blue, #clear, #win_level').on('click',
             (event) => {
                 this.handle_button(event);
             })
@@ -118,6 +118,7 @@ export class App {
     }
 
     async getRendererData(cellType: number, index: number): Promise<Uint32Array> {
+
         try {
             const data = await this.renderer.getBuffer(cellType, index);
             return data
@@ -182,8 +183,6 @@ export class App {
         //stop the animation
         this.stopAnimating()
 
-        //stop any events being triggered by clicking on the canvas
-        this.canvas.removeEventListener('click', this.handleClick.bind(this));
 
         //show the canvas-cover div
         this.canvasCover.style.display = "block"
@@ -264,7 +263,7 @@ export class App {
         //stop the animation
         this.stopAnimating()
 
-        this.addUpgrade()
+        this.addUpgrade(3)
 
         this.displayText()
 
@@ -295,18 +294,16 @@ export class App {
     }
 
     //add a popup to choose an upgrade
-    addUpgrade() {
+    addUpgrade(numUpgrades: number) {
         //stop the animation
         this.stopAnimating()
 
-        //stop any events being triggered by clicking on the canvas
-        this.canvas.removeEventListener('click', this.handleClick.bind(this));
 
         //show the canvas-cover div
         this.canvasCover.style.display = "block"
 
         //get the upgrade from the scene
-        this.tempAugments = this.scene.chooseAugment()
+        this.tempAugments = this.scene.chooseAugment(numUpgrades)
 
         this.setCanvasSize()
 
@@ -337,12 +334,16 @@ export class App {
             const button = document.createElement("button");
 
             button.setAttribute('id', 'upgrade-buttons');
+            //set the button width to be 1/3 of the canvas width
+            button.style.width = (1 / this.tempAugments.length)*100 + "%"
             button.setAttribute('class', 'invisible-button');
             button.setAttribute('data-upgrade', this.tempAugments[i].ID.toString());
 
             //set the text to the name + the description + the modifier of the augment in new lines
             var text = this.tempAugments[i].name + "<br><br> " + this.tempAugments[i].description + "<br><br> Modifier: " + this.tempAugments[i].modifier.toString()
-
+            if(this.tempAugments[i].duplicatesAllowed == false){
+                text += "<br><br> Limit: 1"
+            }
             button.innerHTML = text;
             button.onclick = () => {
                 var upgrade: string = <string>button.getAttribute('data-upgrade')
@@ -358,14 +359,14 @@ export class App {
             container.appendChild(button);
             setTimeout(() => {
                 button.style.display = "block";
-            }, 1000 * (i + 1));
+            }, 100 * (i + 1));
         }
 
-        //wait 1 second then add the event listener to the canvas again
+        /* //wait 1 second then add the event listener to the canvas again
         setTimeout(() => {
             //register clicking on the canvas and log the position
             this.canvas.addEventListener('click', this.handleClick.bind(this));
-        }, 1000);
+        }, 1000); */
     }
 
     //remove the upgrade/restart screen
@@ -450,7 +451,6 @@ export class App {
             // get the data of the grid
             await this.getRendererData(this.mouseCellType, 1)
                 .then(async data => {
-
                     //change the value of the cell to the opposite
                     var newvalue: number = data[cellX + cellY * this.GRID_SIZEX] == 1 ? 0 : 1
                     data[cellX + cellY * this.GRID_SIZEX] = newvalue
@@ -713,6 +713,16 @@ export class App {
             this.endScene()
 
             //update the generations label
+            this.displayText()
+        }
+
+        //when data button is pressed
+        if (event.target.id == "choose_augment") {
+            //stop the animation
+            this.stopAnimating()
+
+            this.addUpgrade(99)
+
             this.displayText()
         }
 

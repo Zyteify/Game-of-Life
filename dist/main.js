@@ -10767,7 +10767,7 @@ class App {
         jquery__WEBPACK_IMPORTED_MODULE_3___default()('#cell_type_green').css("background-color", "#4CAF50");
         jquery__WEBPACK_IMPORTED_MODULE_3___default()('#cell_type_blue').css("background-color", "#555555");
         //register clicking on buttons
-        jquery__WEBPACK_IMPORTED_MODULE_3___default()('#next, #start, #pause, #test-values, #data, #data2, #data-age, #test, #restart, #cell_type_green, #cell_type_blue, #clear, #win_level').on('click', (event) => {
+        jquery__WEBPACK_IMPORTED_MODULE_3___default()('#next, #start, #pause, #test-values, #choose_augment, #data, #data2, #data-age, #test, #restart, #cell_type_green, #cell_type_blue, #clear, #win_level').on('click', (event) => {
             this.handle_button(event);
         });
         //get when the input box fps changes
@@ -10871,8 +10871,6 @@ class App {
         //if you restart the level then reset the scene with a new level
         //stop the animation
         this.stopAnimating();
-        //stop any events being triggered by clicking on the canvas
-        this.canvas.removeEventListener('click', this.handleClick.bind(this));
         //show the canvas-cover div
         this.canvasCover.style.display = "block";
         //add the texts to the canvas cover
@@ -10937,7 +10935,7 @@ class App {
     endScene() {
         //stop the animation
         this.stopAnimating();
-        this.addUpgrade();
+        this.addUpgrade(3);
         this.displayText();
     }
     //when the player has chosed an upgrade and is ready to go to the next level
@@ -10959,15 +10957,13 @@ class App {
         this.displayUpgrades();
     }
     //add a popup to choose an upgrade
-    addUpgrade() {
+    addUpgrade(numUpgrades) {
         //stop the animation
         this.stopAnimating();
-        //stop any events being triggered by clicking on the canvas
-        this.canvas.removeEventListener('click', this.handleClick.bind(this));
         //show the canvas-cover div
         this.canvasCover.style.display = "block";
         //get the upgrade from the scene
-        this.tempAugments = this.scene.chooseAugment();
+        this.tempAugments = this.scene.chooseAugment(numUpgrades);
         this.setCanvasSize();
         //add the texts to the canvas cover
         const paragraph1 = document.createElement("p");
@@ -10991,10 +10987,15 @@ class App {
             // Create a button
             const button = document.createElement("button");
             button.setAttribute('id', 'upgrade-buttons');
+            //set the button width to be 1/3 of the canvas width
+            button.style.width = (1 / this.tempAugments.length) * 100 + "%";
             button.setAttribute('class', 'invisible-button');
             button.setAttribute('data-upgrade', this.tempAugments[i].ID.toString());
             //set the text to the name + the description + the modifier of the augment in new lines
             var text = this.tempAugments[i].name + "<br><br> " + this.tempAugments[i].description + "<br><br> Modifier: " + this.tempAugments[i].modifier.toString();
+            if (this.tempAugments[i].duplicatesAllowed == false) {
+                text += "<br><br> Limit: 1";
+            }
             button.innerHTML = text;
             button.onclick = () => {
                 var upgrade = button.getAttribute('data-upgrade');
@@ -11010,13 +11011,13 @@ class App {
             container.appendChild(button);
             setTimeout(() => {
                 button.style.display = "block";
-            }, 1000 * (i + 1));
+            }, 100 * (i + 1));
         }
-        //wait 1 second then add the event listener to the canvas again
+        /* //wait 1 second then add the event listener to the canvas again
         setTimeout(() => {
             //register clicking on the canvas and log the position
             this.canvas.addEventListener('click', this.handleClick.bind(this));
-        }, 1000);
+        }, 1000); */
     }
     //remove the upgrade/restart screen
     removeUpgradeScreen() {
@@ -11293,6 +11294,13 @@ class App {
             //update the generations label
             this.displayText();
         }
+        //when data button is pressed
+        if (event.target.id == "choose_augment") {
+            //stop the animation
+            this.stopAnimating();
+            this.addUpgrade(99);
+            this.displayText();
+        }
     }
     //make the element flash
     flash(id) {
@@ -11406,11 +11414,20 @@ class Scene {
                 modifier: 0.7,
                 description: "Reduce the size of the grid",
                 duplicatesAllowed: true
+            },
+            {
+                ID: 6,
+                count: 0,
+                name: "Extra neighbour allowed",
+                modifier: 1,
+                description: "Increases the amount of neighbours before the cell dies due to overpopulation",
+                duplicatesAllowed: false,
+                sceneFlag: true
             }
         ];
     }
+    //get all augments with a flag for the renderer to use
     getSceneFlags() {
-        //get all augments with a flag
         var sceneFlags = [];
         for (var i = 0; i < this.augments.length; i++) {
             if (this.augments[i].sceneFlag == true) {
@@ -11446,16 +11463,20 @@ class Scene {
         }
     }
     //return 3 augments from the list of augments that are not already in the return array
-    chooseAugment() {
+    chooseAugment(numAugments) {
         //choose 3 augments from the list of augments that are not already in the return array
         var chosenAugments = [];
         var iterations = 0;
-        for (var i = 0; i < 3; i++) {
+        for (var i = 0; i < numAugments; i++) {
             //choose a random augment
             var augment = this.augmentList[Math.floor(Math.random() * this.augmentList.length)];
             //check to see if the augment is already in the list
             var foundAugment = (0,_view_definitions__WEBPACK_IMPORTED_MODULE_0__.findAugmentByID)(augment.ID, chosenAugments, this.defaultAugment);
-            if (foundAugment.ID == augment.ID) {
+            var myAugment = (0,_view_definitions__WEBPACK_IMPORTED_MODULE_0__.findAugmentByID)(augment.ID, this.augments, this.defaultAugment);
+            //if the augment is already in the list then choose a new augment
+            if (foundAugment.ID == augment.ID
+                //or the augment does not allow duplicates and the augment is already in the player's list
+                || augment.duplicatesAllowed == false && myAugment.count > 0) {
                 //if the augment is already in the list then choose a new augment
                 i--;
             }
@@ -11614,7 +11635,7 @@ class Scene {
         const greenCellAugment = (0,_view_definitions__WEBPACK_IMPORTED_MODULE_0__.findAugmentByID)(0, this.augments, this.defaultAugment);
         const blueCellAugment = (0,_view_definitions__WEBPACK_IMPORTED_MODULE_0__.findAugmentByID)(1, this.augments, this.defaultAugment);
         this.numCells = [greenCellAugment.count * greenCellAugment.modifier, blueCellAugment.count * blueCellAugment.modifier];
-        this.numCellsMax = this.numCells;
+        this.numCellsMax = [greenCellAugment.count * greenCellAugment.modifier, blueCellAugment.count * blueCellAugment.modifier];
         const livesMaxAugment = (0,_view_definitions__WEBPACK_IMPORTED_MODULE_0__.findAugmentByID)(2, this.augments, this.defaultAugment);
         this.numLives = 10 + livesMaxAugment.count * livesMaxAugment.modifier;
         this.lose = false;
@@ -11843,14 +11864,13 @@ class Renderer {
         for (let i = 0; i < this.flags.length; i++) {
             switch (this.flags[i].name) {
                 case "explode":
-                    this.flagList[i] = this.flags[i].count;
-                    console.log("explode found");
+                    this.flagList[0] = this.flags[i].count;
                     break;
-                case "old":
-                    this.flagList[i] = 1;
+                case "Extra neighbour allowed":
+                    this.flagList[1] = this.flags[i].count;
+                    console.log("Extra neighbour allowed");
                     break;
                 default:
-                    this.flagList[i] = 0;
                     console.log("flag not found");
                     break;
             }
@@ -12473,7 +12493,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("@group(0) @binding(0) var<uniform> grid: vec2u;\r\n@group(0) @binding(1) var<uniform> seed: f32;\r\n//@group(0) @binding(2) var<storage, read> flags: array<bool>;\r\n@group(1) @binding(0) var<storage, read> cellStateIn: array<u32>;\r\n@group(1) @binding(1) var<storage, read_write> cellStateOut: array<u32>;\r\n@group(1) @binding(2) var<storage, read> cellStateIn2: array<u32>;\r\n@group(1) @binding(3) var<storage, read_write> cellStateOut2: array<u32>;\r\n@group(2) @binding(0) var<storage, read> cellStateAgeIn: array<u32>;\r\n@group(2) @binding(1) var<storage, read_write> cellStateAgeOut: array<u32>;\r\n@group(3) @binding(0) var<uniform> flagExplode: u32;\r\n@group(3) @binding(1) var<uniform> flagTest: u32;\r\n\r\nfn random(p: vec2<f32>) -> f32 {\r\n    let K1: vec2<f32> = vec2<f32>(\r\n        23.14069263277926, // e^pi (Gelfond's constant)\r\n        2.665144142690225 // 2^sqrt(2) (Gelfond–Schneider constant)\r\n    );\r\n    return fract(cos(dot(p, K1)) * 12345.6789);\r\n}\r\n\r\nfn isOnEdge(cell: vec2u) -> bool {\r\n\treturn cell.x == 0 || cell.x == grid.x - 1 || cell.y == 0 || cell.y == grid.y - 1;\r\n}\r\n\r\nfn cellIndex(cell: vec2u) -> u32 {\r\n\treturn (cell.y % grid.y) * grid.x +\r\n\t\t(cell.x % grid.x);\r\n}\r\n\r\nfn cellActive(cellType: u32, x: u32, y: u32) -> u32 {\r\n\t//if the cell is out of bounds, it is not active\r\n\tif(x >= grid.x || y >= grid.y){\r\n\t\treturn 0;\t\t\r\n\t}\r\n\t\r\n\r\n\tif(cellType == 0){\r\n\t\treturn cellStateIn[cellIndex(vec2(x, y))];\r\n\t}\r\n\telse if (cellType == 1){\r\n\t\treturn cellStateIn2[cellIndex(vec2(x, y))];\r\n\t}\r\n\telse{\r\n\t\treturn 0;\r\n\t}\r\n}\r\n\r\n//set to 1 if the cell should explode\r\nfn cellExplode(x: u32, y: u32) -> u32 {\r\n\tif(x >= grid.x || y >= grid.y){\r\n\t\treturn 0;\r\n\t}\r\n\tvar age = cellStateAgeIn[cellIndex(vec2(x, y))];\r\n\tif(age == 10){\r\n\t\treturn 1;\r\n\t}\r\n\telse {\r\n\t\treturn 0;\r\n\t}\r\n}\r\n\r\n\r\n\r\n@compute @workgroup_size(8, 8)\r\n\r\nfn computeMain(@builtin(global_invocation_id) cell: vec3u){\r\n\t//dont perform extra work if you are outside of the range\r\n\tif (cell.x >= grid.x || cell.y >= grid.y) {\r\n\t\treturn;\r\n\t}\r\n    let i = cellIndex(cell.xy);\r\n\tlet random = random(vec2<f32>(f32(cell.x)+seed, f32(cell.y)));\r\n\r\n\tlet activeNeighbors = \r\n\t\tcellActive(u32(0), cell.x+1, cell.y+1) +\r\n\t\tcellActive(u32(0), cell.x+1, cell.y) +\r\n\t\tcellActive(u32(0), cell.x+1, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y+1) +\r\n\t\tcellActive(u32(0), cell.x, cell.y+1);\r\n\r\n    let activeBNeighbors = \r\n\t\tcellActive(u32(1), cell.x+1, cell.y+1) +\r\n\t\tcellActive(u32(1), cell.x+1, cell.y) +\r\n\t\tcellActive(u32(1), cell.x+1, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y+1) +\r\n\t\tcellActive(u32(1), cell.x, cell.y+1);\r\n\r\n    let explodeNeighbors = \r\n\t\tcellExplode(cell.x+1, cell.y+1) +\r\n\t\tcellExplode(cell.x+1, cell.y) +\r\n\t\tcellExplode(cell.x+1, cell.y-1) +\r\n\t\tcellExplode(cell.x, cell.y-1) +\r\n\t\tcellExplode(cell.x-1, cell.y-1) +\r\n\t\tcellExplode(cell.x-1, cell.y) +\r\n\t\tcellExplode(cell.x-1, cell.y+1) +\r\n\t\tcellExplode(cell.x, cell.y+1)  + \r\n\t\tcellExplode(cell.x, cell.y);;\r\n\r\n\r\n\t// Conway's game of life rules:\r\n\tswitch activeNeighbors {\r\n\t\tcase 2: { \r\n\t\t\tcellStateOut[i] = cellStateIn[i];\r\n\t\t}\r\n        case 3: { \r\n\t\t\tcellStateOut[i] = 1;\r\n\t\t}\r\n\t\tdefault: { // Cells with < 2 or > 3 neighbors become inactive.\r\n            cellStateOut[i] = 0;\r\n\t\t}\r\n\t}\r\n\r\n\t// B Cells rules:\r\n\tswitch activeBNeighbors {\r\n\t\tcase 1, 2, 3, 4, 5, 6, 7, 8: { \r\n\t\t\tcellStateOut[i] = 1;\r\n\t\t}\r\n\t\tdefault: { // Cells with < 2 or > 3 neighbors become inactive.\r\n            cellStateOut2[i] = cellStateOut2[i];\r\n\t\t}\r\n\t}\r\n\r\n\t//move B cells down\r\n\t//let upCell = cellStateIn2[cellIndex(vec2(cell.x, cell.y+1))];\r\n\t//if(upCell == 1 && cell.y!=0){\r\n\t//\tcellStateOut2[i] = 1;\r\n\t//}\r\n\r\n\r\n\r\n\r\n    //if the cell should explode\r\n\tif(flagExplode >= 1){\r\n\t\t//cellStateOut[i] = 1;\r\n\t\tif(explodeNeighbors == 1){\r\n\t\t\tcellStateOut[i] = 1;\r\n\t\t}\r\n\t}\r\n\t\t\r\n\r\n\r\n    //ensure that each cell only exists in either the A or B state\r\n    if(cellStateOut2[i] == 1){\r\n        cellStateOut[i] = 0;\r\n    }\r\n    else if cellStateOut2[i] == 0{\r\n    }\r\n\r\n    //add the age if it is still alive\r\n\tif(cellStateOut[i] == 1){\r\n\t\tcellStateAgeOut[i] = cellStateAgeIn[i]+1;\r\n\t}\r\n\telse{\r\n\t\tcellStateAgeOut[i] = 0;\r\n\t}\r\n\r\n\t//if a cell is on the edge of the board, it should be dead\r\n\t//if(isOnEdge(vec2u(cell.x, cell.y))){\r\n\t//\tcellStateOut[i] = 0;\r\n\t//}\r\n}");
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("@group(0) @binding(0) var<uniform> grid: vec2u;\r\n@group(0) @binding(1) var<uniform> seed: f32;\r\n//@group(0) @binding(2) var<storage, read> flags: array<bool>;\r\n@group(1) @binding(0) var<storage, read> cellStateIn: array<u32>;\r\n@group(1) @binding(1) var<storage, read_write> cellStateOut: array<u32>;\r\n@group(1) @binding(2) var<storage, read> cellStateIn2: array<u32>;\r\n@group(1) @binding(3) var<storage, read_write> cellStateOut2: array<u32>;\r\n@group(2) @binding(0) var<storage, read> cellStateAgeIn: array<u32>;\r\n@group(2) @binding(1) var<storage, read_write> cellStateAgeOut: array<u32>;\r\n@group(3) @binding(0) var<uniform> flagExplode: u32;\r\n@group(3) @binding(1) var<uniform> flagTest: u32;\r\n\r\nfn random(p: vec2<f32>) -> f32 {\r\n    let K1: vec2<f32> = vec2<f32>(\r\n        23.14069263277926, // e^pi (Gelfond's constant)\r\n        2.665144142690225 // 2^sqrt(2) (Gelfond–Schneider constant)\r\n    );\r\n    return fract(cos(dot(p, K1)) * 12345.6789);\r\n}\r\n\r\nfn isOnEdge(cell: vec2u) -> bool {\r\n\treturn cell.x == 0 || cell.x == grid.x - 1 || cell.y == 0 || cell.y == grid.y - 1;\r\n}\r\n\r\nfn cellIndex(cell: vec2u) -> u32 {\r\n\treturn (cell.y % grid.y) * grid.x +\r\n\t\t(cell.x % grid.x);\r\n}\r\n\r\nfn cellActive(cellType: u32, x: u32, y: u32) -> u32 {\r\n\t//if the cell is out of bounds, it is not active\r\n\tif(x >= grid.x || y >= grid.y){\r\n\t\treturn 0;\t\t\r\n\t}\r\n\t\r\n\r\n\tif(cellType == 0){\r\n\t\treturn cellStateIn[cellIndex(vec2(x, y))];\r\n\t}\r\n\telse if (cellType == 1){\r\n\t\treturn cellStateIn2[cellIndex(vec2(x, y))];\r\n\t}\r\n\telse{\r\n\t\treturn 0;\r\n\t}\r\n}\r\n\r\n//set to 1 if the cell should explode\r\nfn cellExplode(x: u32, y: u32) -> u32 {\r\n\tif(x >= grid.x || y >= grid.y){\r\n\t\treturn 0;\r\n\t}\r\n\tvar age = cellStateAgeIn[cellIndex(vec2(x, y))];\r\n\tif(age == 10){\r\n\t\treturn 1;\r\n\t}\r\n\telse {\r\n\t\treturn 0;\r\n\t}\r\n}\r\n\r\n\r\n\r\n@compute @workgroup_size(8, 8)\r\n\r\nfn computeMain(@builtin(global_invocation_id) cell: vec3u){\r\n\t//dont perform extra work if you are outside of the range\r\n\tif (cell.x >= grid.x || cell.y >= grid.y) {\r\n\t\treturn;\r\n\t}\r\n    let i = cellIndex(cell.xy);\r\n\tlet random = random(vec2<f32>(f32(cell.x)+seed, f32(cell.y)));\r\n\r\n\tlet activeNeighbors = \r\n\t\tcellActive(u32(0), cell.x+1, cell.y+1) +\r\n\t\tcellActive(u32(0), cell.x+1, cell.y) +\r\n\t\tcellActive(u32(0), cell.x+1, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y+1) +\r\n\t\tcellActive(u32(0), cell.x, cell.y+1);\r\n\r\n    let activeBNeighbors = \r\n\t\tcellActive(u32(1), cell.x+1, cell.y+1) +\r\n\t\tcellActive(u32(1), cell.x+1, cell.y) +\r\n\t\tcellActive(u32(1), cell.x+1, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y+1) +\r\n\t\tcellActive(u32(1), cell.x, cell.y+1);\r\n\r\n    let explodeNeighbors = \r\n\t\tcellExplode(cell.x+1, cell.y+1) +\r\n\t\tcellExplode(cell.x+1, cell.y) +\r\n\t\tcellExplode(cell.x+1, cell.y-1) +\r\n\t\tcellExplode(cell.x, cell.y-1) +\r\n\t\tcellExplode(cell.x-1, cell.y-1) +\r\n\t\tcellExplode(cell.x-1, cell.y) +\r\n\t\tcellExplode(cell.x-1, cell.y+1) +\r\n\t\tcellExplode(cell.x, cell.y+1)  + \r\n\t\tcellExplode(cell.x, cell.y);;\r\n\r\n\r\n\t// Conway's game of life rules:\r\n//\tswitch activeNeighbors {\r\n//\t\tcase 2: { \r\n//\t\t\tcellStateOut[i] = cellStateIn[i];\r\n//\t\t}\r\n//        case 3: { \r\n//\t\t\tcellStateOut[i] = 1;\r\n//\t\t}\r\n//\t\tdefault: { // Cells with < 2 or > 3 neighbors become inactive.\r\n//            cellStateOut[i] = 0;\r\n//\t\t}\r\n//\t}\r\n\r\n\tif(activeNeighbors == 2){\r\n\t\tcellStateOut[i] = cellStateIn[i];\r\n\t}\r\n\telse if (activeNeighbors == 3){\r\n\t\tcellStateOut[i] = 1;\r\n\t}\r\n\telse if(activeNeighbors < 2 || activeNeighbors > 3+flagTest){\r\n\t\tcellStateOut[i] = 0;\r\n\t}\r\n\r\n\t// B Cells rules:\r\n\tswitch activeBNeighbors {\r\n\t\tcase 1, 2, 3, 4, 5, 6, 7, 8: { \r\n\t\t\tcellStateOut[i] = 1;\r\n\t\t}\r\n\t\tdefault: { // Cells with < 2 or > 3 neighbors become inactive.\r\n            cellStateOut2[i] = cellStateOut2[i];\r\n\t\t}\r\n\t}\r\n\r\n\t//move B cells down\r\n\t//let upCell = cellStateIn2[cellIndex(vec2(cell.x, cell.y+1))];\r\n\t//if(upCell == 1 && cell.y!=0){\r\n\t//\tcellStateOut2[i] = 1;\r\n\t//}\r\n\r\n\r\n\r\n\r\n    //if the cell should explode\r\n\tif(flagExplode >= 1){\r\n\t\t//cellStateOut[i] = 1;\r\n\t\tif(explodeNeighbors >= 1){\r\n\t\t\tcellStateOut[i] = 1;\r\n\t\t}\r\n\t}\r\n\t\t\r\n\r\n\r\n    //ensure that each cell only exists in either the A or B state\r\n    if(cellStateOut2[i] == 1){\r\n        cellStateOut[i] = 0;\r\n    }\r\n    else if cellStateOut2[i] == 0{\r\n    }\r\n\r\n    //add the age if it is still alive\r\n\tif(cellStateOut[i] == 1){\r\n\t\tcellStateAgeOut[i] = cellStateAgeIn[i]+1;\r\n\t}\r\n\telse{\r\n\t\tcellStateAgeOut[i] = 0;\r\n\t}\r\n\r\n\t//if a cell is on the edge of the board, it should be dead\r\n\t//if(isOnEdge(vec2u(cell.x, cell.y))){\r\n\t//\tcellStateOut[i] = 0;\r\n\t//}\r\n}");
 
 /***/ }),
 
