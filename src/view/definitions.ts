@@ -51,6 +51,7 @@ export type Augment = {
   modifier: number;
   description: string;
   duplicatesAllowed: boolean;
+  sceneFlag?: boolean;
 };
 
 export function findAugmentByID(ID: number, augmentArray: Augment[], defaultValue: Augment): Augment {

@@ -73,7 +73,7 @@ fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
 		return vec4f(1.0, 0.0, 0.0, 1);
 	}
 	else if(input.cellType == 1.0){
-		return vec4f(0.0+input.cellAge*1000.0, 1.0, 0.0, 1);
+		return vec4f(0.0+input.cellAge*10.0, 1.0, 0.0, 1);
 	}
 	else if(input.cellType == 2.0){
 		return vec4f(0.0, 0.0, 1.0, 1);

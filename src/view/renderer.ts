@@ -5,6 +5,9 @@ import copier_shader from "./shaders/compute/copier_shader.wgsl";
 import vertexshader from "./shaders/vertexshaders.wgsl";
 import vertexshaderTest from "./shaders/vertexshaders_test.wgsl";
 
+import { Augment } from "../view/definitions";
+import { findAugmentByID } from "../view/definitions";
+
 
 export class Renderer {
     initialized: boolean = false;
@@ -30,9 +33,6 @@ export class Renderer {
 
     backgroundColor: GPUColor = {r: 0.0, g: 0.1, b: 0.1, a: 1.0 };
 
-
-    //rendering 
-
     vertices: Float32Array;
 
     computePass: GPUComputePassEncoder;
@@ -43,6 +43,7 @@ export class Renderer {
     //assets
     uniformBuffer: GPUBuffer;
     seedBuffer: GPUBuffer;
+    flagsBuffer: GPUBuffer[];
     vertexBuffer: GPUBuffer;
     cellStateStorageA: GPUBuffer[];
     cellStateStorageB: GPUBuffer[];
@@ -59,10 +60,12 @@ export class Renderer {
     cellBindGroupLayout: GPUBindGroupLayout
     cellAgeBindGroupLayout: GPUBindGroupLayout
     UniformBindGroupLayout: GPUBindGroupLayout
+    flagsBindGroupLayout: GPUBindGroupLayout
 
     cellAliveBindGroups: GPUBindGroup[];
     cellAgeBindGroups: GPUBindGroup[];
     uniformBindGroup: GPUBindGroup;
+    flagsBindGroup: GPUBindGroup;
 
     step: number = 0;
     globalStep: number = 0;
@@ -77,13 +80,14 @@ export class Renderer {
     canvasFormat: GPUTextureFormat;
     canvasFormatTest: GPUTextureFormat;
 
-    flags: string[] = [];
+    flags: Augment[] = [];
+    flagList: number[] = [];
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
     }
 
-    async Initialize(GRID_SIZEX: number,GRID_SIZEY: number, flags: string[]) {
+    async Initialize(GRID_SIZEX: number,GRID_SIZEY: number, flags: Augment[]) {
 
         this.initialized = true;
 
@@ -93,6 +97,8 @@ export class Renderer {
         this.seed = 'hi';
 
         this.flags = flags;
+
+        this.flagList = [0, 0]
 
         await this.setupDevice();
 
@@ -216,11 +222,46 @@ export class Renderer {
         });
 
         
-        
+        //get the flag augments
+        this.flagList = [0, 0]
 
+        //loop through each flag
+        //get the list of flags
+        for (let i = 0; i < this.flags.length; i++) {
+            switch
+                (this.flags[i].name) {
+                case "explode":
+                    this.flagList[i] = this.flags[i].count;
+                    break;
+                case "old":
+                    this.flagList[i] = 1;
+                    break;
+                default:
+                    this.flagList[i] = 0;
+                    console.log("flag not found")
+                    break;
+                }
 
-        //this.device.queue.writeBuffer(this.seedBuffer, 0, buffer);
+        }
+        this.flagsBuffer = new Array(this.flagList.length)
+        //create an arraybuffer for each flag
+        for (let i = 0; i < this.flagList.length; i++) {
 
+            // Create an ArrayBuffer for a uint32 number
+            const flagBuffer = new ArrayBuffer(4);
+            const dataView = new DataView(flagBuffer);
+
+            // Write the value from this.flags[i] into the buffer
+            dataView.setUint32(0, this.flagList[i], true);
+
+            // Create a buffer that describes the flags.
+            this.flagsBuffer[i] = this.device.createBuffer({
+                label: "flag" + i,
+                size: 4,
+                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+            });
+            this.device.queue.writeBuffer(this.flagsBuffer[i], 0, flagBuffer);
+        }
 
 
         // Create an array representing the active state of each cell.
@@ -306,7 +347,7 @@ export class Renderer {
         });
 
         this.UniformBindGroupLayout = this.device.createBindGroupLayout({
-            label: "Uniform Bind Group",
+            label: "Uniform Bind Group Layout",
             entries: [{
                 binding: 0,
                 visibility: GPUShaderStage.VERTEX | GPUShaderStage.COMPUTE,
@@ -330,6 +371,22 @@ export class Renderer {
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "storage" }
             }]
+        });
+
+        
+        //create a bind group layout for the flags. this is dynamic and depends on the number of flags
+        var flagEntries: GPUBindGroupLayoutEntry[] = [];
+        //loop through each flagbuffer and add it to the flags bind group layout
+        for (let i = 0; i < this.flagList.length; i++) {
+            flagEntries[i] = {binding: i,
+                visibility: GPUShaderStage.VERTEX | GPUShaderStage.COMPUTE, 
+                buffer: { type: "uniform" }}
+            
+        }
+
+        this.flagsBindGroupLayout = this.device.createBindGroupLayout({
+            label: "Flags Bind Group Layout",
+            entries: flagEntries
         });
 
     }
@@ -420,6 +477,23 @@ export class Renderer {
                 ]
             })
 
+        //create a bind group layout for the flags. this is dynamic and depends on the number of flags
+        var flagEntries: GPUBindGroupEntry [] = [];
+        //loop through each flagbuffer and add it to the flags bind group layout
+        for (let i = 0; i < this.flagList.length; i++) {
+            flagEntries[i] = {binding: i,
+                resource: { buffer: this.flagsBuffer[i] }}
+            
+        }
+        
+        this.flagsBindGroup =this.device.createBindGroup({
+            label: "flags bind group",
+            layout: this.flagsBindGroupLayout,
+            entries: flagEntries
+        })
+
+
+
     }
 
     async makePipeline() {
@@ -430,6 +504,7 @@ export class Renderer {
                     this.UniformBindGroupLayout, //group 0 
                     this.cellBindGroupLayout, //group 1 
                     this.cellAgeBindGroupLayout, //group 2
+                    this.flagsBindGroupLayout, //group 3
                 ],
             },
         );
@@ -528,8 +603,8 @@ export class Renderer {
         this.computePass.setBindGroup(0, this.uniformBindGroup);
         this.computePass.setBindGroup(1, this.cellAliveBindGroups[this.step % 2]);
         this.computePass.setBindGroup(2, this.cellAgeBindGroups[this.step % 2]);
-        //todo understand workgroupcount
-        //fornow just use the grid size x
+        this.computePass.setBindGroup(3, this.flagsBindGroup);
+        //set the workgroup size to the grid size divided by the workgroup size and rounded up. in the shader make sure to check if the cell <= grid size
         this.workgroupCountx = Math.ceil(this.GRID_SIZEX / this.WORKGROUP_SIZE);
         this.workgroupCounty = Math.ceil(this.GRID_SIZEY / this.WORKGROUP_SIZE);
         this.computePass.dispatchWorkgroups(this.workgroupCountx, this.workgroupCounty);
@@ -779,7 +854,6 @@ export class Renderer {
             },
         );
 
-
         // Create a compute pipeline that updates the game state.
         var copierPipeline: GPUComputePipeline = this.device.createComputePipeline({
             label: "Simulation pipeline",
@@ -789,8 +863,6 @@ export class Renderer {
                 entryPoint: "computeMain",
             }
         });
-
-
 
         //run the commands
         const encoder = this.device.createCommandEncoder();
@@ -842,16 +914,20 @@ export class Renderer {
     if(this.device){
         this.device.destroy();
         //destroy buffers
-        this.cellStateStorageA[0].destroy();
-        this.cellStateStorageA[1].destroy();
-        this.cellStateStorageA[2].destroy();
-        this.cellStateStorageA[3].destroy();
-        this.cellStateStorageB[0].destroy();
-        this.cellStateStorageB[1].destroy();
-        this.cellStateStorageB[2].destroy();
-        this.cellStateStorageB[3].destroy();
+        //loop through each cellstatestorageB
+        for (let i = 0; i < this.cellStateStorageA.length; i++) {
+            this.cellStateStorageA[i].destroy();
+        }
+        //loop through each cellstatestorageB
+        for (let i = 0; i < this.cellStateStorageB.length; i++) {
+            this.cellStateStorageB[i].destroy();
+        }
         this.uniformBuffer.destroy();
         this.seedBuffer.destroy();
+        //loop through each flagsbuffer
+        for (let i = 0; i < this.flagList.length; i++) {
+            this.flagsBuffer[i].destroy();
+        }
         this.stagingBuffer.destroy();
         this.vertexBuffer.destroy();
 
@@ -863,12 +939,6 @@ export class Renderer {
         this.GRID_SIZEY = 0;
 
         this.initialized = false;
-
-
-
     }
-    
-
   }
-
 }

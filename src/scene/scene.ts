@@ -1,9 +1,10 @@
-import { mainModule } from "process";
 import { flash } from "../view/definitions";
 import { Augment } from "../view/definitions";
-import {findAugmentByID} from "../view/definitions";
+import { findAugmentByID } from "../view/definitions";
 export class Scene {
 
+    initialGridSizeX: number = 10;
+    initialGridSizeY: number = 10;
 
     GRID_SIZEX: number
     GRID_SIZEY: number
@@ -12,16 +13,19 @@ export class Scene {
     generations: number = 0;
 
     level: number;
+
+    initialGenerationsRequired: number = 10;
     generationsRequired: number;
+
     cellsRequired: number = 0;
     cellCount: number = 0;
 
     cells: Uint32Array;
     lose: boolean = false;
 
-
     numLives: number = 10;
-    numLivesMax: number = 10;
+    numLivesLost: number = 0;
+    numLivesLostStartofLevel: number = 0;
 
     numCells: number[] = [10, 1];
     numCellsMax: number[] = [10, 1];
@@ -38,23 +42,15 @@ export class Scene {
         modifier: 0,
         description: "This is a default augment",
         duplicatesAllowed: true,
-      };
+    };
 
 
     constructor(GRID_SIZEX: number, GRID_SIZEY: number) {
-        console.log("Initializing scene");
-
-        this.GRID_SIZEX = GRID_SIZEX;
-        this.GRID_SIZEY = GRID_SIZEY;
+        this.initialGridSizeX = GRID_SIZEX;
+        this.initialGridSizeY = GRID_SIZEY;
         this.createAugments()
         this.resetGame()
-
-
-        
-
     }
-
-
 
     createAugments() {
         this.augmentList = [
@@ -88,7 +84,8 @@ export class Scene {
                 name: "explode",
                 modifier: 1,
                 description: "Explode the cells on the grid",
-                duplicatesAllowed: false
+                duplicatesAllowed: false,
+                sceneFlag: true
             },
             {
                 ID: 4,
@@ -109,80 +106,45 @@ export class Scene {
         ]
     }
 
-
-
-    /* handleUpgrade() {
-        //loop through the unhandled upgrades and handle them
-        for (var i = 0; i < this.unHandledUpgrades.length; i++) {
-            var upgrade = this.unHandledUpgrades[i];
-            switch (upgrade) {
-                case "more green":
-                    this.numCells[0] += 10;
-                    this.numCellsMax[0] += 10;
-                    break;
-                case "more blue":
-                    this.numCells[1] = this.numCells[1]+1;
-                    this.numCellsMax[1] = this.numCellsMax[1]+1;
-                    break;
-                case "more lives":
-                    this.numLivesMax += 10;
-                    this.numLives += 10;
-                    break;
-                case "explode":
-                    //check to see if the flag is already set
-                    if (this.upgradeFlags.indexOf("explode") == -1) {
-                        this.upgradeFlags.push("explode");
-                    }
-                    else {
-                        alert("You already have this upgrade");
-                    }
-                    break;
-                case "less generations":
-                    this.generationsRequired = Math.floor(this.generationsRequired*0.8);
-                    break;
-                case "less grid size":
-                    this.GRID_SIZEX = Math.floor(this.GRID_SIZEX*0.7);
-                    this.GRID_SIZEY = Math.floor(this.GRID_SIZEY*0.7);
-                    break;
-                default:
-                    console.log("upgrade not found");
-                    break;
+    getSceneFlags() {
+        //get all augments with a flag
+        var sceneFlags: Augment[] = [];
+        for (var i = 0; i < this.augments.length; i++) {
+            if (this.augments[i].sceneFlag == true) {
+                sceneFlags.push(this.augments[i]);
             }
         }
-        this.unHandledUpgrades = [];
-
-        return this.upgradeFlags
-        
-    } */
-
+        return sceneFlags;
+    }
 
     //lose a life and return true if the player is dead
     loseLife() {
-        this.numLives--;
-        //flash the lives
-        flash("lives");
-        if (this.numLives <= 0) {
+        
+        if (this.numLivesLost > this.numLives) {
+            this.numLivesLost--;
+        }
+        
+        if (this.numLivesLost <= this.numLives) {
             return true;
         }
+        //flash the lives
+        flash("lives");
         return false;
     }
 
     //add an upgrade
     addAugment(augment: Augment) {
         //check to see if the augment is already in the list
-        const foundAugment: Augment = <Augment> findAugmentByID(augment.ID, this.augments, this.defaultAugment);
+        const foundAugment: Augment = <Augment>findAugmentByID(augment.ID, this.augments, this.defaultAugment);
 
         if (foundAugment.ID == augment.ID) {
             //if the augment is already in the list then increase the count
             foundAugment.count++;
-            console.log('the augment is already found');
-            console.log(foundAugment);
-            console.log(augment)
         }
         else {
             //otherwise add the augment to the list
+            augment.count++
             this.augments.push(augment);
-            console.log('new augment added');
         }
     }
 
@@ -196,7 +158,7 @@ export class Scene {
             var augment = this.augmentList[Math.floor(Math.random() * this.augmentList.length)];
             //check to see if the augment is already in the list
             var foundAugment = findAugmentByID(augment.ID, chosenAugments, this.defaultAugment);
-            if (foundAugment.ID==augment.ID) {
+            if (foundAugment.ID == augment.ID) {
                 //if the augment is already in the list then choose a new augment
                 i--;
             }
@@ -205,7 +167,7 @@ export class Scene {
                 chosenAugments.push(augment);
             }
             iterations++;
-            if(iterations>100){
+            if (iterations > 100) {
                 console.log("too many iterations")
                 break;
             }
@@ -334,47 +296,72 @@ export class Scene {
     }
 
     newGrid() {
-        this.GRID_SIZEX = Math.floor(this.GRID_SIZEX * 1.05 + 5);
-        this.GRID_SIZEY = Math.floor(this.GRID_SIZEY * 1.05 + 5);
+
+        const gridSizeAugment: Augment = <Augment>findAugmentByID(5, this.augments, this.defaultAugment);
+
+        var gridSizeModifier = gridSizeAugment.modifier * gridSizeAugment.count;
+        if (gridSizeModifier < 0.1) {
+            gridSizeModifier = 1;
+        }
+        var levelModifier = (this.level - 1) * 1.05
+        if (levelModifier < 1) {
+            levelModifier = 1;
+        }
+        var levelAddition = (this.level - 1) * 5;
+
+        this.GRID_SIZEX = Math.floor(this.initialGridSizeX * levelModifier * gridSizeModifier) + levelAddition;
+        this.GRID_SIZEY = Math.floor(this.initialGridSizeY * levelModifier * gridSizeModifier) + levelAddition;
     }
 
     //reset the scene and increase the level and the grid size and the number of cells required to win
     nextLevel() {
         this.level++;
 
+        this.numLivesLostStartofLevel = this.numLivesLost;
+
+        this.setSceneState();
+
+
+    }
+
+    //reset the scene
+    restartLevel() {
+        //set the number of lives to the number of lives at the start of the level
+        this.numLivesLost = this.numLivesLostStartofLevel;; 
         this.setSceneState();
 
 
     }
 
 
-    setSceneState(){
-        const generationsAugment: Augment = <Augment> findAugmentByID(4, this.augments, this.defaultAugment);
+    setSceneState() {
+        const generationsAugment: Augment = <Augment>findAugmentByID(4, this.augments, this.defaultAugment);
 
         //set the generations required to win
         var generationModifier = generationsAugment.modifier * generationsAugment.count;
-        if(generationModifier<0.1){
+        if (generationModifier < 0.1) {
             generationModifier = 1;
         }
-        var levelModifier = (this.level-1 *  1.05 +  this.level-1 * 10)
-        if(levelModifier<1){
+        var levelModifier = (this.level - 1) * 1.05 
+        if (levelModifier < 1) {
             levelModifier = 1;
-        }
-        this.generationsRequired = Math.floor(this.generationsRequired * levelModifier * generationModifier);
+        }        
+        var levelAddition = (this.level - 1) * 5;
+        this.generationsRequired = Math.floor(this.initialGenerationsRequired * levelModifier * generationModifier)+levelAddition;
 
 
         this.newGrid();
 
         //set the number of cells to be equal to the augments
-        const greenCellAugment: Augment = <Augment> findAugmentByID(0, this.augments, this.defaultAugment);
-        const blueCellAugment: Augment = <Augment> findAugmentByID(1, this.augments, this.defaultAugment);
+        const greenCellAugment: Augment = <Augment>findAugmentByID(0, this.augments, this.defaultAugment);
+        const blueCellAugment: Augment = <Augment>findAugmentByID(1, this.augments, this.defaultAugment);
 
-        this.numCells = [greenCellAugment.count*greenCellAugment.modifier, blueCellAugment.count*blueCellAugment.modifier];
+        this.numCells = [greenCellAugment.count * greenCellAugment.modifier, blueCellAugment.count * blueCellAugment.modifier];
         this.numCellsMax = this.numCells;
 
-        const livesMaxAugment: Augment = <Augment> findAugmentByID(2, this.augments, this.defaultAugment);
-        this.numLivesMax = 10+livesMaxAugment.count*livesMaxAugment.modifier;
-        
+        const livesMaxAugment: Augment = <Augment>findAugmentByID(2, this.augments, this.defaultAugment);
+        this.numLives = 10 + livesMaxAugment.count * livesMaxAugment.modifier;
+
         this.lose = false;
 
         //update the game state
@@ -388,21 +375,19 @@ export class Scene {
     resetGame() {
         //reset the scene and increase the level and the grid size and the number of cells required to win
         this.level = 1;
+        
 
         //remove all augments
         this.augments = [];
 
-        this.generationsRequired = 10;
-
-        
-
         //add green and blue cells
-        this.addAugment(<Augment> findAugmentByID(0, this.augmentList, this.defaultAugment));
-        this.addAugment(<Augment> findAugmentByID(1, this.augmentList, this.defaultAugment));
+        this.addAugment(<Augment>findAugmentByID(0, this.augmentList, this.defaultAugment));
+        this.addAugment(<Augment>findAugmentByID(1, this.augmentList, this.defaultAugment));
 
         this.setSceneState();
-        //set the generations required to win
-        this.generationsRequired = 10;
+
+        //set the number of lives to the number of lives at the start of the level
+        this.numLives = this.numLives;
     }
 
 

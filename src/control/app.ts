@@ -1,8 +1,7 @@
 import { Renderer } from "../view/renderer";
 import { Scene } from "../scene/scene";
-import { Player } from "../scene/player";
 import { Augment } from "../view/definitions";
-import {findAugmentByID} from "../view/definitions";
+import { findAugmentByID } from "../view/definitions";
 
 import $ from "jquery";
 
@@ -18,7 +17,7 @@ export class App {
     renderer: Renderer;
     scene: Scene;
 
-    sceneFlags: string[] = [];
+    sceneFlags: Augment[] = [];
 
     //Labels for displaying state
     generationsLabel: HTMLElement;
@@ -27,8 +26,10 @@ export class App {
 
     placeableCellCountLabel: HTMLElement[] = [];
     livesLabel: HTMLElement;
+    canvasCover: HTMLElement;
+    canvasMain: HTMLElement;
 
-    fps: number = 20;
+    fps: number = 140;
     animationRunning: boolean = false;
 
     //todo use a dictionary or more appropriate data structure
@@ -46,7 +47,7 @@ export class App {
 
         this.canvas = canvas;
 
-        
+
 
         //default the clickable cell color
         $('#cell_type_green').css("background-color", "#4CAF50");
@@ -57,13 +58,11 @@ export class App {
             (event) => {
                 this.handle_button(event);
             })
-        
 
         //get when the input box fps changes
         $('#fps').on('input',
             (event) => {
                 this.fps = parseInt((<HTMLInputElement>event.target).value)
-                console.log(this.fps)
             })
 
         // register clicking on the canvas and log the position
@@ -89,7 +88,7 @@ export class App {
         window.addEventListener('resize', this.resizeCanvas.bind(this), false);
         this.renderer = new Renderer(canvas);
         this.GenerateScene()
-        
+
         this.resizeCanvas()
         this.getLabels()
         this.displayUpgrades();
@@ -107,6 +106,7 @@ export class App {
     }
 
     async InitializeRenderer() {
+        this.sceneFlags = this.scene.getSceneFlags()
         await this.renderer.Initialize(this.GRID_SIZEX, this.GRID_SIZEY, this.sceneFlags);
         this.renderer.renderGrid()
 
@@ -114,10 +114,8 @@ export class App {
         this.resizeCanvas()
         //send it to the renderer
         this.renderer.setBuffer(newdata, "G");
-        
+
     }
-
-
 
     async getRendererData(cellType: number, index: number): Promise<Uint32Array> {
         try {
@@ -130,13 +128,11 @@ export class App {
         }
     }
 
-
-
     async next() {
         //check to see if you have won the level first then
         //check to see if you've lost the game
-        
-        if ( this.scene.isNextLevel()) {
+
+        if (this.scene.isNextLevel()) {
             //if you have won the level
             //stop the animation
             this.stopAnimating()
@@ -147,12 +143,11 @@ export class App {
             //update the generations label
             this.displayText()
         }
-        else if(this.scene.isLoseGame()){
+        
+        else if (this.scene.isLoseGame()) {
+            this.handleLosing()
             //stop the animation
             this.stopAnimating()
-
-            //reset the scene with a new level
-            this.firstScene()
 
             //update the generations label
             this.displayText()
@@ -177,9 +172,68 @@ export class App {
         this.displayText()
     }
 
-    sendCellstoRenderer() {
+    //create a popup asking whether you want to restart the level or restart the game
+    handleLosing() {
+        //stop the animation
+        this.stopAnimating()
+
+        //create a popup asking whether you want to restart the level or restart the game
+        //if you restart the level then reset the scene with a new level
+        //stop the animation
+        this.stopAnimating()
+
+        //stop any events being triggered by clicking on the canvas
+        this.canvas.removeEventListener('click', this.handleClick.bind(this));
+
+        //show the canvas-cover div
+        this.canvasCover.style.display = "block"
+
+        //add the texts to the canvas cover
+        const paragraph1 = document.createElement("p");
+        paragraph1.setAttribute('id', 'temp');
+        paragraph1.textContent = "You have lost the level";
+        this.canvasCover.appendChild(paragraph1);
+        const paragraph2 = document.createElement("p");
+        paragraph2.setAttribute('id', 'temp');
+        paragraph2.textContent = "Would you like to restart or try again?";
+        this.canvasCover.appendChild(paragraph2);
+
+        //set the canvas cover background to red
+        this.canvasCover.style.backgroundColor = "#f44336"
+
+        //create a div to hold the buttons
+        const container = document.createElement('div');
+        container.setAttribute('id', 'restart-container');
+        this.canvasCover.appendChild(container);
+
+        //create two buttons
+        // Create a button
+        const button1 = document.createElement("button");
+        button1.setAttribute('id', 'restart-button');
+        button1.innerHTML = "Restart Level";
+        button1.onclick = () => {
+            //remove the upgrade container that holds the buttons
+            this.removeUpgradeScreen();
+            //reset the scene with a new level
+            this.restartScene()
+        }
+        container.appendChild(button1);
+
+        // Create a button
+        const button2 = document.createElement("button");
+        button2.setAttribute('id', 'restart-button');
+        button2.innerHTML = "Restart Game";
+        button2.onclick = () => {
+            //remove the upgrade container that holds the buttons
+            this.removeUpgradeScreen();
+            //reset the scene with a new level
+            this.firstScene()
+        }
+        container.appendChild(button2);
+
     }
 
+    //send the data from the renderer to the scene
     updateScene(data: Uint32Array) {
         //update which cells are alive
         this.scene.updateCells(data)
@@ -188,12 +242,13 @@ export class App {
         this.displayText()
     }
 
+    //to go to the first level
     firstScene() {
         //stop the animation
         this.stopAnimating()
 
         this.displayText()
-        alert("You have lost the game!")
+
         this.scene.resetGame()
 
         this.setGridDimensions()
@@ -201,21 +256,22 @@ export class App {
         this.renderer.Unconfigure();
         this.InitializeRenderer()
         this.displayUpgrades();
-        
-        
+        this.displayText()
     }
 
+    //when the player wins the level and gets to choose an upgrade
     endScene() {
         //stop the animation
         this.stopAnimating()
-        
+
         this.addUpgrade()
 
         this.displayText()
 
     }
 
-    nextScene(){
+    //when the player has chosed an upgrade and is ready to go to the next level
+    nextScene() {
         this.scene.nextLevel()
 
         this.setGridDimensions()
@@ -226,40 +282,55 @@ export class App {
         this.displayUpgrades();
     }
 
-    addUpgrade(){
+    //when the player elects to restart the level
+    restartScene() {
+        this.scene.restartLevel()
+
+        this.setGridDimensions()
+
+        this.renderer.Unconfigure();
+        this.InitializeRenderer()
+        this.displayText()
+        this.displayUpgrades();
+    }
+
+    //add a popup to choose an upgrade
+    addUpgrade() {
         //stop the animation
         this.stopAnimating()
 
         //stop any events being triggered by clicking on the canvas
         this.canvas.removeEventListener('click', this.handleClick.bind(this));
 
-        //show the upgrade-screen div
-        const upgradeScreen = <HTMLElement> document.getElementById("upgrade-screen") as HTMLElement;
-        upgradeScreen.style.display = "block"
+        //show the canvas-cover div
+        this.canvasCover.style.display = "block"
 
         //get the upgrade from the scene
         this.tempAugments = this.scene.chooseAugment()
 
+        this.setCanvasSize()
 
-        // Append the new element in front of the canvas
-        const canvasMain = <HTMLElement> document.getElementById('canvasmain');
-
-        //make the canvasmain the width of the window - 200px for each column
-        canvasMain.style.width = window.innerWidth-200-200 + "px"
-        canvasMain.style.height = window.innerHeight + "px"
-        
-        canvasMain?.appendChild(upgradeScreen);
-
+        //add the texts to the canvas cover
+        const paragraph1 = document.createElement("p");
+        paragraph1.setAttribute('id', 'temp');
+        paragraph1.textContent = "You have won the level";
+        this.canvasCover.appendChild(paragraph1);
+        const paragraph2 = document.createElement("p");
+        paragraph2.setAttribute('id', 'temp');
+        paragraph2.textContent = "Choose your next upgrade";
+        this.canvasCover.appendChild(paragraph2);
 
         //create a div to hold the buttons
         const container = document.createElement('div');
         container.setAttribute('id', 'upgrade-container');
-        upgradeScreen.appendChild(container);
+        this.canvasCover.appendChild(container);
+
+        //set the canvas cover background to green
+        this.canvasCover.style.backgroundColor = "#4CAF50"
 
         //wait 1 second then add the each button to the canvas
         setTimeout(() => {
         }, 1000);
-
 
         for (var i = 0; i < this.tempAugments.length; i++) {
             // Create a button
@@ -272,9 +343,9 @@ export class App {
             //set the text to the name + the description + the modifier of the augment in new lines
             var text = this.tempAugments[i].name + "<br><br> " + this.tempAugments[i].description + "<br><br> Modifier: " + this.tempAugments[i].modifier.toString()
 
-            button.innerHTML  = text;
+            button.innerHTML = text;
             button.onclick = () => {
-                var upgrade:string = <string> button.getAttribute('data-upgrade')
+                var upgrade: string = <string>button.getAttribute('data-upgrade')
                 //get the augment from the temporary augments
                 var augment: Augment = findAugmentByID(parseInt(upgrade), this.tempAugments, this.tempAugments[0])
                 this.scene.addAugment(augment)
@@ -287,7 +358,7 @@ export class App {
             container.appendChild(button);
             setTimeout(() => {
                 button.style.display = "block";
-            }, 1000*(i+1));
+            }, 1000 * (i + 1));
         }
 
         //wait 1 second then add the event listener to the canvas again
@@ -295,27 +366,47 @@ export class App {
             //register clicking on the canvas and log the position
             this.canvas.addEventListener('click', this.handleClick.bind(this));
         }, 1000);
-        
-
-        
     }
 
-    removeUpgradeScreen(){
-        //remove the buttons with id upgrade-buttons
-        var buttons = document.getElementById("upgrade-buttons") as HTMLElement;
-        buttons.remove()
-        //remove the upgrade container that holds the buttons
-        const container = document.getElementById("upgrade-container") as HTMLElement;
-        container.remove()
+    //remove the upgrade/restart screen
+    removeUpgradeScreen() {
+        //remove all buttons with id upgrade-buttons
+        var buttons = document.querySelectorAll('button[id="upgrade-buttons"]');
+        buttons.forEach(function (a) {
+            a.remove()
+        });
 
-        const upgradeScreen = <HTMLElement> document.getElementById("upgrade-screen") as HTMLElement;
-        upgradeScreen.style.display = "none"
+        //remove all buttons with id restart-button
+        var buttons = document.querySelectorAll('button[id="restart-button"]');
+        buttons.forEach(function (a) {
+            a.remove()
+        });
 
+        //remove all divs with the  id upgrade-container
+        var divs = document.querySelectorAll('div[id="upgrade-container"]');
+        divs.forEach(function (a) {
+            a.remove()
+        });
+
+        //remove all divs with the  id restart-container
+        var divs = document.querySelectorAll('div[id="restart-container"]');
+        divs.forEach(function (a) {
+            a.remove()
+        });
+
+        this.canvasCover.style.display = "none"
+
+        //remove all paragraphs with id temp
+        var paragraphs = document.querySelectorAll('p[id="temp"]');
+        paragraphs.forEach(function (a) {
+            a.remove()
+        });
     }
 
-    displayUpgrades(){
+    //display the upgrades on the screen that the player already has
+    displayUpgrades() {
 
-        const container = <HTMLElement> document.getElementById('scene-upgrade-container'); // Container element
+        const container = <HTMLElement>document.getElementById('scene-upgrade-container'); // Container element
 
         // Clear the container by setting its innerHTML to an empty string
         container.innerHTML = '';
@@ -326,11 +417,11 @@ export class App {
         for (var i = 0; i < sceneAugments.length; i++) {
             // Create a <p> element
             const paragraph = document.createElement("p");
-            paragraph.textContent = sceneAugments[i].name;
+            paragraph.textContent = sceneAugments[i].name + " x" + sceneAugments[i].count.toString();
             paragraph.id = sceneAugments[i].ID.toString()
             //append the paragraph to the upgrade container
             container.appendChild(paragraph);
-            
+
         }
     }
 
@@ -339,6 +430,7 @@ export class App {
         this.GRID_SIZEY = this.scene.GRID_SIZEY
     }
 
+    //when the player clicks on the canvas
     async handleClick(event: MouseEvent) {
         const canvasRect = this.canvas.getBoundingClientRect();
         const mouseX = event.clientX - canvasRect.left;
@@ -358,14 +450,14 @@ export class App {
             // get the data of the grid
             await this.getRendererData(this.mouseCellType, 1)
                 .then(async data => {
-                    
+
                     //change the value of the cell to the opposite
                     var newvalue: number = data[cellX + cellY * this.GRID_SIZEX] == 1 ? 0 : 1
                     data[cellX + cellY * this.GRID_SIZEX] = newvalue
                     //convert the cell interface to a uint32array for the renderer
                     var newdata: Uint32Array = data
 
-                    
+
                     //send it to the renderer
                     await this.renderer.setBuffer(newdata, this.mouseCellTypeString).then(
                         () => {
@@ -379,7 +471,7 @@ export class App {
                     console.error(error);
                 });
         }
-        else{
+        else {
             var text: string = this.scene.cellNames[this.mouseCellType]
             //alert("You have no " + text + " cells left!")
             //flash the label
@@ -399,8 +491,12 @@ export class App {
         //get all the placeable cell count labels with id pleaceable-cells-available
         this.createCellLabels();
         this.livesLabel = <HTMLElement>document.getElementById("lives");
+
+        this.canvasCover = <HTMLElement>document.getElementById("canvas-cover") as HTMLElement;
+        this.canvasMain = <HTMLElement>document.getElementById('canvasmain');
     }
 
+    //create the labels for the placeable cells
     createCellLabels() {
         //find the html element with id container to create the labels
         const container = document.getElementById("cell container") as HTMLElement;
@@ -417,9 +513,6 @@ export class App {
             this.placeableCellCountLabel.push(paragraph as HTMLElement)
         }
 
-
-        
-        
     }
 
     //update the text on the screen
@@ -446,40 +539,38 @@ export class App {
             this.placeableCellCountLabel[i].innerText = cellNames + " Cells Avaliable: " + numCells + "/" + numCellsMax
         }
 
-        
-
-        
-        
-
-        
-
-        //updat the lives label
-        var numLives = this.scene.numLives
-        var numLivesMax = this.scene.numLivesMax
-        this.livesLabel.innerText = "Lives: " + numLives + "/" + numLivesMax 
+        //update the lives label
+        var numLives = this.scene.numLives - this.scene.numLivesLost
+        var numLivesMax = this.scene.numLives
+        this.livesLabel.innerText = "Lives: " + numLives + "/" + numLivesMax
 
         //update the level
         var level = this.scene.level
-        
+
         //get the level span
-        var levelLabel = <HTMLElement> document.getElementById("level");
-        levelLabel.innerText = "Level: " + level    
+        var levelLabel = <HTMLElement>document.getElementById("level");
+        levelLabel.innerText = "Level: " + level
 
 
 
     }
 
-    //calculate the size of the canvas based on the grid size
+    //calculate the size of the canvas based on the the size of the columns
+    setCanvasSize() {
+        //get the with and height of the parent element
+        // Append the new element in front of the canvas
+        const canvasMain = <HTMLElement>document.getElementById('canvasmain');
+
+        //make the canvasmain the width of the window - 200px for each column
+        canvasMain.style.width = window.innerWidth - 200 - 200 + "px"
+        canvasMain.style.height = window.innerHeight + "px"
+    }
+
+    //calculate the size of the canvas based on the grid size and resize it when the window is resized
     resizeCanvas() {
-        console.log('resizing canvas');
-                // Append the new element in front of the canvas
-                const canvasMain = <HTMLElement> document.getElementById('canvasmain');
 
-                //make the canvasmain the width of the window - 200px for each column
-                canvasMain.style.width = window.innerWidth-200-200 + "px"
-                canvasMain.style.height = window.innerHeight + "px"
+        this.setCanvasSize()
 
-                
         const header = document.getElementById("header");
         var headerHeight = 0
         if (header) {
@@ -497,8 +588,8 @@ export class App {
         this.setGridDimensions();
 
         //get the with and height of the parent element
-        var parentWidth: number = <number> this.canvas.parentElement?.offsetWidth
-        var parentHeight: number = <number> this.canvas.parentElement?.offsetHeight
+        var parentWidth: number = <number>this.canvas.parentElement?.offsetWidth
+        var parentHeight: number = <number>this.canvas.parentElement?.offsetHeight
 
         // Calculate the size of each square in pixels based on the grid size
         var squareSize = Math.min(parentWidth / this.GRID_SIZEX, parentHeight / this.GRID_SIZEY);
@@ -510,10 +601,8 @@ export class App {
 
         this.canvas.width = squareSize * this.GRID_SIZEX;
         this.canvas.height = squareSize * this.GRID_SIZEY;
-
-
-
     }
+
 
     startAnimating() {
 
@@ -588,7 +677,7 @@ export class App {
 
         //when data2 button is pressed
         if (event.target.id == "data2") {
-            await this.getRendererData(1, 1)
+            await this.getRendererData(0, 3)
                 .then(data => {
                     console.log(data)
 
@@ -606,10 +695,9 @@ export class App {
 
         //when data button is pressed
         if (event.target.id == "restart") {
-            this.scene.loseGame()
+            this.handleLosing()
+            //stop the animation
             this.stopAnimating()
-            //reset the scene with a new level
-            this.firstScene()
 
             //update the generations label
             this.displayText()
@@ -617,12 +705,12 @@ export class App {
 
         //when data button is pressed
         if (event.target.id == "win_level") {
+            //if you have won the level
+            //stop the animation
             this.stopAnimating()
-            //add an upgrade
-            this.addUpgrade()
 
             //reset the scene with a new level
-            //this.nextScene()
+            this.endScene()
 
             //update the generations label
             this.displayText()
@@ -633,7 +721,7 @@ export class App {
 
     //make the element flash
     flash(id: string) {
-        var element: HTMLElement = <HTMLElement> document.getElementById(id);
+        var element: HTMLElement = <HTMLElement>document.getElementById(id);
 
         //check to see if it already has the flash class
         if (element.classList.contains("flash")) {
@@ -642,11 +730,11 @@ export class App {
         }
         // Add the "flash" class to the element
         element.classList.add("flash");
-        
+
         // Remove the "flash" class after the animation completes
-        setTimeout(function() {
-          element.classList.remove("flash");
+        setTimeout(function () {
+            element.classList.remove("flash");
         }, 2000); // Adjust the timeout value to match the animation duration
-      }
+    }
 
 }

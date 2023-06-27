@@ -1,11 +1,14 @@
 @group(0) @binding(0) var<uniform> grid: vec2u;
 @group(0) @binding(1) var<uniform> seed: f32;
+//@group(0) @binding(2) var<storage, read> flags: array<bool>;
 @group(1) @binding(0) var<storage, read> cellStateIn: array<u32>;
 @group(1) @binding(1) var<storage, read_write> cellStateOut: array<u32>;
 @group(1) @binding(2) var<storage, read> cellStateIn2: array<u32>;
 @group(1) @binding(3) var<storage, read_write> cellStateOut2: array<u32>;
 @group(2) @binding(0) var<storage, read> cellStateAgeIn: array<u32>;
 @group(2) @binding(1) var<storage, read_write> cellStateAgeOut: array<u32>;
+@group(3) @binding(0) var<uniform> flagExplode: u32;
+@group(3) @binding(1) var<uniform> flagTest: u32;
 
 fn random(p: vec2<f32>) -> f32 {
     let K1: vec2<f32> = vec2<f32>(
@@ -133,9 +136,13 @@ fn computeMain(@builtin(global_invocation_id) cell: vec3u){
 
 
     //if the cell should explode
-	//if(explodeNeighbors == 1){
-	//	cellStateOut[i] = 1;
-	//}	
+	if(flagExplode >= 1){
+		//cellStateOut[i] = 1;
+		if(explodeNeighbors == 1){
+			cellStateOut[i] = 1;
+		}
+	}
+		
 
 
     //ensure that each cell only exists in either the A or B state
@@ -146,12 +153,12 @@ fn computeMain(@builtin(global_invocation_id) cell: vec3u){
     }
 
     //add the age if it is still alive
-	//if(cellStateOut[i] == 1){
-	//	cellStateAgeOut[i] = cellStateAgeIn[i]+1;
-	//}
-	//else{
-	//	cellStateAgeOut[i] = 0;
-	//}
+	if(cellStateOut[i] == 1){
+		cellStateAgeOut[i] = cellStateAgeIn[i]+1;
+	}
+	else{
+		cellStateAgeOut[i] = 0;
+	}
 
 	//if a cell is on the edge of the board, it should be dead
 	//if(isOnEdge(vec2u(cell.x, cell.y))){

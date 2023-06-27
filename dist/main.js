@@ -10753,7 +10753,7 @@ class App {
     constructor(canvas, GRID_SIZEX, GRID_SIZEY) {
         this.sceneFlags = [];
         this.placeableCellCountLabel = [];
-        this.fps = 20;
+        this.fps = 140;
         this.animationRunning = false;
         //todo use a dictionary or more appropriate data structure
         this.mouseCellType = 0;
@@ -10773,7 +10773,6 @@ class App {
         //get when the input box fps changes
         jquery__WEBPACK_IMPORTED_MODULE_3___default()('#fps').on('input', (event) => {
             this.fps = parseInt(event.target.value);
-            console.log(this.fps);
         });
         // register clicking on the canvas and log the position
         this.canvas.addEventListener('click', this.handleClick.bind(this));
@@ -10809,6 +10808,7 @@ class App {
         this.InitializeRenderer();
     }
     async InitializeRenderer() {
+        this.sceneFlags = this.scene.getSceneFlags();
         await this.renderer.Initialize(this.GRID_SIZEX, this.GRID_SIZEY, this.sceneFlags);
         this.renderer.renderGrid();
         var newdata = this.scene.getCells();
@@ -10839,10 +10839,9 @@ class App {
             this.displayText();
         }
         else if (this.scene.isLoseGame()) {
+            this.handleLosing();
             //stop the animation
             this.stopAnimating();
-            //reset the scene with a new level
-            this.firstScene();
             //update the generations label
             this.displayText();
         }
@@ -10864,31 +10863,84 @@ class App {
         }
         this.displayText();
     }
-    sendCellstoRenderer() {
+    //create a popup asking whether you want to restart the level or restart the game
+    handleLosing() {
+        //stop the animation
+        this.stopAnimating();
+        //create a popup asking whether you want to restart the level or restart the game
+        //if you restart the level then reset the scene with a new level
+        //stop the animation
+        this.stopAnimating();
+        //stop any events being triggered by clicking on the canvas
+        this.canvas.removeEventListener('click', this.handleClick.bind(this));
+        //show the canvas-cover div
+        this.canvasCover.style.display = "block";
+        //add the texts to the canvas cover
+        const paragraph1 = document.createElement("p");
+        paragraph1.setAttribute('id', 'temp');
+        paragraph1.textContent = "You have lost the level";
+        this.canvasCover.appendChild(paragraph1);
+        const paragraph2 = document.createElement("p");
+        paragraph2.setAttribute('id', 'temp');
+        paragraph2.textContent = "Would you like to restart or try again?";
+        this.canvasCover.appendChild(paragraph2);
+        //set the canvas cover background to red
+        this.canvasCover.style.backgroundColor = "#f44336";
+        //create a div to hold the buttons
+        const container = document.createElement('div');
+        container.setAttribute('id', 'restart-container');
+        this.canvasCover.appendChild(container);
+        //create two buttons
+        // Create a button
+        const button1 = document.createElement("button");
+        button1.setAttribute('id', 'restart-button');
+        button1.innerHTML = "Restart Level";
+        button1.onclick = () => {
+            //remove the upgrade container that holds the buttons
+            this.removeUpgradeScreen();
+            //reset the scene with a new level
+            this.restartScene();
+        };
+        container.appendChild(button1);
+        // Create a button
+        const button2 = document.createElement("button");
+        button2.setAttribute('id', 'restart-button');
+        button2.innerHTML = "Restart Game";
+        button2.onclick = () => {
+            //remove the upgrade container that holds the buttons
+            this.removeUpgradeScreen();
+            //reset the scene with a new level
+            this.firstScene();
+        };
+        container.appendChild(button2);
     }
+    //send the data from the renderer to the scene
     updateScene(data) {
         //update which cells are alive
         this.scene.updateCells(data);
         //update the generations label
         this.displayText();
     }
+    //to go to the first level
     firstScene() {
         //stop the animation
         this.stopAnimating();
         this.displayText();
-        alert("You have lost the game!");
         this.scene.resetGame();
         this.setGridDimensions();
         this.renderer.Unconfigure();
         this.InitializeRenderer();
         this.displayUpgrades();
+        this.displayText();
     }
+    //when the player wins the level and gets to choose an upgrade
     endScene() {
         //stop the animation
         this.stopAnimating();
         this.addUpgrade();
         this.displayText();
     }
+    //when the player has chosed an upgrade and is ready to go to the next level
     nextScene() {
         this.scene.nextLevel();
         this.setGridDimensions();
@@ -10897,26 +10949,41 @@ class App {
         this.displayText();
         this.displayUpgrades();
     }
+    //when the player elects to restart the level
+    restartScene() {
+        this.scene.restartLevel();
+        this.setGridDimensions();
+        this.renderer.Unconfigure();
+        this.InitializeRenderer();
+        this.displayText();
+        this.displayUpgrades();
+    }
+    //add a popup to choose an upgrade
     addUpgrade() {
         //stop the animation
         this.stopAnimating();
         //stop any events being triggered by clicking on the canvas
         this.canvas.removeEventListener('click', this.handleClick.bind(this));
-        //show the upgrade-screen div
-        const upgradeScreen = document.getElementById("upgrade-screen");
-        upgradeScreen.style.display = "block";
+        //show the canvas-cover div
+        this.canvasCover.style.display = "block";
         //get the upgrade from the scene
         this.tempAugments = this.scene.chooseAugment();
-        // Append the new element in front of the canvas
-        const canvasMain = document.getElementById('canvasmain');
-        //make the canvasmain the width of the window - 200px for each column
-        canvasMain.style.width = window.innerWidth - 200 - 200 + "px";
-        canvasMain.style.height = window.innerHeight + "px";
-        canvasMain === null || canvasMain === void 0 ? void 0 : canvasMain.appendChild(upgradeScreen);
+        this.setCanvasSize();
+        //add the texts to the canvas cover
+        const paragraph1 = document.createElement("p");
+        paragraph1.setAttribute('id', 'temp');
+        paragraph1.textContent = "You have won the level";
+        this.canvasCover.appendChild(paragraph1);
+        const paragraph2 = document.createElement("p");
+        paragraph2.setAttribute('id', 'temp');
+        paragraph2.textContent = "Choose your next upgrade";
+        this.canvasCover.appendChild(paragraph2);
         //create a div to hold the buttons
         const container = document.createElement('div');
         container.setAttribute('id', 'upgrade-container');
-        upgradeScreen.appendChild(container);
+        this.canvasCover.appendChild(container);
+        //set the canvas cover background to green
+        this.canvasCover.style.backgroundColor = "#4CAF50";
         //wait 1 second then add the each button to the canvas
         setTimeout(() => {
         }, 1000);
@@ -10951,16 +11018,36 @@ class App {
             this.canvas.addEventListener('click', this.handleClick.bind(this));
         }, 1000);
     }
+    //remove the upgrade/restart screen
     removeUpgradeScreen() {
-        //remove the buttons with id upgrade-buttons
-        var buttons = document.getElementById("upgrade-buttons");
-        buttons.remove();
-        //remove the upgrade container that holds the buttons
-        const container = document.getElementById("upgrade-container");
-        container.remove();
-        const upgradeScreen = document.getElementById("upgrade-screen");
-        upgradeScreen.style.display = "none";
+        //remove all buttons with id upgrade-buttons
+        var buttons = document.querySelectorAll('button[id="upgrade-buttons"]');
+        buttons.forEach(function (a) {
+            a.remove();
+        });
+        //remove all buttons with id restart-button
+        var buttons = document.querySelectorAll('button[id="restart-button"]');
+        buttons.forEach(function (a) {
+            a.remove();
+        });
+        //remove all divs with the  id upgrade-container
+        var divs = document.querySelectorAll('div[id="upgrade-container"]');
+        divs.forEach(function (a) {
+            a.remove();
+        });
+        //remove all divs with the  id restart-container
+        var divs = document.querySelectorAll('div[id="restart-container"]');
+        divs.forEach(function (a) {
+            a.remove();
+        });
+        this.canvasCover.style.display = "none";
+        //remove all paragraphs with id temp
+        var paragraphs = document.querySelectorAll('p[id="temp"]');
+        paragraphs.forEach(function (a) {
+            a.remove();
+        });
     }
+    //display the upgrades on the screen that the player already has
     displayUpgrades() {
         const container = document.getElementById('scene-upgrade-container'); // Container element
         // Clear the container by setting its innerHTML to an empty string
@@ -10971,7 +11058,7 @@ class App {
         for (var i = 0; i < sceneAugments.length; i++) {
             // Create a <p> element
             const paragraph = document.createElement("p");
-            paragraph.textContent = sceneAugments[i].name;
+            paragraph.textContent = sceneAugments[i].name + " x" + sceneAugments[i].count.toString();
             paragraph.id = sceneAugments[i].ID.toString();
             //append the paragraph to the upgrade container
             container.appendChild(paragraph);
@@ -10981,6 +11068,7 @@ class App {
         this.GRID_SIZEX = this.scene.GRID_SIZEX;
         this.GRID_SIZEY = this.scene.GRID_SIZEY;
     }
+    //when the player clicks on the canvas
     async handleClick(event) {
         const canvasRect = this.canvas.getBoundingClientRect();
         const mouseX = event.clientX - canvasRect.left;
@@ -11026,7 +11114,10 @@ class App {
         //get all the placeable cell count labels with id pleaceable-cells-available
         this.createCellLabels();
         this.livesLabel = document.getElementById("lives");
+        this.canvasCover = document.getElementById("canvas-cover");
+        this.canvasMain = document.getElementById('canvasmain');
     }
+    //create the labels for the placeable cells
     createCellLabels() {
         //find the html element with id container to create the labels
         const container = document.getElementById("cell container");
@@ -11062,9 +11153,9 @@ class App {
             var numCellsMax = this.scene.getNumCellsMax(i);
             this.placeableCellCountLabel[i].innerText = cellNames + " Cells Avaliable: " + numCells + "/" + numCellsMax;
         }
-        //updat the lives label
-        var numLives = this.scene.numLives;
-        var numLivesMax = this.scene.numLivesMax;
+        //update the lives label
+        var numLives = this.scene.numLives - this.scene.numLivesLost;
+        var numLivesMax = this.scene.numLives;
         this.livesLabel.innerText = "Lives: " + numLives + "/" + numLivesMax;
         //update the level
         var level = this.scene.level;
@@ -11072,15 +11163,19 @@ class App {
         var levelLabel = document.getElementById("level");
         levelLabel.innerText = "Level: " + level;
     }
-    //calculate the size of the canvas based on the grid size
-    resizeCanvas() {
-        var _a, _b;
-        console.log('resizing canvas');
+    //calculate the size of the canvas based on the the size of the columns
+    setCanvasSize() {
+        //get the with and height of the parent element
         // Append the new element in front of the canvas
         const canvasMain = document.getElementById('canvasmain');
         //make the canvasmain the width of the window - 200px for each column
         canvasMain.style.width = window.innerWidth - 200 - 200 + "px";
         canvasMain.style.height = window.innerHeight + "px";
+    }
+    //calculate the size of the canvas based on the grid size and resize it when the window is resized
+    resizeCanvas() {
+        var _a, _b;
+        this.setCanvasSize();
         const header = document.getElementById("header");
         var headerHeight = 0;
         if (header) {
@@ -11168,7 +11263,7 @@ class App {
         }
         //when data2 button is pressed
         if (event.target.id == "data2") {
-            await this.getRendererData(1, 1)
+            await this.getRendererData(0, 3)
                 .then(data => {
                 console.log(data);
             });
@@ -11182,20 +11277,19 @@ class App {
         }
         //when data button is pressed
         if (event.target.id == "restart") {
-            this.scene.loseGame();
+            this.handleLosing();
+            //stop the animation
             this.stopAnimating();
-            //reset the scene with a new level
-            this.firstScene();
             //update the generations label
             this.displayText();
         }
         //when data button is pressed
         if (event.target.id == "win_level") {
+            //if you have won the level
+            //stop the animation
             this.stopAnimating();
-            //add an upgrade
-            this.addUpgrade();
             //reset the scene with a new level
-            //this.nextScene()
+            this.endScene();
             //update the generations label
             this.displayText();
         }
@@ -11236,12 +11330,16 @@ __webpack_require__.r(__webpack_exports__);
 
 class Scene {
     constructor(GRID_SIZEX, GRID_SIZEY) {
+        this.initialGridSizeX = 10;
+        this.initialGridSizeY = 10;
         this.generations = 0;
+        this.initialGenerationsRequired = 10;
         this.cellsRequired = 0;
         this.cellCount = 0;
         this.lose = false;
         this.numLives = 10;
-        this.numLivesMax = 10;
+        this.numLivesLost = 0;
+        this.numLivesLostStartofLevel = 0;
         this.numCells = [10, 1];
         this.numCellsMax = [10, 1];
         this.cellNames = ["Green", "Blue"];
@@ -11253,9 +11351,8 @@ class Scene {
             description: "This is a default augment",
             duplicatesAllowed: true,
         };
-        console.log("Initializing scene");
-        this.GRID_SIZEX = GRID_SIZEX;
-        this.GRID_SIZEY = GRID_SIZEY;
+        this.initialGridSizeX = GRID_SIZEX;
+        this.initialGridSizeY = GRID_SIZEY;
         this.createAugments();
         this.resetGame();
     }
@@ -11291,7 +11388,8 @@ class Scene {
                 name: "explode",
                 modifier: 1,
                 description: "Explode the cells on the grid",
-                duplicatesAllowed: false
+                duplicatesAllowed: false,
+                sceneFlag: true
             },
             {
                 ID: 4,
@@ -11311,57 +11409,26 @@ class Scene {
             }
         ];
     }
-    /* handleUpgrade() {
-        //loop through the unhandled upgrades and handle them
-        for (var i = 0; i < this.unHandledUpgrades.length; i++) {
-            var upgrade = this.unHandledUpgrades[i];
-            switch (upgrade) {
-                case "more green":
-                    this.numCells[0] += 10;
-                    this.numCellsMax[0] += 10;
-                    break;
-                case "more blue":
-                    this.numCells[1] = this.numCells[1]+1;
-                    this.numCellsMax[1] = this.numCellsMax[1]+1;
-                    break;
-                case "more lives":
-                    this.numLivesMax += 10;
-                    this.numLives += 10;
-                    break;
-                case "explode":
-                    //check to see if the flag is already set
-                    if (this.upgradeFlags.indexOf("explode") == -1) {
-                        this.upgradeFlags.push("explode");
-                    }
-                    else {
-                        alert("You already have this upgrade");
-                    }
-                    break;
-                case "less generations":
-                    this.generationsRequired = Math.floor(this.generationsRequired*0.8);
-                    break;
-                case "less grid size":
-                    this.GRID_SIZEX = Math.floor(this.GRID_SIZEX*0.7);
-                    this.GRID_SIZEY = Math.floor(this.GRID_SIZEY*0.7);
-                    break;
-                default:
-                    console.log("upgrade not found");
-                    break;
+    getSceneFlags() {
+        //get all augments with a flag
+        var sceneFlags = [];
+        for (var i = 0; i < this.augments.length; i++) {
+            if (this.augments[i].sceneFlag == true) {
+                sceneFlags.push(this.augments[i]);
             }
         }
-        this.unHandledUpgrades = [];
-
-        return this.upgradeFlags
-        
-    } */
+        return sceneFlags;
+    }
     //lose a life and return true if the player is dead
     loseLife() {
-        this.numLives--;
-        //flash the lives
-        (0,_view_definitions__WEBPACK_IMPORTED_MODULE_0__.flash)("lives");
-        if (this.numLives <= 0) {
+        if (this.numLivesLost > this.numLives) {
+            this.numLivesLost--;
+        }
+        if (this.numLivesLost <= this.numLives) {
             return true;
         }
+        //flash the lives
+        (0,_view_definitions__WEBPACK_IMPORTED_MODULE_0__.flash)("lives");
         return false;
     }
     //add an upgrade
@@ -11371,14 +11438,11 @@ class Scene {
         if (foundAugment.ID == augment.ID) {
             //if the augment is already in the list then increase the count
             foundAugment.count++;
-            console.log('the augment is already found');
-            console.log(foundAugment);
-            console.log(augment);
         }
         else {
             //otherwise add the augment to the list
+            augment.count++;
             this.augments.push(augment);
-            console.log('new augment added');
         }
     }
     //return 3 augments from the list of augments that are not already in the return array
@@ -11506,12 +11570,30 @@ class Scene {
         return cells;
     }
     newGrid() {
-        this.GRID_SIZEX = Math.floor(this.GRID_SIZEX * 1.05 + 5);
-        this.GRID_SIZEY = Math.floor(this.GRID_SIZEY * 1.05 + 5);
+        const gridSizeAugment = (0,_view_definitions__WEBPACK_IMPORTED_MODULE_0__.findAugmentByID)(5, this.augments, this.defaultAugment);
+        var gridSizeModifier = gridSizeAugment.modifier * gridSizeAugment.count;
+        if (gridSizeModifier < 0.1) {
+            gridSizeModifier = 1;
+        }
+        var levelModifier = (this.level - 1) * 1.05;
+        if (levelModifier < 1) {
+            levelModifier = 1;
+        }
+        var levelAddition = (this.level - 1) * 5;
+        this.GRID_SIZEX = Math.floor(this.initialGridSizeX * levelModifier * gridSizeModifier) + levelAddition;
+        this.GRID_SIZEY = Math.floor(this.initialGridSizeY * levelModifier * gridSizeModifier) + levelAddition;
     }
     //reset the scene and increase the level and the grid size and the number of cells required to win
     nextLevel() {
         this.level++;
+        this.numLivesLostStartofLevel = this.numLivesLost;
+        this.setSceneState();
+    }
+    //reset the scene
+    restartLevel() {
+        //set the number of lives to the number of lives at the start of the level
+        this.numLivesLost = this.numLivesLostStartofLevel;
+        ;
         this.setSceneState();
     }
     setSceneState() {
@@ -11521,11 +11603,12 @@ class Scene {
         if (generationModifier < 0.1) {
             generationModifier = 1;
         }
-        var levelModifier = (this.level - 1 * 1.05 + this.level - 1 * 10);
+        var levelModifier = (this.level - 1) * 1.05;
         if (levelModifier < 1) {
             levelModifier = 1;
         }
-        this.generationsRequired = Math.floor(this.generationsRequired * levelModifier * generationModifier);
+        var levelAddition = (this.level - 1) * 5;
+        this.generationsRequired = Math.floor(this.initialGenerationsRequired * levelModifier * generationModifier) + levelAddition;
         this.newGrid();
         //set the number of cells to be equal to the augments
         const greenCellAugment = (0,_view_definitions__WEBPACK_IMPORTED_MODULE_0__.findAugmentByID)(0, this.augments, this.defaultAugment);
@@ -11533,7 +11616,7 @@ class Scene {
         this.numCells = [greenCellAugment.count * greenCellAugment.modifier, blueCellAugment.count * blueCellAugment.modifier];
         this.numCellsMax = this.numCells;
         const livesMaxAugment = (0,_view_definitions__WEBPACK_IMPORTED_MODULE_0__.findAugmentByID)(2, this.augments, this.defaultAugment);
-        this.numLivesMax = 10 + livesMaxAugment.count * livesMaxAugment.modifier;
+        this.numLives = 10 + livesMaxAugment.count * livesMaxAugment.modifier;
         this.lose = false;
         //update the game state
         this.cells = this.generateCells();
@@ -11546,13 +11629,12 @@ class Scene {
         this.level = 1;
         //remove all augments
         this.augments = [];
-        this.generationsRequired = 10;
         //add green and blue cells
         this.addAugment((0,_view_definitions__WEBPACK_IMPORTED_MODULE_0__.findAugmentByID)(0, this.augmentList, this.defaultAugment));
         this.addAugment((0,_view_definitions__WEBPACK_IMPORTED_MODULE_0__.findAugmentByID)(1, this.augmentList, this.defaultAugment));
         this.setSceneState();
-        //set the generations required to win
-        this.generationsRequired = 10;
+        //set the number of lives to the number of lives at the start of the level
+        this.numLives = this.numLives;
     }
 }
 
@@ -11646,6 +11728,7 @@ class Renderer {
         this.seed = 'hi';
         this.WORKGROUP_SIZE = 8;
         this.flags = [];
+        this.flagList = [];
         this.canvas = canvas;
     }
     async Initialize(GRID_SIZEX, GRID_SIZEY, flags) {
@@ -11654,6 +11737,7 @@ class Renderer {
         this.GRID_SIZEY = GRID_SIZEY;
         this.seed = 'hi';
         this.flags = flags;
+        this.flagList = [0, 0];
         await this.setupDevice();
         await this.makeBindGroupsLayouts();
         await this.createAssets();
@@ -11752,7 +11836,41 @@ class Renderer {
             size: 4,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
-        //this.device.queue.writeBuffer(this.seedBuffer, 0, buffer);
+        //get the flag augments
+        this.flagList = [0, 0];
+        //loop through each flag
+        //get the list of flags
+        for (let i = 0; i < this.flags.length; i++) {
+            switch (this.flags[i].name) {
+                case "explode":
+                    this.flagList[i] = this.flags[i].count;
+                    console.log("explode found");
+                    break;
+                case "old":
+                    this.flagList[i] = 1;
+                    break;
+                default:
+                    this.flagList[i] = 0;
+                    console.log("flag not found");
+                    break;
+            }
+        }
+        this.flagsBuffer = new Array(this.flagList.length);
+        //create an arraybuffer for each flag
+        for (let i = 0; i < this.flagList.length; i++) {
+            // Create an ArrayBuffer for a uint32 number
+            const flagBuffer = new ArrayBuffer(4);
+            const dataView = new DataView(flagBuffer);
+            // Write the value from this.flags[i] into the buffer
+            dataView.setUint32(0, this.flagList[i], true);
+            // Create a buffer that describes the flags.
+            this.flagsBuffer[i] = this.device.createBuffer({
+                label: "flag" + i,
+                size: 4,
+                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+            });
+            this.device.queue.writeBuffer(this.flagsBuffer[i], 0, flagBuffer);
+        }
         // Create an array representing the active state of each cell.
         this.cellStateArray = new Uint32Array(this.GRID_SIZEX * this.GRID_SIZEY);
         this.BUFFER_SIZE = this.cellStateArray.byteLength;
@@ -11831,7 +11949,7 @@ class Renderer {
                 }]
         });
         this.UniformBindGroupLayout = this.device.createBindGroupLayout({
-            label: "Uniform Bind Group",
+            label: "Uniform Bind Group Layout",
             entries: [{
                     binding: 0,
                     visibility: GPUShaderStage.VERTEX | GPUShaderStage.COMPUTE,
@@ -11854,6 +11972,18 @@ class Renderer {
                     visibility: GPUShaderStage.COMPUTE,
                     buffer: { type: "storage" }
                 }]
+        });
+        //create a bind group layout for the flags. this is dynamic and depends on the number of flags
+        var flagEntries = [];
+        //loop through each flagbuffer and add it to the flags bind group layout
+        for (let i = 0; i < this.flagList.length; i++) {
+            flagEntries[i] = { binding: i,
+                visibility: GPUShaderStage.VERTEX | GPUShaderStage.COMPUTE,
+                buffer: { type: "uniform" } };
+        }
+        this.flagsBindGroupLayout = this.device.createBindGroupLayout({
+            label: "Flags Bind Group Layout",
+            entries: flagEntries
         });
     }
     async makeBindGroup() {
@@ -11939,6 +12069,18 @@ class Renderer {
                     }
                 ]
             });
+        //create a bind group layout for the flags. this is dynamic and depends on the number of flags
+        var flagEntries = [];
+        //loop through each flagbuffer and add it to the flags bind group layout
+        for (let i = 0; i < this.flagList.length; i++) {
+            flagEntries[i] = { binding: i,
+                resource: { buffer: this.flagsBuffer[i] } };
+        }
+        this.flagsBindGroup = this.device.createBindGroup({
+            label: "flags bind group",
+            layout: this.flagsBindGroupLayout,
+            entries: flagEntries
+        });
     }
     async makePipeline() {
         this.pipelineLayout = this.device.createPipelineLayout({
@@ -11946,7 +12088,8 @@ class Renderer {
             bindGroupLayouts: [
                 this.UniformBindGroupLayout,
                 this.cellBindGroupLayout,
-                this.cellAgeBindGroupLayout, //group 2
+                this.cellAgeBindGroupLayout,
+                this.flagsBindGroupLayout, //group 3
             ],
         });
         this.renderPipelineLayout = this.device.createPipelineLayout({
@@ -12026,8 +12169,8 @@ class Renderer {
             this.computePass.setBindGroup(0, this.uniformBindGroup);
         this.computePass.setBindGroup(1, this.cellAliveBindGroups[this.step % 2]);
         this.computePass.setBindGroup(2, this.cellAgeBindGroups[this.step % 2]);
-        //todo understand workgroupcount
-        //fornow just use the grid size x
+        this.computePass.setBindGroup(3, this.flagsBindGroup);
+        //set the workgroup size to the grid size divided by the workgroup size and rounded up. in the shader make sure to check if the cell <= grid size
         this.workgroupCountx = Math.ceil(this.GRID_SIZEX / this.WORKGROUP_SIZE);
         this.workgroupCounty = Math.ceil(this.GRID_SIZEY / this.WORKGROUP_SIZE);
         this.computePass.dispatchWorkgroups(this.workgroupCountx, this.workgroupCounty);
@@ -12275,16 +12418,20 @@ class Renderer {
         if (this.device) {
             this.device.destroy();
             //destroy buffers
-            this.cellStateStorageA[0].destroy();
-            this.cellStateStorageA[1].destroy();
-            this.cellStateStorageA[2].destroy();
-            this.cellStateStorageA[3].destroy();
-            this.cellStateStorageB[0].destroy();
-            this.cellStateStorageB[1].destroy();
-            this.cellStateStorageB[2].destroy();
-            this.cellStateStorageB[3].destroy();
+            //loop through each cellstatestorageB
+            for (let i = 0; i < this.cellStateStorageA.length; i++) {
+                this.cellStateStorageA[i].destroy();
+            }
+            //loop through each cellstatestorageB
+            for (let i = 0; i < this.cellStateStorageB.length; i++) {
+                this.cellStateStorageB[i].destroy();
+            }
             this.uniformBuffer.destroy();
             this.seedBuffer.destroy();
+            //loop through each flagsbuffer
+            for (let i = 0; i < this.flagList.length; i++) {
+                this.flagsBuffer[i].destroy();
+            }
             this.stagingBuffer.destroy();
             this.vertexBuffer.destroy();
             //remove references to the state
@@ -12326,7 +12473,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("@group(0) @binding(0) var<uniform> grid: vec2u;\r\n@group(0) @binding(1) var<uniform> seed: f32;\r\n@group(1) @binding(0) var<storage, read> cellStateIn: array<u32>;\r\n@group(1) @binding(1) var<storage, read_write> cellStateOut: array<u32>;\r\n@group(1) @binding(2) var<storage, read> cellStateIn2: array<u32>;\r\n@group(1) @binding(3) var<storage, read_write> cellStateOut2: array<u32>;\r\n@group(2) @binding(0) var<storage, read> cellStateAgeIn: array<u32>;\r\n@group(2) @binding(1) var<storage, read_write> cellStateAgeOut: array<u32>;\r\n\r\nfn random(p: vec2<f32>) -> f32 {\r\n    let K1: vec2<f32> = vec2<f32>(\r\n        23.14069263277926, // e^pi (Gelfond's constant)\r\n        2.665144142690225 // 2^sqrt(2) (Gelfond–Schneider constant)\r\n    );\r\n    return fract(cos(dot(p, K1)) * 12345.6789);\r\n}\r\n\r\nfn isOnEdge(cell: vec2u) -> bool {\r\n\treturn cell.x == 0 || cell.x == grid.x - 1 || cell.y == 0 || cell.y == grid.y - 1;\r\n}\r\n\r\nfn cellIndex(cell: vec2u) -> u32 {\r\n\treturn (cell.y % grid.y) * grid.x +\r\n\t\t(cell.x % grid.x);\r\n}\r\n\r\nfn cellActive(cellType: u32, x: u32, y: u32) -> u32 {\r\n\t//if the cell is out of bounds, it is not active\r\n\tif(x >= grid.x || y >= grid.y){\r\n\t\treturn 0;\t\t\r\n\t}\r\n\t\r\n\r\n\tif(cellType == 0){\r\n\t\treturn cellStateIn[cellIndex(vec2(x, y))];\r\n\t}\r\n\telse if (cellType == 1){\r\n\t\treturn cellStateIn2[cellIndex(vec2(x, y))];\r\n\t}\r\n\telse{\r\n\t\treturn 0;\r\n\t}\r\n}\r\n\r\n//set to 1 if the cell should explode\r\nfn cellExplode(x: u32, y: u32) -> u32 {\r\n\tif(x >= grid.x || y >= grid.y){\r\n\t\treturn 0;\r\n\t}\r\n\tvar age = cellStateAgeIn[cellIndex(vec2(x, y))];\r\n\tif(age == 10){\r\n\t\treturn 1;\r\n\t}\r\n\telse {\r\n\t\treturn 0;\r\n\t}\r\n}\r\n\r\n\r\n\r\n@compute @workgroup_size(8, 8)\r\n\r\nfn computeMain(@builtin(global_invocation_id) cell: vec3u){\r\n\t//dont perform extra work if you are outside of the range\r\n\tif (cell.x >= grid.x || cell.y >= grid.y) {\r\n\t\treturn;\r\n\t}\r\n    let i = cellIndex(cell.xy);\r\n\tlet random = random(vec2<f32>(f32(cell.x)+seed, f32(cell.y)));\r\n\r\n\tlet activeNeighbors = \r\n\t\tcellActive(u32(0), cell.x+1, cell.y+1) +\r\n\t\tcellActive(u32(0), cell.x+1, cell.y) +\r\n\t\tcellActive(u32(0), cell.x+1, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y+1) +\r\n\t\tcellActive(u32(0), cell.x, cell.y+1);\r\n\r\n    let activeBNeighbors = \r\n\t\tcellActive(u32(1), cell.x+1, cell.y+1) +\r\n\t\tcellActive(u32(1), cell.x+1, cell.y) +\r\n\t\tcellActive(u32(1), cell.x+1, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y+1) +\r\n\t\tcellActive(u32(1), cell.x, cell.y+1);\r\n\r\n    let explodeNeighbors = \r\n\t\tcellExplode(cell.x+1, cell.y+1) +\r\n\t\tcellExplode(cell.x+1, cell.y) +\r\n\t\tcellExplode(cell.x+1, cell.y-1) +\r\n\t\tcellExplode(cell.x, cell.y-1) +\r\n\t\tcellExplode(cell.x-1, cell.y-1) +\r\n\t\tcellExplode(cell.x-1, cell.y) +\r\n\t\tcellExplode(cell.x-1, cell.y+1) +\r\n\t\tcellExplode(cell.x, cell.y+1)  + \r\n\t\tcellExplode(cell.x, cell.y);;\r\n\r\n\r\n\t// Conway's game of life rules:\r\n\tswitch activeNeighbors {\r\n\t\tcase 2: { \r\n\t\t\tcellStateOut[i] = cellStateIn[i];\r\n\t\t}\r\n        case 3: { \r\n\t\t\tcellStateOut[i] = 1;\r\n\t\t}\r\n\t\tdefault: { // Cells with < 2 or > 3 neighbors become inactive.\r\n            cellStateOut[i] = 0;\r\n\t\t}\r\n\t}\r\n\r\n\t// B Cells rules:\r\n\tswitch activeBNeighbors {\r\n\t\tcase 1, 2, 3, 4, 5, 6, 7, 8: { \r\n\t\t\tcellStateOut[i] = 1;\r\n\t\t}\r\n\t\tdefault: { // Cells with < 2 or > 3 neighbors become inactive.\r\n            cellStateOut2[i] = cellStateOut2[i];\r\n\t\t}\r\n\t}\r\n\r\n\t//move B cells down\r\n\t//let upCell = cellStateIn2[cellIndex(vec2(cell.x, cell.y+1))];\r\n\t//if(upCell == 1 && cell.y!=0){\r\n\t//\tcellStateOut2[i] = 1;\r\n\t//}\r\n\r\n\r\n\r\n\r\n    //if the cell should explode\r\n\t//if(explodeNeighbors == 1){\r\n\t//\tcellStateOut[i] = 1;\r\n\t//}\t\r\n\r\n\r\n    //ensure that each cell only exists in either the A or B state\r\n    if(cellStateOut2[i] == 1){\r\n        cellStateOut[i] = 0;\r\n    }\r\n    else if cellStateOut2[i] == 0{\r\n    }\r\n\r\n    //add the age if it is still alive\r\n\t//if(cellStateOut[i] == 1){\r\n\t//\tcellStateAgeOut[i] = cellStateAgeIn[i]+1;\r\n\t//}\r\n\t//else{\r\n\t//\tcellStateAgeOut[i] = 0;\r\n\t//}\r\n\r\n\t//if a cell is on the edge of the board, it should be dead\r\n\t//if(isOnEdge(vec2u(cell.x, cell.y))){\r\n\t//\tcellStateOut[i] = 0;\r\n\t//}\r\n}");
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("@group(0) @binding(0) var<uniform> grid: vec2u;\r\n@group(0) @binding(1) var<uniform> seed: f32;\r\n//@group(0) @binding(2) var<storage, read> flags: array<bool>;\r\n@group(1) @binding(0) var<storage, read> cellStateIn: array<u32>;\r\n@group(1) @binding(1) var<storage, read_write> cellStateOut: array<u32>;\r\n@group(1) @binding(2) var<storage, read> cellStateIn2: array<u32>;\r\n@group(1) @binding(3) var<storage, read_write> cellStateOut2: array<u32>;\r\n@group(2) @binding(0) var<storage, read> cellStateAgeIn: array<u32>;\r\n@group(2) @binding(1) var<storage, read_write> cellStateAgeOut: array<u32>;\r\n@group(3) @binding(0) var<uniform> flagExplode: u32;\r\n@group(3) @binding(1) var<uniform> flagTest: u32;\r\n\r\nfn random(p: vec2<f32>) -> f32 {\r\n    let K1: vec2<f32> = vec2<f32>(\r\n        23.14069263277926, // e^pi (Gelfond's constant)\r\n        2.665144142690225 // 2^sqrt(2) (Gelfond–Schneider constant)\r\n    );\r\n    return fract(cos(dot(p, K1)) * 12345.6789);\r\n}\r\n\r\nfn isOnEdge(cell: vec2u) -> bool {\r\n\treturn cell.x == 0 || cell.x == grid.x - 1 || cell.y == 0 || cell.y == grid.y - 1;\r\n}\r\n\r\nfn cellIndex(cell: vec2u) -> u32 {\r\n\treturn (cell.y % grid.y) * grid.x +\r\n\t\t(cell.x % grid.x);\r\n}\r\n\r\nfn cellActive(cellType: u32, x: u32, y: u32) -> u32 {\r\n\t//if the cell is out of bounds, it is not active\r\n\tif(x >= grid.x || y >= grid.y){\r\n\t\treturn 0;\t\t\r\n\t}\r\n\t\r\n\r\n\tif(cellType == 0){\r\n\t\treturn cellStateIn[cellIndex(vec2(x, y))];\r\n\t}\r\n\telse if (cellType == 1){\r\n\t\treturn cellStateIn2[cellIndex(vec2(x, y))];\r\n\t}\r\n\telse{\r\n\t\treturn 0;\r\n\t}\r\n}\r\n\r\n//set to 1 if the cell should explode\r\nfn cellExplode(x: u32, y: u32) -> u32 {\r\n\tif(x >= grid.x || y >= grid.y){\r\n\t\treturn 0;\r\n\t}\r\n\tvar age = cellStateAgeIn[cellIndex(vec2(x, y))];\r\n\tif(age == 10){\r\n\t\treturn 1;\r\n\t}\r\n\telse {\r\n\t\treturn 0;\r\n\t}\r\n}\r\n\r\n\r\n\r\n@compute @workgroup_size(8, 8)\r\n\r\nfn computeMain(@builtin(global_invocation_id) cell: vec3u){\r\n\t//dont perform extra work if you are outside of the range\r\n\tif (cell.x >= grid.x || cell.y >= grid.y) {\r\n\t\treturn;\r\n\t}\r\n    let i = cellIndex(cell.xy);\r\n\tlet random = random(vec2<f32>(f32(cell.x)+seed, f32(cell.y)));\r\n\r\n\tlet activeNeighbors = \r\n\t\tcellActive(u32(0), cell.x+1, cell.y+1) +\r\n\t\tcellActive(u32(0), cell.x+1, cell.y) +\r\n\t\tcellActive(u32(0), cell.x+1, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y-1) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y) +\r\n\t\tcellActive(u32(0), cell.x-1, cell.y+1) +\r\n\t\tcellActive(u32(0), cell.x, cell.y+1);\r\n\r\n    let activeBNeighbors = \r\n\t\tcellActive(u32(1), cell.x+1, cell.y+1) +\r\n\t\tcellActive(u32(1), cell.x+1, cell.y) +\r\n\t\tcellActive(u32(1), cell.x+1, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y-1) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y) +\r\n\t\tcellActive(u32(1), cell.x-1, cell.y+1) +\r\n\t\tcellActive(u32(1), cell.x, cell.y+1);\r\n\r\n    let explodeNeighbors = \r\n\t\tcellExplode(cell.x+1, cell.y+1) +\r\n\t\tcellExplode(cell.x+1, cell.y) +\r\n\t\tcellExplode(cell.x+1, cell.y-1) +\r\n\t\tcellExplode(cell.x, cell.y-1) +\r\n\t\tcellExplode(cell.x-1, cell.y-1) +\r\n\t\tcellExplode(cell.x-1, cell.y) +\r\n\t\tcellExplode(cell.x-1, cell.y+1) +\r\n\t\tcellExplode(cell.x, cell.y+1)  + \r\n\t\tcellExplode(cell.x, cell.y);;\r\n\r\n\r\n\t// Conway's game of life rules:\r\n\tswitch activeNeighbors {\r\n\t\tcase 2: { \r\n\t\t\tcellStateOut[i] = cellStateIn[i];\r\n\t\t}\r\n        case 3: { \r\n\t\t\tcellStateOut[i] = 1;\r\n\t\t}\r\n\t\tdefault: { // Cells with < 2 or > 3 neighbors become inactive.\r\n            cellStateOut[i] = 0;\r\n\t\t}\r\n\t}\r\n\r\n\t// B Cells rules:\r\n\tswitch activeBNeighbors {\r\n\t\tcase 1, 2, 3, 4, 5, 6, 7, 8: { \r\n\t\t\tcellStateOut[i] = 1;\r\n\t\t}\r\n\t\tdefault: { // Cells with < 2 or > 3 neighbors become inactive.\r\n            cellStateOut2[i] = cellStateOut2[i];\r\n\t\t}\r\n\t}\r\n\r\n\t//move B cells down\r\n\t//let upCell = cellStateIn2[cellIndex(vec2(cell.x, cell.y+1))];\r\n\t//if(upCell == 1 && cell.y!=0){\r\n\t//\tcellStateOut2[i] = 1;\r\n\t//}\r\n\r\n\r\n\r\n\r\n    //if the cell should explode\r\n\tif(flagExplode >= 1){\r\n\t\t//cellStateOut[i] = 1;\r\n\t\tif(explodeNeighbors == 1){\r\n\t\t\tcellStateOut[i] = 1;\r\n\t\t}\r\n\t}\r\n\t\t\r\n\r\n\r\n    //ensure that each cell only exists in either the A or B state\r\n    if(cellStateOut2[i] == 1){\r\n        cellStateOut[i] = 0;\r\n    }\r\n    else if cellStateOut2[i] == 0{\r\n    }\r\n\r\n    //add the age if it is still alive\r\n\tif(cellStateOut[i] == 1){\r\n\t\tcellStateAgeOut[i] = cellStateAgeIn[i]+1;\r\n\t}\r\n\telse{\r\n\t\tcellStateAgeOut[i] = 0;\r\n\t}\r\n\r\n\t//if a cell is on the edge of the board, it should be dead\r\n\t//if(isOnEdge(vec2u(cell.x, cell.y))){\r\n\t//\tcellStateOut[i] = 0;\r\n\t//}\r\n}");
 
 /***/ }),
 
@@ -12341,7 +12488,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("struct VertexOutput {\r\n\t@builtin(position) position: vec4f,\r\n\t@location(0) cell: vec2f,\r\n\t@location(1) cellAge: f32,\r\n\t@location(2) cellType: f32,\r\n};\r\n\r\n@group(0) @binding(0) var<uniform> grid: vec2u;\r\n@group(1) @binding(0) var<storage> cellState: array<u32>;\r\n@group(2) @binding(0) var<storage> cellStateAge: array<u32>;\r\n@group(1) @binding(2) var<storage> cellState2: array<u32>;\r\n@group(2) @binding(2) var<storage> cellStateAge2: array<u32>;\r\n\r\nfn cellIndex(cell: vec2u) -> u32 {\r\n\treturn (cell.y % grid.y) * grid.x +\r\n\t\t(cell.x % grid.x);\r\n}\r\n\r\nfn isOnEdge(cell: vec2u) -> bool {\r\n\treturn cell.x == 0 || cell.x == grid.x - 1 || cell.y == 0 || cell.y == grid.y - 1;\r\n}\r\n\r\n@vertex\r\nfn vertexMain(@location(0) position: vec2f,\r\n              @builtin(instance_index) instance: u32) -> VertexOutput {\r\n\tvar output: VertexOutput;\r\n\r\n\tlet i = f32(instance);\r\n\tlet cell = vec2f(i % f32(grid.x), floor(i / f32(grid.x)));\r\n\t\r\n\tvar cellType=f32();\r\n\tvar state = f32();\r\n\r\n\t//check the type of cell. first check the cellstate2, then cellstate, then default to 0\r\n\tif(1==cellState2[instance]){\r\n\t\tcellType = 2.0;\r\n\t\tstate = f32(cellState2[instance]);\r\n\t}\r\n\telse if (1==cellState[instance]){\r\n\t\tcellType = 1.0;\r\n\t\tstate = f32(cellState[instance]);\r\n\t}\r\n\telse{\r\n\t\tcellType = 0.0;\r\n\t\tstate = 0.0;\r\n\t}\r\n\t\r\n\t//if the cell is on the edge of the grid, then we need to set the cell type to 0\r\n\t//if(isOnEdge(vec2u(cell))){\r\n\t//\tcellType = 0.0;\r\n\t//\tstate=1.0;\r\n\t//}\r\n\r\n\r\n\tlet cellOffset = cell / vec2f(grid) * 2;\r\n\tlet gridPos = (position*state+1) / vec2f(grid) - 1 + cellOffset;\r\n\r\n\r\n\r\n\t\r\n\r\n\toutput.position = vec4f(gridPos, 0, 1);\r\n\toutput.cell = cell / vec2f(grid);\r\n\t//get the age of the current cell\r\n\toutput.cellAge = f32(cellStateAge[instance])/100.0;\r\n\toutput.cellType = cellType;\r\n\treturn output;\r\n}\r\n\r\n@fragment\r\nfn fragmentMain(input: VertexOutput) -> @location(0) vec4f {\r\n\tif(input.cellType == 0.0){\r\n\t\treturn vec4f(1.0, 0.0, 0.0, 1);\r\n\t}\r\n\telse if(input.cellType == 1.0){\r\n\t\treturn vec4f(0.0+input.cellAge*1000.0, 1.0, 0.0, 1);\r\n\t}\r\n\telse if(input.cellType == 2.0){\r\n\t\treturn vec4f(0.0, 0.0, 1.0, 1);\r\n\t}\r\n\telse\r\n\t{\r\n\t\treturn vec4f(1.0, 1.0, 1.0, 1);\r\n\t}\r\n}");
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ("struct VertexOutput {\r\n\t@builtin(position) position: vec4f,\r\n\t@location(0) cell: vec2f,\r\n\t@location(1) cellAge: f32,\r\n\t@location(2) cellType: f32,\r\n};\r\n\r\n@group(0) @binding(0) var<uniform> grid: vec2u;\r\n@group(1) @binding(0) var<storage> cellState: array<u32>;\r\n@group(2) @binding(0) var<storage> cellStateAge: array<u32>;\r\n@group(1) @binding(2) var<storage> cellState2: array<u32>;\r\n@group(2) @binding(2) var<storage> cellStateAge2: array<u32>;\r\n\r\nfn cellIndex(cell: vec2u) -> u32 {\r\n\treturn (cell.y % grid.y) * grid.x +\r\n\t\t(cell.x % grid.x);\r\n}\r\n\r\nfn isOnEdge(cell: vec2u) -> bool {\r\n\treturn cell.x == 0 || cell.x == grid.x - 1 || cell.y == 0 || cell.y == grid.y - 1;\r\n}\r\n\r\n@vertex\r\nfn vertexMain(@location(0) position: vec2f,\r\n              @builtin(instance_index) instance: u32) -> VertexOutput {\r\n\tvar output: VertexOutput;\r\n\r\n\tlet i = f32(instance);\r\n\tlet cell = vec2f(i % f32(grid.x), floor(i / f32(grid.x)));\r\n\t\r\n\tvar cellType=f32();\r\n\tvar state = f32();\r\n\r\n\t//check the type of cell. first check the cellstate2, then cellstate, then default to 0\r\n\tif(1==cellState2[instance]){\r\n\t\tcellType = 2.0;\r\n\t\tstate = f32(cellState2[instance]);\r\n\t}\r\n\telse if (1==cellState[instance]){\r\n\t\tcellType = 1.0;\r\n\t\tstate = f32(cellState[instance]);\r\n\t}\r\n\telse{\r\n\t\tcellType = 0.0;\r\n\t\tstate = 0.0;\r\n\t}\r\n\t\r\n\t//if the cell is on the edge of the grid, then we need to set the cell type to 0\r\n\t//if(isOnEdge(vec2u(cell))){\r\n\t//\tcellType = 0.0;\r\n\t//\tstate=1.0;\r\n\t//}\r\n\r\n\r\n\tlet cellOffset = cell / vec2f(grid) * 2;\r\n\tlet gridPos = (position*state+1) / vec2f(grid) - 1 + cellOffset;\r\n\r\n\r\n\r\n\t\r\n\r\n\toutput.position = vec4f(gridPos, 0, 1);\r\n\toutput.cell = cell / vec2f(grid);\r\n\t//get the age of the current cell\r\n\toutput.cellAge = f32(cellStateAge[instance])/100.0;\r\n\toutput.cellType = cellType;\r\n\treturn output;\r\n}\r\n\r\n@fragment\r\nfn fragmentMain(input: VertexOutput) -> @location(0) vec4f {\r\n\tif(input.cellType == 0.0){\r\n\t\treturn vec4f(1.0, 0.0, 0.0, 1);\r\n\t}\r\n\telse if(input.cellType == 1.0){\r\n\t\treturn vec4f(0.0+input.cellAge*10.0, 1.0, 0.0, 1);\r\n\t}\r\n\telse if(input.cellType == 2.0){\r\n\t\treturn vec4f(0.0, 0.0, 1.0, 1);\r\n\t}\r\n\telse\r\n\t{\r\n\t\treturn vec4f(1.0, 1.0, 1.0, 1);\r\n\t}\r\n}");
 
 /***/ }),
 

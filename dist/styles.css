@@ -89,12 +89,12 @@ body {
   width: 33.33%;
 }
 
-#upgrade-screen {
+#canvas-cover {
   position: absolute;
   width: 100%;
   height: 100%;
-  background-color: red;
   display: none;
+  background-color: green;
 }
 
 #upgrade-container, p{
@@ -147,4 +147,15 @@ hr {
   margin-top: auto;
   display: flex;
   flex-direction: column;
+}
+
+#restart-container{
+  /* make the child items flex */
+  display: flex;
+  background-color: red;
+  height: 100%
+}
+
+#restart-button {
+  width: 50%;
 }
