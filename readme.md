@@ -1,4 +1,5 @@
-https://zyteify.github.io/
+A WIP "game of life" style game. Graphics are done with WebGPU and therefore only work with browsers that are compatible with this new graphics API.
+
 
 debugging:
 
